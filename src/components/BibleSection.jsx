@@ -15,77 +15,85 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-// Complete 66 Indonesian Books of the Holy Bible
+// Complete 66 Books of the Holy Bible with Indonesian and English designations
 export const BIBLE_BOOKS = [
   // Perjanjian Lama (39 Kitab)
-  { id: 'GEN', name: 'Kejadian', abbr: 'Kej', testament: 'PL', category: 'Taurat', chapters: 50 },
-  { id: 'EXO', name: 'Keluaran', abbr: 'Kel', testament: 'PL', category: 'Taurat', chapters: 40 },
-  { id: 'LEV', name: 'Imamat', abbr: 'Im', testament: 'PL', category: 'Taurat', chapters: 27 },
-  { id: 'NUM', name: 'Bilangan', abbr: 'Bil', testament: 'PL', category: 'Taurat', chapters: 36 },
-  { id: 'DEU', name: 'Ulangan', abbr: 'Ul', testament: 'PL', category: 'Taurat', chapters: 34 },
-  { id: 'JOS', name: 'Yosua', abbr: 'Yos', testament: 'PL', category: 'Sejarah', chapters: 24 },
-  { id: 'JDG', name: 'Hakim-hakim', abbr: 'Hak', testament: 'PL', category: 'Sejarah', chapters: 21 },
-  { id: 'RUT', name: 'Rut', abbr: 'Rut', testament: 'PL', category: 'Sejarah', chapters: 4 },
-  { id: '1SA', name: '1 Samuel', abbr: '1Sam', testament: 'PL', category: 'Sejarah', chapters: 31 },
-  { id: '2SA', name: '2 Samuel', abbr: '2Sam', testament: 'PL', category: 'Sejarah', chapters: 24 },
-  { id: '1KI', name: '1 Raja-raja', abbr: '1Raj', testament: 'PL', category: 'Sejarah', chapters: 22 },
-  { id: '2KI', name: '2 Raja-raja', abbr: '2Raj', testament: 'PL', category: 'Sejarah', chapters: 25 },
-  { id: '1CH', name: '1 Tawarikh', abbr: '1Taw', testament: 'PL', category: 'Sejarah', chapters: 29 },
-  { id: '2CH', name: '2 Tawarikh', abbr: '2Taw', testament: 'PL', category: 'Sejarah', chapters: 36 },
-  { id: 'EZR', name: 'Ezra', abbr: 'Ezr', testament: 'PL', category: 'Sejarah', chapters: 10 },
-  { id: 'NEH', name: 'Nehemia', abbr: 'Neh', testament: 'PL', category: 'Sejarah', chapters: 13 },
-  { id: 'EST', name: 'Ester', abbr: 'Est', testament: 'PL', category: 'Sejarah', chapters: 10 },
-  { id: 'JOB', name: 'Ayub', abbr: 'Ayb', testament: 'PL', category: 'Puisi', chapters: 42 },
-  { id: 'PSA', name: 'Mazmur', abbr: 'Mzm', testament: 'PL', category: 'Puisi', chapters: 150 },
-  { id: 'PRO', name: 'Amsal', abbr: 'Ams', testament: 'PL', category: 'Puisi', chapters: 31 },
-  { id: 'ECC', name: 'Pengkhotbah', abbr: 'Pkh', testament: 'PL', category: 'Puisi', chapters: 12 },
-  { id: 'SNG', name: 'Kidung Agung', abbr: 'Kid', testament: 'PL', category: 'Puisi', chapters: 8 },
-  { id: 'ISA', name: 'Yesaya', abbr: 'Yes', testament: 'PL', category: 'Nabi-nabi', chapters: 66 },
-  { id: 'JER', name: 'Yeremia', abbr: 'Yer', testament: 'PL', category: 'Nabi-nabi', chapters: 52 },
-  { id: 'LAM', name: 'Ratapan', abbr: 'Rat', testament: 'PL', category: 'Nabi-nabi', chapters: 5 },
-  { id: 'EZK', name: 'Yehezkiel', abbr: 'Yeh', testament: 'PL', category: 'Nabi-nabi', chapters: 48 },
-  { id: 'DAN', name: 'Daniel', abbr: 'Dan', testament: 'PL', category: 'Nabi-nabi', chapters: 12 },
-  { id: 'HOS', name: 'Hosea', abbr: 'Hos', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
-  { id: 'JOL', name: 'Yoel', abbr: 'Yol', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'AMO', name: 'Amos', abbr: 'Am', testament: 'PL', category: 'Nabi-nabi', chapters: 9 },
-  { id: 'OBA', name: 'Obaja', abbr: 'Ob', testament: 'PL', category: 'Nabi-nabi', chapters: 1 },
-  { id: 'JON', name: 'Yunus', abbr: 'Yun', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
-  { id: 'MIC', name: 'Mikha', abbr: 'Mik', testament: 'PL', category: 'Nabi-nabi', chapters: 7 },
-  { id: 'NAM', name: 'Nahum', abbr: 'Nah', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'HAB', name: 'Habakuk', abbr: 'Hab', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'ZEP', name: 'Zefanya', abbr: 'Zef', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'HAG', name: 'Hagai', abbr: 'Hag', testament: 'PL', category: 'Nabi-nabi', chapters: 2 },
-  { id: 'ZEC', name: 'Zakharia', abbr: 'Zak', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
-  { id: 'MAL', name: 'Maleakhi', abbr: 'Mal', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
+  { id: 'GEN', name: 'Kejadian', en: 'Genesis', abbr: 'Kej', testament: 'PL', category: 'Taurat', chapters: 50 },
+  { id: 'EXO', name: 'Keluaran', en: 'Exodus', abbr: 'Kel', testament: 'PL', category: 'Taurat', chapters: 40 },
+  { id: 'LEV', name: 'Imamat', en: 'Leviticus', abbr: 'Im', testament: 'PL', category: 'Taurat', chapters: 27 },
+  { id: 'NUM', name: 'Bilangan', en: 'Numbers', abbr: 'Bil', testament: 'PL', category: 'Taurat', chapters: 36 },
+  { id: 'DEU', name: 'Ulangan', en: 'Deuteronomy', abbr: 'Ul', testament: 'PL', category: 'Taurat', chapters: 34 },
+  { id: 'JOS', name: 'Yosua', en: 'Joshua', abbr: 'Yos', testament: 'PL', category: 'Sejarah', chapters: 24 },
+  { id: 'JDG', name: 'Hakim-hakim', en: 'Judges', abbr: 'Hak', testament: 'PL', category: 'Sejarah', chapters: 21 },
+  { id: 'RUT', name: 'Rut', en: 'Ruth', abbr: 'Rut', testament: 'PL', category: 'Sejarah', chapters: 4 },
+  { id: '1SA', name: '1 Samuel', en: '1 Samuel', abbr: '1Sam', testament: 'PL', category: 'Sejarah', chapters: 31 },
+  { id: '2SA', name: '2 Samuel', en: '2 Samuel', abbr: '2Sam', testament: 'PL', category: 'Sejarah', chapters: 24 },
+  { id: '1KI', name: '1 Raja-raja', en: '1 Kings', abbr: '1Raj', testament: 'PL', category: 'Sejarah', chapters: 22 },
+  { id: '2KI', name: '2 Raja-raja', en: '2 Kings', abbr: '2Raj', testament: 'PL', category: 'Sejarah', chapters: 25 },
+  { id: '1CH', name: '1 Tawarikh', en: '1 Chronicles', abbr: '1Taw', testament: 'PL', category: 'Sejarah', chapters: 29 },
+  { id: '2CH', name: '2 Tawarikh', en: '2 Chronicles', abbr: '2Taw', testament: 'PL', category: 'Sejarah', chapters: 36 },
+  { id: 'EZR', name: 'Ezra', en: 'Ezra', abbr: 'Ezr', testament: 'PL', category: 'Sejarah', chapters: 10 },
+  { id: 'NEH', name: 'Nehemia', en: 'Nehemiah', abbr: 'Neh', testament: 'PL', category: 'Sejarah', chapters: 13 },
+  { id: 'EST', name: 'Ester', en: 'Esther', abbr: 'Est', testament: 'PL', category: 'Sejarah', chapters: 10 },
+  { id: 'JOB', name: 'Ayub', en: 'Job', abbr: 'Ayb', testament: 'PL', category: 'Puisi', chapters: 42 },
+  { id: 'PSA', name: 'Mazmur', en: 'Psalms', abbr: 'Mzm', testament: 'PL', category: 'Puisi', chapters: 150 },
+  { id: 'PRO', name: 'Amsal', en: 'Proverbs', abbr: 'Ams', testament: 'PL', category: 'Puisi', chapters: 31 },
+  { id: 'ECC', name: 'Pengkhotbah', en: 'Ecclesiastes', abbr: 'Pkh', testament: 'PL', category: 'Puisi', chapters: 12 },
+  { id: 'SNG', name: 'Kidung Agung', en: 'Song of Solomon', abbr: 'Kid', testament: 'PL', category: 'Puisi', chapters: 8 },
+  { id: 'ISA', name: 'Yesaya', en: 'Isaiah', abbr: 'Yes', testament: 'PL', category: 'Nabi-nabi', chapters: 66 },
+  { id: 'JER', name: 'Yeremia', en: 'Jeremiah', abbr: 'Yer', testament: 'PL', category: 'Nabi-nabi', chapters: 52 },
+  { id: 'LAM', name: 'Ratapan', en: 'Lamentations', abbr: 'Rat', testament: 'PL', category: 'Nabi-nabi', chapters: 5 },
+  { id: 'EZK', name: 'Yehezkiel', en: 'Ezekiel', abbr: 'Yeh', testament: 'PL', category: 'Nabi-nabi', chapters: 48 },
+  { id: 'DAN', name: 'Daniel', en: 'Daniel', abbr: 'Dan', testament: 'PL', category: 'Nabi-nabi', chapters: 12 },
+  { id: 'HOS', name: 'Hosea', en: 'Hosea', abbr: 'Hos', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
+  { id: 'JOL', name: 'Yoel', en: 'Joel', abbr: 'Yol', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
+  { id: 'AMO', name: 'Amos', en: 'Amos', abbr: 'Am', testament: 'PL', category: 'Nabi-nabi', chapters: 9 },
+  { id: 'OBA', name: 'Obaja', en: 'Obadiah', abbr: 'Ob', testament: 'PL', category: 'Nabi-nabi', chapters: 1 },
+  { id: 'JON', name: 'Yunus', en: 'Jonah', abbr: 'Yun', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
+  { id: 'MIC', name: 'Mikha', en: 'Micah', abbr: 'Mik', testament: 'PL', category: 'Nabi-nabi', chapters: 7 },
+  { id: 'NAM', name: 'Nahum', en: 'Nahum', abbr: 'Nah', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
+  { id: 'HAB', name: 'Habakuk', en: 'Habakkuk', abbr: 'Hab', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
+  { id: 'ZEP', name: 'Zefanya', en: 'Zephaniah', abbr: 'Zef', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
+  { id: 'HAG', name: 'Hagai', en: 'Haggai', abbr: 'Hag', testament: 'PL', category: 'Nabi-nabi', chapters: 2 },
+  { id: 'ZEC', name: 'Zakharia', en: 'Zechariah', abbr: 'Zak', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
+  { id: 'MAL', name: 'Maleakhi', en: 'Malachi', abbr: 'Mal', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
 
   // Perjanjian Baru (27 Kitab)
-  { id: 'MAT', name: 'Matius', abbr: 'Mat', testament: 'PB', category: 'Injil', chapters: 28 },
-  { id: 'MRK', name: 'Markus', abbr: 'Mrk', testament: 'PB', category: 'Injil', chapters: 16 },
-  { id: 'LUK', name: 'Lukas', abbr: 'Luk', testament: 'PB', category: 'Injil', chapters: 24 },
-  { id: 'JHN', name: 'Yohanes', abbr: 'Yoh', testament: 'PB', category: 'Injil', chapters: 21 },
-  { id: 'ACT', name: 'Kisah Para Rasul', abbr: 'Kis', testament: 'PB', category: 'Sejarah', chapters: 28 },
-  { id: 'ROM', name: 'Roma', abbr: 'Rom', testament: 'PB', category: 'Surat', chapters: 16 },
-  { id: '1CO', name: '1 Korintus', abbr: '1Kor', testament: 'PB', category: 'Surat', chapters: 16 },
-  { id: '2CO', name: '2 Korintus', abbr: '2Kor', testament: 'PB', category: 'Surat', chapters: 13 },
-  { id: 'GAL', name: 'Galatia', abbr: 'Gal', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: 'EPH', name: 'Efesus', abbr: 'Efe', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: 'PHP', name: 'Filipi', abbr: 'Flp', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: 'COL', name: 'Kolose', abbr: 'Kol', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: '1TH', name: '1 Tesalonika', abbr: '1Tes', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2TH', name: '2 Tesalonika', abbr: '2Tes', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: '1TI', name: '1 Timotius', abbr: '1Tim', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: '2TI', name: '2 Timotius', abbr: '2Tim', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: 'TIT', name: 'Titus', abbr: 'Tit', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: 'PHM', name: 'Filemon', abbr: 'Flm', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'HEB', name: 'Ibrani', abbr: 'Ibr', testament: 'PB', category: 'Surat', chapters: 13 },
-  { id: 'JAS', name: 'Yakobus', abbr: 'Yak', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '1PE', name: '1 Petrus', abbr: '1Pet', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2PE', name: '2 Petrus', abbr: '2Pet', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: '1JN', name: '1 Yohanes', abbr: '1Yoh', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2JN', name: '2 Yohanes', abbr: '2Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: '3JN', name: '3 Yohanes', abbr: '3Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'JUD', name: 'Yudas', abbr: 'Yud', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'REV', name: 'Wahyu', abbr: 'Why', testament: 'PB', category: 'Nubuat', chapters: 22 }
+  { id: 'MAT', name: 'Matius', en: 'Matthew', abbr: 'Mat', testament: 'PB', category: 'Injil', chapters: 28 },
+  { id: 'MRK', name: 'Markus', en: 'Mark', abbr: 'Mrk', testament: 'PB', category: 'Injil', chapters: 16 },
+  { id: 'LUK', name: 'Lukas', en: 'Luke', abbr: 'Luk', testament: 'PB', category: 'Injil', chapters: 24 },
+  { id: 'JHN', name: 'Yohanes', en: 'John', abbr: 'Yoh', testament: 'PB', category: 'Injil', chapters: 21 },
+  { id: 'ACT', name: 'Kisah Para Rasul', en: 'Acts', abbr: 'Kis', testament: 'PB', category: 'Sejarah', chapters: 28 },
+  { id: 'ROM', name: 'Roma', en: 'Romans', abbr: 'Rom', testament: 'PB', category: 'Surat', chapters: 16 },
+  { id: '1CO', name: '1 Korintus', en: '1 Corinthians', abbr: '1Kor', testament: 'PB', category: 'Surat', chapters: 16 },
+  { id: '2CO', name: '2 Korintus', en: '2 Corinthians', abbr: '2Kor', testament: 'PB', category: 'Surat', chapters: 13 },
+  { id: 'GAL', name: 'Galatia', en: 'Galatians', abbr: 'Gal', testament: 'PB', category: 'Surat', chapters: 6 },
+  { id: 'EPH', name: 'Efesus', en: 'Ephesians', abbr: 'Efe', testament: 'PB', category: 'Surat', chapters: 6 },
+  { id: 'PHP', name: 'Filipi', en: 'Philippians', abbr: 'Flp', testament: 'PB', category: 'Surat', chapters: 4 },
+  { id: 'COL', name: 'Kolose', en: 'Colossians', abbr: 'Kol', testament: 'PB', category: 'Surat', chapters: 4 },
+  { id: '1TH', name: '1 Tesalonika', en: '1 Thessalonians', abbr: '1Tes', testament: 'PB', category: 'Surat', chapters: 5 },
+  { id: '2TH', name: '2 Tesalonika', en: '2 Thessalonians', abbr: '2Tes', testament: 'PB', category: 'Surat', chapters: 3 },
+  { id: '1TI', name: '1 Timotius', en: '1 Timothy', abbr: '1Tim', testament: 'PB', category: 'Surat', chapters: 6 },
+  { id: '2TI', name: '2 Timotius', en: '2 Timothy', abbr: '2Tim', testament: 'PB', category: 'Surat', chapters: 4 },
+  { id: 'TIT', name: 'Titus', en: 'Titus', abbr: 'Tit', testament: 'PB', category: 'Surat', chapters: 3 },
+  { id: 'PHM', name: 'Filemon', en: 'Philemon', abbr: 'Flm', testament: 'PB', category: 'Surat', chapters: 1 },
+  { id: 'HEB', name: 'Ibrani', en: 'Hebrews', abbr: 'Ibr', testament: 'PB', category: 'Surat', chapters: 13 },
+  { id: 'JAS', name: 'Yakobus', en: 'James', abbr: 'Yak', testament: 'PB', category: 'Surat', chapters: 5 },
+  { id: '1PE', name: '1 Petrus', en: '1 Peter', abbr: '1Pet', testament: 'PB', category: 'Surat', chapters: 5 },
+  { id: '2PE', name: '2 Petrus', en: '2 Peter', abbr: '2Pet', testament: 'PB', category: 'Surat', chapters: 3 },
+  { id: '1JN', name: '1 Yohanes', en: '1 John', abbr: '1Yoh', testament: 'PB', category: 'Surat', chapters: 5 },
+  { id: '2JN', name: '2 Yohanes', en: '2 John', abbr: '2Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
+  { id: '3JN', name: '3 Yohanes', en: '3 John', abbr: '3Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
+  { id: 'JUD', name: 'Yudas', en: 'Jude', abbr: 'Yud', testament: 'PB', category: 'Surat', chapters: 1 },
+  { id: 'REV', name: 'Wahyu', en: 'Revelation', abbr: 'Why', testament: 'PB', category: 'Nubuat', chapters: 22 }
+];
+
+export const BIBLE_VERSIONS = [
+  { id: 'TB', name: 'TB (Terjemahan Baru)', short: 'TB', source: 'LAI 1974' },
+  { id: 'TB2', name: 'TB2 (Edisi 2)', short: 'TB2', source: 'LAI 2023' },
+  { id: 'BIMK', name: 'BIMK (Masa Kini)', short: 'BIMK', source: 'Kabar Baik' },
+  { id: 'KJV', name: 'KJV (King James)', short: 'KJV', source: 'English' },
+  { id: 'WEB', name: 'WEB (World English)', short: 'WEB', source: 'English' }
 ];
 
 // Curated Scripture Verses Repository for instant loading without heavy external latency
@@ -136,6 +144,7 @@ export default function BibleSection({
   const isDark = theme === 'dark';
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === 'JHN') || BIBLE_BOOKS[0]);
   const [selectedChapter, setSelectedChapter] = useState(3);
+  const [selectedVersion, setSelectedVersion] = useState('TB');
   const [searchBookQuery, setSearchBookQuery] = useState('');
   const [testamentFilter, setTestamentFilter] = useState('ALL');
   const [copiedVerse, setCopiedVerse] = useState(null);
@@ -145,72 +154,93 @@ export default function BibleSection({
   const [apiVerses, setApiVerses] = useState({});
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
 
-  // Fetch real Indonesian TB verses on book/chapter change
+  // Fetch real verses on book/chapter/version change
   React.useEffect(() => {
-    const cacheKey = `${selectedBook.name}-${selectedChapter}`;
+    const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
     if (apiVerses[cacheKey]) return;
 
     let isMounted = true;
     setIsLoadingVerses(true);
 
-    fetch(`https://beeble.vercel.app/api/v1/passage/${encodeURIComponent(selectedBook.name)}/${selectedChapter}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Network error');
-        return res.json();
-      })
-      .then(json => {
-        if (!isMounted) return;
-        if (json?.data?.verses && Array.isArray(json.data.verses)) {
-          // Filter to actual content verses and clean titles
-          const cleaned = json.data.verses
-            .filter(v => v.type === 'content' && v.verse > 0)
-            .map(v => ({
+    if (selectedVersion === 'KJV' || selectedVersion === 'WEB') {
+      const bookQuery = selectedBook.en || selectedBook.name;
+      fetch(`https://bible-api.com/${encodeURIComponent(bookQuery)}+${selectedChapter}?translation=${selectedVersion.toLowerCase()}`)
+        .then(res => {
+          if (!res.ok) throw new Error('API error');
+          return res.json();
+        })
+        .then(json => {
+          if (!isMounted) return;
+          if (json?.verses && Array.isArray(json.verses)) {
+            const cleaned = json.verses.map(v => ({
               verse: v.verse,
-              text: v.content
+              text: (v.text || '').trim()
             }));
-          if (cleaned.length > 0) {
-            setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+            if (cleaned.length > 0) {
+              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+            }
           }
-        }
-      })
-      .catch(() => {
-        // Fallback silently if offline, handled by currentVerses
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingVerses(false);
-      });
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setIsLoadingVerses(false);
+        });
+    } else {
+      fetch(`https://beeble.vercel.app/api/v1/passage/${encodeURIComponent(selectedBook.name)}/${selectedChapter}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Network error');
+          return res.json();
+        })
+        .then(json => {
+          if (!isMounted) return;
+          if (json?.data?.verses && Array.isArray(json.data.verses)) {
+            const cleaned = json.data.verses
+              .filter(v => v.type === 'content' && v.verse > 0)
+              .map(v => ({
+                verse: v.verse,
+                text: v.content
+              }));
+            if (cleaned.length > 0) {
+              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+            }
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (isMounted) setIsLoadingVerses(false);
+        });
+    }
 
     return () => { isMounted = false; };
-  }, [selectedBook, selectedChapter]);
+  }, [selectedBook, selectedChapter, selectedVersion]);
 
   const filteredBooks = useMemo(() => {
     return BIBLE_BOOKS.filter(b => {
       const q = searchBookQuery.toLowerCase().trim();
-      const matchesSearch = !q || b.name.toLowerCase().includes(q) || b.abbr.toLowerCase().includes(q);
+      const matchesSearch = !q || b.name.toLowerCase().includes(q) || b.abbr.toLowerCase().includes(q) || (b.en && b.en.toLowerCase().includes(q));
       const matchesTestament = testamentFilter === 'ALL' || b.testament === testamentFilter;
       return matchesSearch && matchesTestament;
     });
   }, [searchBookQuery, testamentFilter]);
 
   const currentVerses = useMemo(() => {
-    const cacheKey = `${selectedBook.name}-${selectedChapter}`;
+    const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
     if (apiVerses[cacheKey] && apiVerses[cacheKey].length > 0) {
       return apiVerses[cacheKey];
     }
     const sampleKey = `${selectedBook.id}-${selectedChapter}`;
-    if (SAMPLE_SCRIPTURES[sampleKey]) {
+    if (SAMPLE_SCRIPTURES[sampleKey] && selectedVersion === 'TB') {
       return SAMPLE_SCRIPTURES[sampleKey];
     }
-    // High-yield fallback verses for smooth UX
     return Array.from({ length: 15 }, (_, i) => ({
       verse: i + 1,
       text: `${selectedBook.name} pasal ${selectedChapter} ayat ${i + 1} — "Sebab firman Allah hidup dan kuat dan lebih tajam dari pada pedang bermata dua manapun... Berbahagialah orang yang mendengarkan firman Tuhan dan memeliharanya."`
     }));
-  }, [selectedBook, selectedChapter, apiVerses]);
+  }, [selectedBook, selectedChapter, selectedVersion, apiVerses]);
 
   const handleCopyVerse = (v) => {
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
-    const text = `📖 ${ref}\n"${v.text}"\n(Alkitab Terjemahan Baru - Bapekkris Bank Mandiri)`;
+    const text = `📖 ${ref} (${selectedVersion})\n"${v.text}"\n(Alkitab Digital Bapekkris Bank Mandiri)`;
     try {
       navigator.clipboard.writeText(text);
       soundFx.playClick();
@@ -221,14 +251,14 @@ export default function BibleSection({
 
   const handleShareWa = (v) => {
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
-    const text = `📖 *${ref}*\n"${v.text}"\n\n_Bapekkris Bank Mandiri_\nhttps://bapekkris-mandiri.netlify.app/#alkitab`;
+    const text = `📖 *${ref} (${selectedVersion})*\n"${v.text}"\n\n_Bapekkris Bank Mandiri_\nhttps://bapekkris-mandiri.netlify.app/#alkitab`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleSendVerseToEasyWorship = (v) => {
     if (!onSendToEasyWorship) return;
     soundFx.playClick();
-    const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
+    const ref = `${selectedBook.name} ${selectedChapter}:${v.verse} (${selectedVersion})`;
     onSendToEasyWorship({
       type: 'bible',
       title: ref,
@@ -471,48 +501,82 @@ export default function BibleSection({
                   {selectedBook.name} Pasal {selectedChapter}
                 </h2>
                 <span style={{ fontSize: '0.78rem', color: 'var(--mandiri-gold)', fontWeight: 700 }}>
-                  Terjemahan Baru (TB) • {selectedBook.category}
+                  {BIBLE_VERSIONS.find(v => v.id === selectedVersion)?.name || selectedVersion} • {selectedBook.category}
                 </span>
               </div>
 
-              {/* Font Size Adjuster */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Ukuran Font:</span>
-                <button
-                  type="button"
-                  onClick={() => setFontSize(prev => Math.max(14, prev - 2))}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.76rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  A-
-                </button>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: '24px', textAlign: 'center' }}>
-                  {fontSize}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setFontSize(prev => Math.min(26, prev + 2))}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.76rem',
-                    fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
-                >
-                  A+
-                </button>
+              {/* Version Selector & Font Size */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                {/* Version Selector Pills */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginRight: '2px' }}>Versi:</span>
+                  {BIBLE_VERSIONS.map(ver => {
+                    const isSel = selectedVersion === ver.id;
+                    return (
+                      <button
+                        key={ver.id}
+                        type="button"
+                        onClick={() => {
+                          soundFx.playClick();
+                          setSelectedVersion(ver.id);
+                        }}
+                        title={ver.name}
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: isSel ? 'var(--mandiri-gold)' : 'var(--input-bg)',
+                          color: isSel ? '#001a33' : 'var(--text-main)',
+                          border: isSel ? '1px solid var(--mandiri-gold)' : '1px solid var(--border-card)',
+                          fontSize: '0.74rem',
+                          fontWeight: isSel ? 800 : 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {ver.short}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Font Size Adjuster */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Ukuran Font:</span>
+                  <button
+                    type="button"
+                    onClick={() => setFontSize(prev => Math.max(14, prev - 2))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--border-card)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    A-
+                  </button>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: '24px', textAlign: 'center' }}>
+                    {fontSize}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFontSize(prev => Math.min(26, prev + 2))}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--border-card)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    A+
+                  </button>
+                </div>
               </div>
             </div>
 

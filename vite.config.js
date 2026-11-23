@@ -7,20 +7,22 @@ export default defineConfig({
   server: {
     proxy: {
       '/storage-proxy': {
-        target: 'https://xarcxbfgeoetyhpqsick.supabase.co/storage/v1',
+        target: 'https://zkvjudumhhnwxchhakjl.supabase.co/storage/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/storage-proxy/, '')
       }
     }
   },
   build: {
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-icons': ['lucide-react']
+          'vendor-icons': ['lucide-react'],
+          'vendor-pdf': ['jspdf', 'html2canvas'],
+          'vendor-qr': ['qrcode']
         }
       }
     }
