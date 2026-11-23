@@ -1,5 +1,7 @@
-const SUPABASE_URL = "https://xarcxbfgeoetyhpqsick.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhcmN4YmZnZW9ldHlocHFzaWNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM2MTM1MjMsImV4cCI6MjEwOTE4OTUyM30.xQzKu3bL9Pzp3OeL6s2s9sEtTBQukr1y0XQSf21bzWI";
+const SUPABASE_URL = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_URL")) || 
+                     (typeof Deno !== "undefined" && Deno.env?.get("VITE_SUPABASE_URL")) || "";
+const SUPABASE_ANON_KEY = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_ANON_KEY")) || 
+                          (typeof Deno !== "undefined" && Deno.env?.get("VITE_SUPABASE_ANON_KEY")) || "";
 
 function escapeHtml(str = "") {
   return String(str)
@@ -26,6 +28,11 @@ export default async function handler(request, context) {
 
   // If normal browser user (not a preview crawler bot), continue to React SPA app
   if (!isCrawler) {
+    return context.next();
+  }
+
+  // If Supabase credentials are not configured in environment, continue
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return context.next();
   }
 

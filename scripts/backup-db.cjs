@@ -18,18 +18,20 @@ let projectId = process.env.SUPABASE_PROJECT_ID;
 const triggerTag = process.env.TRIGGER_TAG || 'LOCAL';
 const triggerLabel = process.env.TRIGGER_LABEL || (triggerTag === 'SYSTEM' ? '⏰ Sistem (Jadwal Otomatis 02:00 WIB)' : '🤖 Antigravity AI (Manual / Pasca Pembaruan)');
 
-if (!token || !projectId) {
+if (!token || !projectId || !process.env.VITE_SUPABASE_ANON_KEY) {
   const envPath = path.join(__dirname, '..', '.env');
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf8');
     const tokenMatch = envContent.match(/SUPABASE_MGMT_TOKEN=([^\s]+)/);
     const urlMatch = envContent.match(/VITE_SUPABASE_URL=https:\/\/([^.]+)\.supabase\.co/);
+    const anonMatch = envContent.match(/VITE_SUPABASE_ANON_KEY=([^\s]+)/);
     if (!token && tokenMatch) token = tokenMatch[1];
     if (!projectId && urlMatch) projectId = urlMatch[1];
+    if (!process.env.VITE_SUPABASE_ANON_KEY && anonMatch) process.env.VITE_SUPABASE_ANON_KEY = anonMatch[1];
   }
 }
 
-if (!projectId) projectId = 'zkvjudumhhnwxchhakjl';
+if (!projectId) projectId = process.env.VITE_SUPABASE_PROJECT_ID || '';
 
 const tables = [
   'tenures', 'tenure_roles', 'departments', 'divisions', 'sub_divisions',
@@ -86,7 +88,7 @@ async function runFullBackup() {
 
   for (const tbl of tables) {
     try {
-      const anonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_WertqHUdlXfWgQ1UBY4eug_TlfQVj2J';
+      const anonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
       const res = await fetch(`https://${projectId}.supabase.co/rest/v1/${tbl}?select=*`, {
         headers: {
           'apikey': anonKey,
@@ -122,7 +124,7 @@ async function runFullBackup() {
   console.log('\n--- 2/2. Mengunduh Berkas Fisik Storage Bucket (bapekkris-media) ---');
   let storageFiles = [];
   try {
-    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_WertqHUdlXfWgQ1UBY4eug_TlfQVj2J';
+    const anonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
     const listRes = await fetch(`https://${projectId}.supabase.co/storage/v1/object/list/bapekkris-media`, {
       method: 'POST',
       headers: {
