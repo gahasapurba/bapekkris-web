@@ -96,9 +96,6 @@ export const BIBLE_VERSIONS = [
   { id: 'WEB', name: 'WEB (World English)', short: 'WEB', source: 'English' }
 ];
 
-// Zero mock data repository
-const SAMPLE_SCRIPTURES = {};
-
 export default function BibleSection({
   theme,
   onSendToEasyWorship

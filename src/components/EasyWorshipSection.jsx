@@ -24,9 +24,6 @@ import {
 import { soundFx } from '../utils/audio';
 import { BIBLE_BOOKS } from './BibleSection';
 
-// Initial empty template - zero mock data
-const DEFAULT_LITURGY_ITEMS = [];
-
 // Helper to break song lyrics into distinct slide stanzas
 function parseTextToSlides(rawText = '') {
   if (!rawText) return [];
@@ -65,9 +62,9 @@ export default function EasyWorshipSection({
   const [playlist, setPlaylist] = useState(() => {
     try {
       const saved = localStorage.getItem('bapekkris_ew_playlist');
-      return saved ? JSON.parse(saved) : DEFAULT_LITURGY_ITEMS;
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
-      return DEFAULT_LITURGY_ITEMS;
+      return [];
     }
   });
 
