@@ -126,6 +126,16 @@ export default function EasyWorshipSection({
   const [customText, setCustomText] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
+  const filteredAvailableSongs = useMemo(() => {
+    const q = songSearchQuery.toLowerCase().trim();
+    if (!q) return availableSongs.slice(0, 50);
+    return availableSongs.filter(s => 
+      (s.title || '').toLowerCase().includes(q) || 
+      (s.songNumber || '').toLowerCase().includes(q) || 
+      (s.lyrics || '').toLowerCase().includes(q)
+    ).slice(0, 50);
+  }, [availableSongs, songSearchQuery]);
+
   // Handle incoming initialItem (e.g. from Alkitab or Kidung Jemaat "Kirim ke EasyWorship")
   useEffect(() => {
     if (initialItem && initialItem.title) {
@@ -880,19 +890,11 @@ export default function EasyWorshipSection({
                   />
 
                   <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {availableSongs.filter(s => {
-                      const q = songSearchQuery.toLowerCase().trim();
-                      if (!q) return true;
-                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q) || (s.lyrics || '').toLowerCase().includes(q);
-                    }).length === 0 ? (
+                    {filteredAvailableSongs.length === 0 ? (
                       <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
                         Tidak menemukan lagu yang cocok. Anda dapat menambahkan slide kustom pada tab Teks Kustom di atas.
                       </div>
-                    ) : availableSongs.filter(s => {
-                      const q = songSearchQuery.toLowerCase().trim();
-                      if (!q) return true;
-                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q) || (s.lyrics || '').toLowerCase().includes(q);
-                    }).map((s) => (
+                    ) : filteredAvailableSongs.map((s) => (
                       <button
                         key={s.id}
                         type="button"

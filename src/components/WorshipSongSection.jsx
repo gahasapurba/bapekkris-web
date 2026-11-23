@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Music, 
   Search, 
@@ -23,6 +23,12 @@ export default function WorshipSongSection({
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(80);
+
+  // Reset display limit when search query or category changes
+  useEffect(() => {
+    setDisplayLimit(80);
+  }, [searchQuery, selectedCategory]);
 
   // Kombinasi Pustaka Himne Kanonik (KJ, PKJ, NKB, PW) dengan lagu kustom dari Supabase (jika ada)
   const songList = useMemo(() => {
@@ -257,61 +263,85 @@ export default function WorshipSongSection({
                     <p style={{ margin: 0, fontSize: '0.88rem' }}>Tidak menemukan lagu yang cocok dengan pencarian.</p>
                   </div>
                 ) : (
-                  filteredSongs.map(song => {
-                    const isSelected = activeSong?.id === song.id;
-                    return (
+                  <>
+                    {filteredSongs.slice(0, displayLimit).map(song => {
+                      const isSelected = activeSong?.id === song.id;
+                      return (
+                        <button
+                          key={song.id}
+                          onClick={() => {
+                            soundFx.playClick();
+                            setActiveSongId(song.id);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 14px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: isSelected ? (isDark ? 'rgba(255, 184, 0, 0.14)' : 'rgba(0, 61, 121, 0.08)') : 'transparent',
+                            border: isSelected ? '1px solid var(--mandiri-gold)' : '1px solid var(--border-card)',
+                            color: isSelected ? (isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)') : 'var(--text-main)',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                              {song.songNumber && (
+                                <span style={{
+                                  padding: '2px 6px',
+                                  borderRadius: '4px',
+                                  background: isDark ? 'rgba(255, 184, 0, 0.2)' : 'rgba(0, 61, 121, 0.1)',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  fontFamily: 'monospace'
+                                }}>
+                                  {song.songNumber}
+                                </span>
+                              )}
+                              <span style={{
+                                fontWeight: isSelected ? 800 : 600,
+                                fontSize: '0.88rem',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis'
+                              }}>
+                                {song.title}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
+                              {song.category} {song.keySignature ? `• ${song.keySignature}` : ''}
+                            </div>
+                          </div>
+                          <ChevronRight size={16} style={{ color: isSelected ? 'var(--mandiri-gold)' : 'var(--text-dim)', flexShrink: 0 }} />
+                        </button>
+                      );
+                    })}
+
+                    {filteredSongs.length > displayLimit && (
                       <button
-                        key={song.id}
-                        onClick={() => {
-                          soundFx.playClick();
-                          setActiveSongId(song.id);
-                        }}
+                        type="button"
+                        onClick={() => setDisplayLimit(prev => prev + 80)}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '12px 14px',
+                          width: '100%',
+                          padding: '10px 14px',
                           borderRadius: 'var(--radius-sm)',
-                          background: isSelected ? (isDark ? 'rgba(255, 184, 0, 0.14)' : 'rgba(0, 61, 121, 0.08)') : 'transparent',
-                          border: isSelected ? '1px solid var(--mandiri-gold)' : '1px solid var(--border-card)',
-                          color: isSelected ? (isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)') : 'var(--text-main)',
-                          textAlign: 'left',
+                          background: 'rgba(255, 184, 0, 0.12)',
+                          border: '1px solid rgba(255, 184, 0, 0.35)',
+                          color: 'var(--mandiri-gold)',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
                           cursor: 'pointer',
-                          transition: 'all 0.15s ease'
+                          textAlign: 'center',
+                          marginTop: '6px'
                         }}
                       >
-                        <div style={{ minWidth: 0, flex: 1, paddingRight: '8px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                            {song.songNumber && (
-                              <span style={{
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: isDark ? 'rgba(255, 184, 0, 0.2)' : 'rgba(0, 61, 121, 0.1)',
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                fontFamily: 'monospace'
-                              }}>
-                                {song.songNumber}
-                              </span>
-                            )}
-                            <span style={{
-                              fontWeight: isSelected ? 800 : 600,
-                              fontSize: '0.88rem',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis'
-                            }}>
-                              {song.title}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)' }}>
-                            {song.category} {song.keySignature ? `• ${song.keySignature}` : ''}
-                          </div>
-                        </div>
-                        <ChevronRight size={16} style={{ color: isSelected ? 'var(--mandiri-gold)' : 'var(--text-dim)', flexShrink: 0 }} />
+                        + Tampilkan Lebih Banyak ({Math.min(displayLimit, filteredSongs.length)} dari {filteredSongs.length} lagu)
                       </button>
-                    );
-                  })
+                    )}
+                  </>
                 )}
               </div>
 
