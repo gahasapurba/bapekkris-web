@@ -64,3 +64,4 @@ jobs:
             backups/*.zip
             backups/*.json
           retention-days: 30
+

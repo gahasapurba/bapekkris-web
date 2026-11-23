@@ -82,3 +82,4 @@
 -- 19. easy_worship_schedules (Jadwal & Tata Ibadah EasyWorship)
 -- INSERT INTO public.easy_worship_schedules (id, event_id, title, service_date, items, theme_settings, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
+
