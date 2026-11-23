@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { getDeadlineStatus } from '../utils/dateUtils';
 import { 
   Building2, 
@@ -32,6 +33,17 @@ export default function Navbar({
   onOpenQuickSearch
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
   const isDark = theme === 'dark';
   const activeFormsCount = forms.filter(f => {
     if (f.isOpen === false) return false;
@@ -237,7 +249,7 @@ export default function Navbar({
         </nav>
 
         {/* 3. Right: Utility Controls (Search, Tenure, Theme, Mobile Hamburger) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <div className="navbar-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           {/* Global Quick Search Shortcut (Ctrl+K / Cmd+K) */}
           {onOpenQuickSearch && (
             <button
@@ -363,92 +375,313 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Mobile Drawer Navigation Menu */}
-      {isMobileMenuOpen && (
-        <div style={{
-          position: 'fixed',
-          top: '74px',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: isDark ? 'rgba(7, 13, 30, 0.98)' : 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          borderTop: '1px solid var(--border-card)',
-          padding: '20px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          overflowY: 'auto',
-          zIndex: 999999,
-          boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
-        }}>
-          {navItems.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = currentTab === tab.id;
-            return (
+      {/* Mobile Drawer Navigation Menu (Rendered via React Portal into document.body to avoid header backdrop-filter clipping) */}
+      {isMobileMenuOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="mobile-drawer-overlay"
+          onClick={() => setIsMobileMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999999,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-start'
+          }}
+        >
+          <div 
+            className="mobile-drawer-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              maxHeight: '100dvh',
+              height: '100%',
+              background: isDark ? '#060d1f' : '#ffffff',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Drawer Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-card)',
+              background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              flexShrink: 0
+            }}>
+              <div 
+                onClick={handleLogoClick}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+              >
+                <img 
+                  src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
+                  alt="Bapekkris Bank Mandiri"
+                  style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                />
+                <div>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-main)', lineHeight: 1.1 }}>
+                    BAPEKKRIS
+                  </div>
+                  <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>
+                    Bank Mandiri
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={onToggleTheme}
+                  title="Ganti Tema Warna"
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: 'var(--radius-md)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                    border: '1px solid var(--border-card)',
+                    color: isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isDark ? <Sun size={17} /> : <Moon size={17} />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  aria-label="Tutup Menu"
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: 'var(--radius-md)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                    border: '1px solid var(--border-card)',
+                    color: 'var(--text-main)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Drawer Body (Scrollable) */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              WebkitOverflowScrolling: 'touch'
+            }}>
+              {/* Quick Search Button in Drawer */}
+              {onOpenQuickSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenQuickSearch();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '12px 14px',
+                    borderRadius: 'var(--radius-md)',
+                    background: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                    border: '1px solid var(--border-card)',
+                    color: 'var(--text-muted)',
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    marginBottom: '8px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Search size={16} />
+                    <span>Pencarian Cepat Bapekkris...</span>
+                  </div>
+                  <kbd style={{
+                    fontSize: '0.68rem',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                    color: 'var(--text-dim)',
+                    fontFamily: 'monospace'
+                  }}>
+                    ⌘K
+                  </kbd>
+                </button>
+              )}
+
+              {/* All Navigation Items */}
+              {navItems.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = currentTab === tab.id || (tab.id === 'event' && currentTab === 'program') || (tab.id === 'form' && currentTab === 'oprec');
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleSelectTab(tab.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '12px',
+                      padding: '12px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      background: isActive 
+                        ? (isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(0, 61, 121, 0.08)') 
+                        : 'transparent',
+                      color: isActive 
+                        ? (isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)') 
+                        : 'var(--text-main)',
+                      border: 'none',
+                      fontSize: '0.94rem',
+                      fontWeight: isActive ? 800 : 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Icon size={18} style={{ color: isActive ? 'var(--mandiri-gold)' : 'var(--text-muted)', flexShrink: 0 }} />
+                    <span style={{ flex: 1 }}>{tab.label}</span>
+                    {isActive && (
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--mandiri-gold)'
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+
+              {/* Highlighted Registration Form Tab */}
+              {isFormVisible && (
+                <button
+                  onClick={() => handleSelectTab('form')}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--mandiri-gold)',
+                    color: '#040914',
+                    border: 'none',
+                    fontSize: '0.92rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    marginTop: '10px',
+                    boxShadow: '0 4px 14px rgba(255, 184, 0, 0.25)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <UserPlus size={18} />
+                    <span>Registrasi & Form Pendaftaran</span>
+                  </div>
+                  {activeFormsCount > 0 && (
+                    <span style={{
+                      background: '#040914',
+                      color: '#ffffff',
+                      fontSize: '0.72rem',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-full)',
+                      fontWeight: 800
+                    }}>
+                      {activeFormsCount} Aktif
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {/* Tenure Switcher if multiple tenures */}
+              {Array.isArray(tenures) && tenures.length > 1 && (
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-card)' }}>
+                  <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                    Pilih Periode Kepengurusan
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <select
+                      value={activeTenure?.id || ''}
+                      onChange={(e) => {
+                        const selected = tenures.find(t => t.id === e.target.value);
+                        if (selected && onSelectTenure) onSelectTenure(selected);
+                        setIsMobileMenuOpen(false);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px 32px 10px 12px',
+                        borderRadius: 'var(--radius-md)',
+                        background: isDark ? 'rgba(255, 255, 255, 0.06)' : '#ffffff',
+                        border: '1px solid var(--border-card)',
+                        color: 'var(--text-main)',
+                        fontSize: '0.86rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        appearance: 'none',
+                        WebkitAppearance: 'none',
+                        outline: 'none'
+                      }}
+                    >
+                      {tenures.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          Periode {t.code || t.title}{t.isActive ? ' (Aktif)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-dim)' }} />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Drawer Footer */}
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid var(--border-card)',
+              background: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.74rem',
+              color: 'var(--text-muted)',
+              flexShrink: 0
+            }}>
+              <span>Badan Pembinaan Kerohanian Kristen</span>
               <button
-                key={tab.id}
-                onClick={() => handleSelectTab(tab.id)}
+                type="button"
+                onClick={() => handleSelectTab('admin')}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--radius-md)',
-                  background: isActive ? (isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(0, 61, 121, 0.08)') : 'transparent',
-                  color: isActive ? 'var(--mandiri-gold)' : 'var(--text-main)',
+                  background: 'transparent',
                   border: 'none',
-                  fontSize: '0.92rem',
+                  color: 'var(--mandiri-gold)',
+                  fontSize: '0.74rem',
                   fontWeight: 700,
-                  cursor: 'pointer',
-                  textAlign: 'left'
+                  cursor: 'pointer'
                 }}
               >
-                <Icon size={18} />
-                <span>{tab.label}</span>
+                Admin Portal →
               </button>
-            );
-          })}
-
-          {isFormVisible && (
-            <button
-              onClick={() => handleSelectTab('form')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--mandiri-gold)',
-                color: '#040914',
-                border: 'none',
-                fontSize: '0.92rem',
-                fontWeight: 800,
-                cursor: 'pointer',
-                marginTop: '8px'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <UserPlus size={18} />
-                <span>Registrasi & Form Pendaftaran</span>
-              </div>
-              {activeFormsCount > 0 && (
-                <span style={{
-                  background: '#040914',
-                  color: '#ffffff',
-                  fontSize: '0.72rem',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-full)',
-                  fontWeight: 800
-                }}>
-                  {activeFormsCount} Aktif
-                </span>
-              )}
-            </button>
-          )}
-        </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </header>
   );

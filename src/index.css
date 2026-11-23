@@ -485,6 +485,19 @@ select option {
     margin-left: 6px !important;
     gap: 6px !important;
   }
+
+  .navbar-search-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .navbar-search-btn .navbar-search-text,
+  .navbar-search-btn kbd {
+    display: none !important;
+  }
 }
 
 /* TABLET & MOBILE CONTENT (< 868px) */
