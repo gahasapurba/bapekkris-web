@@ -1548,11 +1548,11 @@ export default function App() {
               border: '1.5px solid var(--border-card)'
             }}>
               <img 
-                src={isDark ? "/assets/apd-logo-white.png" : "/assets/CNT_IT_APD_LOGO_SUITE/01-APD Master Brand Logo.png"} 
-                alt="CNT IT APD Logo"
-                style={{ height: '48px', objectFit: 'contain', marginBottom: '4px' }}
+                src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
+                alt="Bapekkris Bank Mandiri"
+                style={{ height: '52px', objectFit: 'contain', marginBottom: '4px' }}
                 onError={(e) => {
-                  e.currentTarget.src = "/assets/CNT_IT_APD_LOGO_SUITE/main-apd-delivery-horizontal-logo.png";
+                  e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
                 }}
               />
 
@@ -1579,7 +1579,7 @@ export default function App() {
               </h2>
 
               <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: 1.65, maxWidth: '480px', margin: 0 }}>
-                Saat ini seluruh halaman publik portal <strong>Culture Network Team (CNT) IT APD</strong> sedang dinonaktifkan sementara. Silakan kembali lagi nanti.
+                Saat ini seluruh halaman publik portal <strong>Bapekkris Bank Mandiri</strong> sedang dinonaktifkan sementara. Silakan kembali lagi nanti.
               </p>
             </div>
           </div>
@@ -1609,7 +1609,7 @@ export default function App() {
         <Suspense
           fallback={
             <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-              Memuat halaman CNT IT APD...
+              Memuat halaman Bapekkris Bank Mandiri...
             </div>
           }
         >

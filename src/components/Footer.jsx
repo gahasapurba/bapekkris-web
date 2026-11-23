@@ -28,20 +28,14 @@ export default function Footer({ theme }) {
         }}>
           {/* Left Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
-              background: 'linear-gradient(135deg, #003d79 0%, #002244 100%)',
-              border: '1.5px solid var(--mandiri-gold)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(0, 61, 121, 0.35)',
-              fontSize: '1.3rem'
-            }}>
-              ✝️
-            </div>
+            <img 
+              src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
+              alt="Bapekkris Bank Mandiri" 
+              style={{ height: '42px', width: 'auto', objectFit: 'contain' }}
+              onError={(e) => {
+                e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
+              }}
+            />
             <div>
               <div style={{ fontWeight: 800, fontSize: '0.98rem', color: 'var(--text-main)' }}>
                 Bapekkris Bank Mandiri
@@ -55,20 +49,20 @@ export default function Footer({ theme }) {
           {/* Partner Badges */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px', opacity: 0.95 }}>
             <img 
-              src={isDark ? "/assets/mandiri-logo.png" : "/assets/mandiri-logo.png"} 
+              src={isDark ? "/assets/Mandiri/04-Mandiri White Color Alternative Logo.png" : "/assets/mandiri-logo.png"} 
               alt="Bank Mandiri" 
               style={{ height: '24px', objectFit: 'contain' }}
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
+                e.currentTarget.src = "/assets/mandiri-logo.png";
               }}
             />
             <div style={{ height: '20px', width: '1px', background: 'var(--border-card)' }} />
             <img 
-              src="/assets/danantara-logo.png" 
+              src={isDark ? "/assets/Danantara/negative-danantara-indonesia-horizontal-logo.png" : "/assets/danantara-logo.png"} 
               alt="Danantara Indonesia" 
               style={{ height: '22px', objectFit: 'contain' }}
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
+                e.currentTarget.src = "/assets/danantara-logo.png";
               }}
             />
           </div>

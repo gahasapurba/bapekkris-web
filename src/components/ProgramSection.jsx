@@ -244,7 +244,7 @@ export default function ProgramSection({
     const url = getEventDirectUrl(evt.id);
     const dateText = formatWibEventRange(evt.startDate, evt.endDate, evt.date);
     const locText = evt.location || 'Plaza Mandiri';
-    const text = `🎉 *Agenda Kegiatan CNT IT APD*\n*${evt.title}*\n📅 ${dateText} • 📍 ${locText}\n\nYuk ikuti & konfirmasi kehadiranmu (RSVP) di:\n${url}`;
+    const text = `🎉 *Agenda Kegiatan Bapekkris Bank Mandiri*\n*${evt.title}*\n📅 ${dateText} • 📍 ${locText}\n\nYuk ikuti & konfirmasi kehadiranmu (RSVP) di:\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -333,10 +333,10 @@ export default function ProgramSection({
   // Quarter breakdown for Calendar View (Dynamic based on activeTenure)
   const tenureYear = activeTenure?.code || '';
   const quarters = [
-    { id: 'Q1', label: tenureYear ? `Q1 ${tenureYear} (Jan - Mar)` : 'Q1 (Jan - Mar)', color: '#0ea5e9', desc: 'Kick-off Budaya, Turnamen E-Sports & Aksi Donor Darah' },
-    { id: 'Q2', label: tenureYear ? `Q2 ${tenureYear} (Apr - Jun)` : 'Q2 (Apr - Jun)', color: '#10b981', desc: 'Ramadan Charity, Grand Gathering & Family Teambuilding' },
-    { id: 'Q3', label: tenureYear ? `Q3 ${tenureYear} (Jul - Sep)` : 'Q3 (Jul - Sep)', color: '#a855f7', desc: 'Tech Hackathon, Turnamen Olahraga & Wellness Sharing' },
-    { id: 'Q4', label: tenureYear ? `Q4 ${tenureYear} (Okt - Des)` : 'Q4 (Okt - Des)', color: '#ffb800', desc: 'APD Got Talent, Townhall Akhir Tahun & Apresiasi Akbar' }
+    { id: 'Q1', label: tenureYear ? `Q1 ${tenureYear} (Jan - Mar)` : 'Q1 (Jan - Mar)', color: '#0ea5e9', desc: 'Ibadah Awal Tahun, Doa Syafaat & Persekutuan Wilayah' },
+    { id: 'Q2', label: tenureYear ? `Q2 ${tenureYear} (Apr - Jun)` : 'Q2 (Apr - Jun)', color: '#10b981', desc: 'Paskah Bapekkris, Aksi Sosial Diakonia & Fellowship' },
+    { id: 'Q3', label: tenureYear ? `Q3 ${tenureYear} (Jul - Sep)` : 'Q3 (Jul - Sep)', color: '#a855f7', desc: 'Retret Rohani Insan Mandiri, Seminar Karakter & Pembinaan' },
+    { id: 'Q4', label: tenureYear ? `Q4 ${tenureYear} (Okt - Des)` : 'Q4 (Okt - Des)', color: '#ffb800', desc: 'Perayaan Natal Bersama Bapekkris, Ibadah Akhir Tahun & Apresiasi Pelayanan' }
   ];
 
   return (

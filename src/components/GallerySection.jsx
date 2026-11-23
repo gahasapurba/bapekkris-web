@@ -118,7 +118,7 @@ export default function GallerySection({
   }, [isLightboxOpen, activeEvent, eventPhotos.length]);
 
   const safePhotoIdx = eventPhotos.length > 0 && currentPhotoIdx < eventPhotos.length ? currentPhotoIdx : 0;
-  const currentPhotoUrl = eventPhotos[safePhotoIdx] || eventPhotos[0] || '/assets/CNT_IT_APD_LOGO_SUITE/01-APD Master Brand Logo.png';
+  const currentPhotoUrl = eventPhotos[safePhotoIdx] || eventPhotos[0] || '/assets/mandiri-club-bapekkris-original.png';
 
   const getDownloadPhotoUrl = (url) => {
     if (!url || typeof url !== 'string') return '';
@@ -177,10 +177,10 @@ export default function GallerySection({
     if (!gal) return;
     const url = getGalleryShareUrl(gal.id);
     const dateText = formatWibDateTime(gal.date) || '';
-    const divText = gal.divisionName || gal.division || 'CNT IT APD';
+    const divText = gal.divisionName || gal.division || 'Bapekkris Bank Mandiri';
     const descText = gal.description ? (gal.description.length > 150 ? gal.description.slice(0, 147) + '...' : gal.description) : '';
 
-    const text = `📸 *Dokumentasi Kegiatan CNT IT APD*\n*${gal.title}*\n${dateText ? `📅 ${dateText} • ${divText}\n` : ''}${descText ? `\n"${descText}"\n` : ''}\nLihat foto dokumentasi selengkapnya di web:\n${url}`;
+    const text = `📸 *Dokumentasi Kegiatan Bapekkris Bank Mandiri*\n*${gal.title}*\n${dateText ? `📅 ${dateText} • ${divText}\n` : ''}${descText ? `\n"${descText}"\n` : ''}\nLihat foto dokumentasi selengkapnya di web:\n${url}`;
 
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
@@ -202,10 +202,10 @@ export default function GallerySection({
           Creative Media & Documentation
         </span>
         <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3.2rem)', fontWeight: 900, color: 'var(--text-main)', marginBottom: '12px' }}>
-          Galeri Kegiatan CNT IT APD
+          Galeri Kegiatan Bapekkris Bank Mandiri
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6 }}>
-          Merekam momen kebersamaan, semangat kolaborasi, dan keceriaan seluruh insan Group IT Application Delivery di setiap program budaya.
+          Merekam momen persekutuan, ibadah syukur, dan pelayanan kasih keluarga besar Bapekkris PT Bank Mandiri (Persero) Tbk.
         </p>
       </div>
 
@@ -561,7 +561,7 @@ export default function GallerySection({
                 <Calendar size={13} /> {formatWibDateTime(activeEvent.date) || '-'}
               </span>
               <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Divisi: {activeEvent.divisionName || activeEvent.division || 'CNT IT APD'}
+                Divisi: {activeEvent.divisionName || activeEvent.division || 'Bapekkris Bank Mandiri'}
               </span>
               {activeEvent.eventId && (() => {
                 const connectedEvt = (events || []).find(e => String(e.id) === String(activeEvent.eventId) && e.isPublic === true);

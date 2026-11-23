@@ -74,10 +74,10 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
           Official Brand Guidelines & Katalog Digital
         </span>
         <h1 style={{ fontSize: 'clamp(2.2rem, 4vw, 3.2rem)', fontWeight: 900, color: 'var(--text-main)', marginBottom: '16px' }}>
-          Daftar Asset CNT IT APD
+          Daftar Asset Bapekkris Bank Mandiri
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.02rem', lineHeight: 1.6 }}>
-          Katalog asset resmi Culture Network Team Group IT Application Delivery: paket logo resmi, template PowerPoint Townhall, virtual background, dan panduan identitas brand.
+          Katalog asset resmi Badan Pembinaan Kerohanian Kristen Bank Mandiri: paket logo resmi, template presentasi ibadah, virtual background kebaktian, dan panduan identitas visual.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={18} color="var(--mandiri-gold)" />
               <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                Evolusi Identitas Brand CNT IT APD
+                Identitas Resmi & Logo Bapekkris Bank Mandiri
               </h3>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -110,7 +110,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
                   cursor: 'pointer'
                 }}
               >
-                1. Logo Ribbon (Legacy)
+                1. Logo Original (Light BG)
               </button>
               <button
                 onClick={() => setLogoPhase(1)}
@@ -125,7 +125,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
                   cursor: 'pointer'
                 }}
               >
-                2. Modern APD (Current)
+                2. Logo White Variant (Dark BG)
               </button>
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -188,15 +188,16 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
               pointerEvents: logoPhase === 0 ? 'auto' : 'none'
             }}>
               <img
-                src="https://xarcxbfgeoetyhpqsick.supabase.co/storage/v1/object/public/cnt-media/assets/1793748243148_cnt-logo.png"
-                alt="Logo CNT Ribbon Legacy"
+                src="/assets/mandiri-club-bapekkris-original.png"
+                alt="Logo Bapekkris Original"
                 style={{
-                  maxHeight: '120px',
+                  maxHeight: '90px',
+                  maxWidth: '320px',
                   objectFit: 'contain'
                 }}
               />
               <span className="badge-gold" style={{ fontSize: '0.68rem' }}>
-                Logo Pita Infinity (Legacy Version)
+                Logo Resmi Original (Full Color)
               </span>
             </div>
 
@@ -213,28 +214,25 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
               pointerEvents: logoPhase === 1 ? 'auto' : 'none'
             }}>
               <img
-                src={isDark ? "/assets/apd-logo-white.png" : "/assets/CNT_IT_APD_LOGO_SUITE/01-APD Master Brand Logo.png"}
-                alt="Logo Modern CNT IT APD"
+                src="/assets/mandiri-club-bapekkris-white.png"
+                alt="Logo Bapekkris White Variant"
                 style={{
                   maxHeight: '90px',
                   maxWidth: '320px',
                   objectFit: 'contain'
                 }}
-                onError={(e) => {
-                  e.currentTarget.src = "/assets/CNT_IT_APD_LOGO_SUITE/main-apd-delivery-horizontal-logo.png";
-                }}
               />
               <span className="badge-cyan" style={{ fontSize: '0.68rem' }}>
-                Logo IT APD (Since 2026)
+                Logo Versi Putih (Latar Gelap)
               </span>
             </div>
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '14px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             {logoPhase === 0 ? (
-              <span>Logo sebelumnya mengusung pita infinity melingkar biru-emas.</span>
+              <span>Logo Resmi Mandiri Club Bapekkris versi original (full color) untuk latar belakang terang.</span>
             ) : (
-              <span>Transformasi ke logo horizontal tipografi modern Mandiri IT APD dengan ketegasan visual delivery.</span>
+              <span>Logo Resmi Mandiri Club Bapekkris versi putih kontras tinggi untuk latar belakang gelap.</span>
             )}
           </div>
         </div>

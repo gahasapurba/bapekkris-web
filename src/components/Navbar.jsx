@@ -122,21 +122,20 @@ export default function Navbar({
             marginRight: 'clamp(8px, 1.5vw, 20px)'
           }}
         >
-          <div style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '10px',
-            background: 'linear-gradient(135deg, #003d79 0%, #001c3d 100%)',
-            border: '1.5px solid var(--mandiri-gold)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '1.15rem',
-            boxShadow: '0 3px 10px rgba(0, 61, 121, 0.4)',
-            flexShrink: 0
-          }}>
-            ✝️
-          </div>
+          <img 
+            className="navbar-brand-logo"
+            src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
+            alt="Bapekkris Bank Mandiri"
+            style={{
+              height: '36px',
+              width: 'auto',
+              maxHeight: '38px',
+              objectFit: 'contain'
+            }}
+            onError={(e) => {
+              e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
+            }}
+          />
           <div className="navbar-brand-divider" style={{ height: '22px', width: '1px', background: 'var(--border-card)', flexShrink: 0 }} />
           <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
             <span className="navbar-brand-title" style={{ fontSize: '1rem', fontWeight: 900, letterSpacing: '-0.01em', color: 'var(--text-main)', lineHeight: 1.15 }}>

@@ -32,6 +32,63 @@ import { getDivisionLead, getDivisionStructure, getMemberLevel } from '../utils/
 import { getDeadlineStatus, formatWibTimestamp, formatDeadlineWib } from '../utils/dateUtils';
 import { getUnifiedEventAttendees } from '../utils/quotaUtils';
 
+const DEFAULT_BAPEKKRIS_FAQS = [
+  {
+    id: 'faq-1',
+    category: 'Tentang Bapekkris',
+    question: 'Apa itu Bapekkris (Badan Pembinaan Kerohanian Kristen) Bank Mandiri?',
+    answer: 'Bapekkris (Badan Pembinaan Kerohanian Kristen) PT Bank Mandiri (Persero) Tbk adalah wadah pembinaan kerohanian Kristen dan Katolik bagi seluruh insan Mandirian. Bapekkris hadir untuk membangun persekutuan yang berakar kuat, mempererat tali kasih persaudaraan, dan membina integritas spiritual dalam bekerja serta melayani bagi kemuliaan Tuhan.',
+    isPublished: true,
+    sortOrder: 0,
+    askedBy: 'Admin Bapekkris'
+  },
+  {
+    id: 'faq-2',
+    category: 'Ibadah & Persekutuan',
+    question: 'Siapa saja yang boleh mengikuti persekutuan doa dan ibadah Bapekkris?',
+    answer: 'Seluruh pegawai Bank Mandiri (organik maupun non-organik), pensiunan, tenaga alih daya, magang, serta keluarga besar Mandirian Kristen dan Katolik di seluruh unit kerja, kantor cabang, maupun anak perusahaan terbuka penuh untuk mengikuti seluruh rangkaian ibadah dan kegiatan Bapekkris.',
+    isPublished: true,
+    sortOrder: 1,
+    askedBy: 'Admin Bapekkris'
+  },
+  {
+    id: 'faq-3',
+    category: 'Jadwal & Lokasi',
+    question: 'Kapan dan di mana jadwal ibadah rutin Bapekkris dilaksanakan?',
+    answer: 'Ibadah rutin persekutuan doa diadakan secara hybrid setiap hari Jumat pukul 12.00 - 13.00 WIB (on-site di Chapel/Auditorium Plaza Mandiri dan disiarkan secara langsung via Zoom/MS Teams). Tautan streaming dan pengingat jadwal selalu diperbarui di portal ini.',
+    isPublished: true,
+    sortOrder: 2,
+    askedBy: 'Admin Bapekkris'
+  },
+  {
+    id: 'faq-4',
+    category: 'Pelayanan Doa',
+    question: 'Bagaimana cara menyampaikan permohonan pokok doa syafaat atau konseling?',
+    answer: 'Anda dapat menyampaikan permohonan doa syafaat melalui fitur Kotak Doa & Aspirasi di website ini atau menghubungi langsung Tim Pelayanan Doa Bapekkris. Setiap pokok doa akan dijaga kerahasiaannya dan didoakan bersama oleh tim pendoa syafaat.',
+    isPublished: true,
+    sortOrder: 3,
+    askedBy: 'Admin Bapekkris'
+  },
+  {
+    id: 'faq-5',
+    category: 'Event & Pendaftaran',
+    question: 'Bagaimana cara mendaftar kegiatan besar seperti Retret, Paskah, atau Natal Bapekkris?',
+    answer: 'Setiap agenda besar akan diumumkan pada menu Program Kerja & Ibadah serta Hub Registrasi. Anda cukup memilih event yang sedang dibuka, mengisi formulir online, dan menyimpan kartu konfirmasi QR Code untuk kehadiran di lokasi acara.',
+    isPublished: true,
+    sortOrder: 4,
+    askedBy: 'Admin Bapekkris'
+  },
+  {
+    id: 'faq-6',
+    category: 'Pelayanan & Pengurus',
+    question: 'Bagaimana cara bergabung dalam tim pelayanan Bapekkris (Pemusik, Singers, Multimedia, Diakonia)?',
+    answer: 'Bapekkris senantiasa membuka pintu bagi Mandirian yang rindu melayani, baik di bidang musik & pujian (worship team), multimedia, dokumentasi, usher, maupun bakti sosial diakonia. Silakan hubungi pengurus melalui kontak yang tersedia di halaman Organisasi atau mendaftar pada pembukaan pendaftaran pelayanan.',
+    isPublished: true,
+    sortOrder: 5,
+    askedBy: 'Admin Bapekkris'
+  }
+];
+
 export default function HomeSection({ 
   activeTenure, 
   divisions, 
@@ -766,7 +823,7 @@ export default function HomeSection({
 
                   <div style={{ borderTop: '1px solid var(--border-card)', paddingTop: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: '0.78rem', color: 'var(--neon-cyan)', fontWeight: 700 }}>
-                      ✓ Terbuka untuk Officer APD
+                      ✓ Terbuka untuk Seluruh Mandirian
                     </span>
                     <button
                       onClick={() => handleTabChange('form', f.id)}
@@ -1147,9 +1204,10 @@ export default function HomeSection({
         </section>
       )}
 
-      {/* 6. PUSAT PANDUAN & TANYA JAWAB INTERAKTIF (FAQ BUDAYA & OPERASIONAL CNT) */}
+      {/* 6. PUSAT PANDUAN & TANYA JAWAB INTERAKTIF (FAQ BAPEKKRIS BANK MANDIRI) */}
       {(() => {
-        const publishedFaqs = (faqs || []).filter(f => f.isPublished !== false);
+        const effectiveFaqs = (faqs && faqs.length > 0) ? faqs : DEFAULT_BAPEKKRIS_FAQS;
+        const publishedFaqs = effectiveFaqs.filter(f => f.isPublished !== false);
         if (publishedFaqs.length === 0) return null;
 
         const categories = ['Semua', ...Array.from(new Set(publishedFaqs.map(f => f.category || 'Umum')))];
@@ -1184,7 +1242,7 @@ export default function HomeSection({
                 <Search size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
                 <input
                   type="text"
-                  placeholder="Cari pertanyaan (misal: olahraga, dana, sekben, oprec)..."
+                  placeholder="Cari pertanyaan seputar ibadah, pelayanan, jadwal, retret..."
                   value={faqSearch}
                   onChange={(e) => {
                     setFaqSearch(e.target.value);
@@ -1632,7 +1690,7 @@ export default function HomeSection({
             }}>
               <div style={{ fontSize: '0.84rem' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Pengusul / Squad: </span>
-                <strong style={{ color: 'var(--neon-cyan)' }}>{askName.trim() || 'Anonim / Insan IT APD'}</strong>
+                <strong style={{ color: 'var(--neon-cyan)' }}>{askName.trim() || 'Anonim / Insan Mandiri'}</strong>
               </div>
               <div style={{ fontSize: '0.84rem' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Topik / Kategori: </span>

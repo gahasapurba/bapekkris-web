@@ -1746,9 +1746,14 @@ export default function AdminPortal({
 
         <div className="glass-panel" style={{ padding: '36px 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <img 
+              src="/assets/mandiri-club-bapekkris-original.png" 
+              alt="Bapekkris Bank Mandiri" 
+              style={{ height: '48px', width: 'auto', objectFit: 'contain', margin: '0 auto 14px auto', display: 'block' }} 
+            />
             <div style={{
-              width: '52px',
-              height: '52px',
+              width: '46px',
+              height: '46px',
               borderRadius: '50%',
               background: 'rgba(255, 184, 0, 0.15)',
               border: '1px solid var(--mandiri-gold)',
@@ -1758,13 +1763,13 @@ export default function AdminPortal({
               justifyContent: 'center',
               margin: '0 auto 12px auto'
             }}>
-              <Lock size={24} />
+              <Lock size={22} />
             </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              Portal Pengurus CNT IT APD
+              Portal Pengurus Bapekkris Bank Mandiri
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Masuk untuk mengelola galeri, event, divisi, form, dll.
+              Masuk untuk mengelola ibadah, renungan, lagu, event, pengurus, dll.
             </p>
           </div>
 
@@ -1965,7 +1970,7 @@ export default function AdminPortal({
           </button>
           <div style={{ height: '20px', width: '1px', background: 'var(--border-card)' }} />
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-            Admin Dashboard CNT IT APD
+            Admin Dashboard Bapekkris Bank Mandiri
           </h2>
           {/* Cloud Sync Badge */}
           <span
@@ -2016,7 +2021,7 @@ export default function AdminPortal({
             onClick={() => {
               const snapshot = {
                 meta: {
-                  app: 'CNT IT APD Portal',
+                  app: 'Bapekkris Bank Mandiri Portal',
                   exportedAt: new Date().toISOString(),
                   activeTenureId: activeTenure?.id || ''
                 },
@@ -2042,7 +2047,7 @@ export default function AdminPortal({
               const url = URL.createObjectURL(blob);
               const link = document.createElement('a');
               link.href = url;
-              link.setAttribute('download', `Backup_CNT_IT_APD_${new Date().toISOString().slice(0, 10)}.json`);
+              link.setAttribute('download', `Backup_Bapekkris_Bank_Mandiri_${new Date().toISOString().slice(0, 10)}.json`);
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
@@ -2062,7 +2067,7 @@ export default function AdminPortal({
               fontSize: '0.78rem',
               cursor: 'pointer'
             }}
-            title="Unduh Backup Penuh (.json) seluruh data 13 tabel database CNT IT APD"
+            title="Unduh Backup Penuh (.json) seluruh data database Bapekkris Bank Mandiri"
           >
             <Download size={13} />
             <span>💾 Backup (.json)</span>
@@ -2528,7 +2533,7 @@ export default function AdminPortal({
                 <div style={{ fontSize: '0.84rem', color: 'var(--text-main)' }}>
                   {visiblePagesCount === 0 ? (
                     <span>
-                      <strong>Perhatian: Semua halaman sedang di-Hide!</strong> Pengunjung saat ini melihat layar <em>Mode Standby / Pemeliharaan</em> dengan akses langsung ke Portal Pengurus CNT IT APD.
+                      <strong>Perhatian: Semua halaman sedang di-Hide!</strong> Pengunjung saat ini melihat layar <em>Mode Standby / Pemeliharaan</em> dengan akses langsung ke Portal Pengurus Bapekkris Bank Mandiri.
                     </span>
                   ) : (
                     <span>
@@ -3169,7 +3174,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="Contoh: Siap berkontribusi aktif memajukan budaya kolaborasi IT APD"
+                placeholder="Contoh: Siap melayani dengan integritas dan kasih sesama insan Mandiri"
                 value={memMotto}
                 onChange={(e) => setMemMotto(e.target.value)}
                 style={{
@@ -4419,7 +4424,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="Contoh: 150+ Peserta Officer IT APD"
+                placeholder="Contoh: 150+ Jemaat Mandirian"
                 value={eventKpi}
                 onChange={(e) => setEventKpi(e.target.value)}
                 style={{
@@ -5280,7 +5285,7 @@ export default function AdminPortal({
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = `daftar_hadir_rsvp_cnt_it_apd_${Date.now()}.csv`;
+                        link.download = `daftar_hadir_rsvp_bapekkris_${Date.now()}.csv`;
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
@@ -5624,7 +5629,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="Contoh: IT APD Fun Run 5K Gelora Mandiri"
+                placeholder="Contoh: Ibadah Paskah & Aksi Kasih Plaza Mandiri"
                 value={galTitle}
                 onChange={(e) => {
                   setGalTitle(e.target.value);
@@ -5918,7 +5923,7 @@ export default function AdminPortal({
               </label>
               <textarea
                 rows={3}
-                placeholder="Ceritakan keseruan acara dan antusiasme insan IT APD..."
+                placeholder="Ceritakan sukacita ibadah dan kehangatan persekutuan jemaat Bapekkris..."
                 value={galDesc}
                 onChange={(e) => {
                   setGalDesc(e.target.value);
@@ -6471,7 +6476,7 @@ export default function AdminPortal({
         </div>
       )}
 
-      {/* TAB CONTENT: MANAJEMEN DEPARTEMEN IT APD */}
+      {/* TAB CONTENT: MANAJEMEN UNIT KERJA / WILAYAH */}
       {activeTab === 'departments' && (() => {
         const DEPTS_PER_PAGE = 10;
         const filteredDepts = (departments || []).filter(d => {
@@ -6497,7 +6502,7 @@ export default function AdminPortal({
           <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
-                Manajemen Departemen IT APD ({departments.length})
+                Manajemen Unit Kerja / Wilayah ({departments.length})
               </h3>
               <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0 }}>
                 Kelola daftar departemen/unit kerja di lingkungan IT Application Delivery sebagai pilihan resmi saat pendaftaran RSVP kegiatan.
@@ -6674,7 +6679,7 @@ export default function AdminPortal({
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = `daftar_departemen_cnt_it_apd_${Date.now()}.csv`;
+                    link.download = `daftar_departemen_bapekkris_${Date.now()}.csv`;
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -7164,7 +7169,7 @@ export default function AdminPortal({
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement('a');
                   link.href = url;
-                  link.download = `daftar_divisi_cnt_it_apd_${Date.now()}.csv`;
+                  link.download = `daftar_divisi_bapekkris_${Date.now()}.csv`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -7625,7 +7630,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="misal: Kepengurusan CNT IT APD 2027"
+                placeholder="misal: Kepengurusan Bapekkris 2026/2027"
                 value={newTenureTitle}
                 onChange={(e) => {
                   setNewTenureTitle(e.target.value);
@@ -7841,7 +7846,7 @@ export default function AdminPortal({
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement('a');
                   link.href = url;
-                  link.download = `daftar_periode_cnt_it_apd_${Date.now()}.csv`;
+                  link.download = `daftar_periode_bapekkris_${Date.now()}.csv`;
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -8203,7 +8208,7 @@ export default function AdminPortal({
               >
                 {tenures.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.title || `Kepengurusan CNT ${t.code}`} {t.id === activeTenure?.id ? '(Aktif)' : ''}
+                    {t.title || `Kepengurusan Bapekkris ${t.code}`} {t.id === activeTenure?.id ? '(Aktif)' : ''}
                   </option>
                 ))}
               </select>
@@ -8812,7 +8817,7 @@ export default function AdminPortal({
                       onClick={() => {
                         const url = `${getPublicBaseUrl()}/?form=${encodeURIComponent(f.id)}#form`;
                         const dl = f.deadline ? formatDeadlineWib(f.deadline) : 'Tanpa batas waktu';
-                        const text = `📋 *Formulir Registrasi CNT IT APD*\n*${f.title}*\n⏳ Batas Pengisian: ${dl}\n\nSilakan isi formulir melalui tautan resmi berikut:\n${url}`;
+                        const text = `📋 *Formulir Registrasi Bapekkris Bank Mandiri*\n*${f.title}*\n⏳ Batas Pengisian: ${dl}\n\nSilakan isi formulir melalui tautan resmi berikut:\n${url}`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
                       }}
                       style={{
@@ -9231,7 +9236,7 @@ export default function AdminPortal({
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
                     link.setAttribute("href", url);
-                    link.setAttribute("download", `data_pengisian_form_cnt_it_apd_${Date.now()}.csv`);
+                    link.setAttribute("download", `data_pengisian_form_bapekkris_${Date.now()}.csv`);
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
@@ -9308,7 +9313,7 @@ export default function AdminPortal({
                   const applicantWa = extractApplicantPhone(sub.data);
                   const formTitle = resolveFormTitle(sub);
                   const waMessage = encodeURIComponent(
-                    `Halo ${applicantName}, kami dari Pengurus Culture Network Team (CNT) IT APD Bank Mandiri ingin menindaklanjuti pendaftaran Anda pada "${formTitle}".`
+                    `Halo ${applicantName}, kami dari Pengurus Bapekkris Bank Mandiri ingin menindaklanjuti pendaftaran Anda pada "${formTitle}".`
                   );
 
                   return (
@@ -10324,7 +10329,7 @@ export default function AdminPortal({
         <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
-              Kelola Katalog Asset CNT IT APD ({brandAssets.length})
+              Kelola Katalog Asset Bapekkris Bank Mandiri ({brandAssets.length})
             </h3>
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0 }}>
               Unggah file logo, template PowerPoint Townhall, Virtual Background MS Teams/Zoom, atau dokumen panduan brand langsung ke Supabase Storage agar dapat diunduh di halaman Asset.
@@ -10344,7 +10349,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="Contoh: Template PPT Townhall CNT IT APD 2026"
+                placeholder="Contoh: Template PPT Ibadah Bapekkris 2026"
                 value={assetTitle}
                 onChange={(e) => {
                   setAssetTitle(e.target.value);
@@ -10858,7 +10863,7 @@ export default function AdminPortal({
         <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
-              Kelola Pusat Panduan & Tanya Jawab (FAQ) Budaya CNT
+              Kelola Pusat Panduan & Tanya Jawab (FAQ) Bapekkris
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
               Tambahkan atau perbarui daftar pertanyaan umum seputar kegiatan olahraga/komunitas, pengajuan dana Sekben, aspirasi, hingga alur seleksi Oprec. Tersinkronisasi langsung dengan tabel <code>public.faqs</code> di Supabase.
@@ -10907,7 +10912,7 @@ export default function AdminPortal({
               </label>
               <textarea
                 rows={3}
-                placeholder="Tuliskan penjelasan lengkap yang jelas dan membantu insan IT APD..."
+                placeholder="Tuliskan penjelasan lengkap yang jelas dan membantu jemaat..."
                 value={faqAnswer}
                 onChange={(e) => {
                   setFaqAnswer(e.target.value);
@@ -11016,7 +11021,7 @@ export default function AdminPortal({
                       }}
                     >
                       <option value="all">Semua Kategori</option>
-                      <option value="Tentang CNT">Tentang CNT</option>
+                      <option value="Tentang Bapekkris">Tentang Bapekkris</option>
                       <option value="Kegiatan & Event">Kegiatan & Event</option>
                       <option value="Operasional & Sekben">Operasional & Sekben</option>
                       <option value="Aspirasi & Usulan">Aspirasi & Usulan</option>
@@ -11059,7 +11064,7 @@ export default function AdminPortal({
                           }}>
                             {f.isPublished !== false ? '● Ditampilkan di Publik' : '⏳ Menunggu Jawaban / Draft'}
                           </span>
-                          {f.askedBy && f.askedBy !== 'Admin CNT' && (
+                          {f.askedBy && f.askedBy !== 'Admin Bapekkris' && (
                             <span style={{
                               fontSize: '0.68rem',
                               fontWeight: 700,
@@ -11557,7 +11562,7 @@ export default function AdminPortal({
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Motto / Pesan Semangat (Opsional)</label>
                     <input
                       type="text"
-                      placeholder="Contoh: Siap berkontribusi aktif memajukan budaya kolaborasi IT APD"
+                      placeholder="Contoh: Siap melayani dengan integritas dan kasih sesama insan Mandiri"
                       value={editingItem.item.motto || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, motto: e.target.value } })}
                       style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
@@ -12402,7 +12407,7 @@ export default function AdminPortal({
                   </div>
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Visi CNT IT (Dinamis)</label>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Visi Bapekkris (Dinamis)</label>
                   <textarea
                     rows={3}
                     value={editingItem.item.visi || ''}
@@ -12411,7 +12416,7 @@ export default function AdminPortal({
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Misi CNT IT (1 baris per misi)</label>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Misi Bapekkris (1 baris per misi)</label>
                   <textarea
                     rows={4}
                     placeholder="Tulis poin misi (satu baris per misi)..."
@@ -12613,7 +12618,7 @@ export default function AdminPortal({
                   >
                     {tenures.map((t) => (
                       <option key={t.id} value={t.id}>
-                        {t.title || `Kepengurusan CNT ${t.code}`} {t.id === activeTenure?.id ? '(Aktif)' : ''}
+                        {t.title || `Kepengurusan Bapekkris ${t.code}`} {t.id === activeTenure?.id ? '(Aktif)' : ''}
                       </option>
                     ))}
                   </select>
@@ -13526,7 +13531,7 @@ export default function AdminPortal({
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Peserta</label>
                     <input
                       type="text"
-                      placeholder="Contoh: 150+ Peserta Officer IT APD"
+                      placeholder="Contoh: 150+ Jemaat Mandirian"
                       value={editingItem.item.peserta !== undefined ? editingItem.item.peserta : (editingItem.item.kpi || '')}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -13897,7 +13902,7 @@ export default function AdminPortal({
                     onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, category: e.target.value } })}
                     style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
                   >
-                    <option value="Tentang CNT">Tentang CNT</option>
+                    <option value="Tentang Bapekkris">Tentang Bapekkris</option>
                     <option value="Kegiatan & Event">Kegiatan & Event</option>
                     <option value="Operasional & Sekben">Operasional & Sekben</option>
                     <option value="Aspirasi & Usulan">Aspirasi & Usulan</option>
@@ -16308,7 +16313,7 @@ export default function AdminPortal({
                     Executive Summary & LPJ Resmi
                   </span>
                   <h2 style={{ fontSize: 'clamp(1.15rem, 4vw, 1.45rem)', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
-                    Laporan Pertanggungjawaban & Progres CNT IT APD
+                    Laporan Pertanggungjawaban & Progres Bapekkris Bank Mandiri
                   </h2>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                     Periode: <strong>{selectedReportTenure?.title || selectedReportTenure?.code || 'Kepengurusan'}</strong>{selectedReportTenure?.themeTagline ? ` • Tema: "${selectedReportTenure.themeTagline}"` : ''}
