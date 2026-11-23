@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import { BIBLE_BOOKS } from './BibleSection';
+import { BIBLE_SONG_COLLECTION } from '../data/hymnalLibrary';
 
 // Helper to break song lyrics into distinct slide stanzas
 function parseTextToSlides(rawText = '') {
@@ -57,6 +58,23 @@ export default function EasyWorshipSection({
   initialItem
 }) {
   const isDark = theme === 'dark';
+
+  // Koleksi lagu lengkap (Pustaka Himne Kanonik + custom dari Supabase)
+  const availableSongs = useMemo(() => {
+    const list = [...BIBLE_SONG_COLLECTION];
+    (songs || []).forEach(customSong => {
+      const idx = list.findIndex(s => 
+        (customSong.id && s.id === customSong.id) ||
+        (customSong.songNumber && s.songNumber?.toLowerCase() === customSong.songNumber?.toLowerCase())
+      );
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...customSong };
+      } else {
+        list.push(customSong);
+      }
+    });
+    return list.sort((a, b) => (a.songNumber || a.title || '').localeCompare(b.songNumber || b.title || ''));
+  }, [songs]);
 
   // Master Playlist / Service Order state
   const [playlist, setPlaylist] = useState(() => {
@@ -862,18 +880,18 @@ export default function EasyWorshipSection({
                   />
 
                   <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {(songs || []).filter(s => {
+                    {availableSongs.filter(s => {
                       const q = songSearchQuery.toLowerCase().trim();
                       if (!q) return true;
-                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q);
+                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q) || (s.lyrics || '').toLowerCase().includes(q);
                     }).length === 0 ? (
                       <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
-                        Belum ada lagu rohani di database. Anda dapat menambahkan slide kustom pada tab Teks Kustom di atas.
+                        Tidak menemukan lagu yang cocok. Anda dapat menambahkan slide kustom pada tab Teks Kustom di atas.
                       </div>
-                    ) : (songs || []).filter(s => {
+                    ) : availableSongs.filter(s => {
                       const q = songSearchQuery.toLowerCase().trim();
                       if (!q) return true;
-                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q);
+                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q) || (s.lyrics || '').toLowerCase().includes(q);
                     }).map((s) => (
                       <button
                         key={s.id}
@@ -897,7 +915,17 @@ export default function EasyWorshipSection({
                           cursor: 'pointer'
                         }}
                       >
-                        {s.title}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%' }}>
+                          <div>
+                            <span style={{ color: 'var(--mandiri-gold)', marginRight: '6px', fontFamily: 'monospace' }}>
+                              {s.songNumber ? `[${s.songNumber}]` : ''}
+                            </span>
+                            <span>{s.title}</span>
+                          </div>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 500, flexShrink: 0 }}>
+                            {s.category}
+                          </span>
+                        </div>
                       </button>
                     ))}
                   </div>

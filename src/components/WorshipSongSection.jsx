@@ -12,6 +12,7 @@ import {
   BookOpen
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { BIBLE_SONG_COLLECTION } from '../data/hymnalLibrary';
 
 export default function WorshipSongSection({
   songs = [],
@@ -23,14 +24,34 @@ export default function WorshipSongSection({
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Pure data from Supabase without mock/dummy/fallback hymns
+  // Kombinasi Pustaka Himne Kanonik (KJ, PKJ, NKB, PW) dengan lagu kustom dari Supabase (jika ada)
   const songList = useMemo(() => {
-    return [...(songs || [])].sort((a, b) => (a.songNumber || a.title || '').localeCompare(b.songNumber || b.title || ''));
+    const list = [...BIBLE_SONG_COLLECTION];
+    (songs || []).forEach(customSong => {
+      const idx = list.findIndex(s => 
+        (customSong.id && s.id === customSong.id) ||
+        (customSong.songNumber && s.songNumber?.toLowerCase() === customSong.songNumber?.toLowerCase())
+      );
+      if (idx >= 0) {
+        list[idx] = { ...list[idx], ...customSong };
+      } else {
+        list.push(customSong);
+      }
+    });
+    return list.sort((a, b) => (a.songNumber || a.title || '').localeCompare(b.songNumber || b.title || ''));
   }, [songs]);
 
   const [activeSongId, setActiveSongId] = useState(songList[0]?.id || null);
 
   const activeSong = songList.find(s => s.id === activeSongId) || songList[0] || null;
+
+  const categoryCounts = useMemo(() => {
+    const counts = { ALL: songList.length };
+    songList.forEach(s => {
+      counts[s.category] = (counts[s.category] || 0) + 1;
+    });
+    return counts;
+  }, [songList]);
 
   const filteredSongs = useMemo(() => {
     return songList.filter(song => {
@@ -143,14 +164,20 @@ export default function WorshipSongSection({
             }}>
               {/* Categories */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['ALL', 'Kidung Jemaat', 'Pelengkap Kidung Jemaat', 'Nyanyikanlah Kidung Baru', 'Praise & Worship'].map(cat => {
-                  const isSelected = selectedCategory === cat;
+                {[
+                  { id: 'ALL', label: `Semua Lagu (${categoryCounts.ALL || 0})` },
+                  { id: 'Kidung Jemaat', label: `Kidung Jemaat (${categoryCounts['Kidung Jemaat'] || 0})` },
+                  { id: 'Pelengkap Kidung Jemaat', label: `PKJ (${categoryCounts['Pelengkap Kidung Jemaat'] || 0})` },
+                  { id: 'Nyanyikanlah Kidung Baru', label: `NKB (${categoryCounts['Nyanyikanlah Kidung Baru'] || 0})` },
+                  { id: 'Praise & Worship', label: `Praise & Worship (${categoryCounts['Praise & Worship'] || 0})` }
+                ].map(cat => {
+                  const isSelected = selectedCategory === cat.id;
                   return (
                     <button
-                      key={cat}
+                      key={cat.id}
                       onClick={() => {
                         soundFx.playClick();
-                        setSelectedCategory(cat);
+                        setSelectedCategory(cat.id);
                       }}
                       style={{
                         padding: '8px 16px',
@@ -164,7 +191,7 @@ export default function WorshipSongSection({
                         transition: 'all 0.2s ease'
                       }}
                     >
-                      {cat === 'ALL' ? 'Semua Lagu' : cat}
+                      {cat.label}
                     </button>
                   );
                 })}
