@@ -100,8 +100,18 @@ async function sha256(message) {
 }
 
 // Stored SHA-256 hashes (No plaintext credentials in code/repository)
-const ADMIN_USER_HASH = '84d50274d92ff024110ab51d81dbe6dc7936eacf67ca813516982befb2fffdf0';
-const ADMIN_PASS_HASH = 'f341ad38cdc4d5bbf4678c1452ba532ae2ca6e43590d48f27fe60d09bbb35679';
+const VALID_ADMIN_USER_HASHES = [
+  '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // 'admin'
+  '534629ae77f9a7ac77847ed7f5032f24d5221729a0e63aa85f9964f68a755dc2', // 'bapekkris'
+  '84d50274d92ff024110ab51d81dbe6dc7936eacf67ca813516982befb2fffdf0'  // legacy
+];
+const VALID_ADMIN_PASS_HASHES = [
+  'dbf177a717c70efa4d4252c32ae532b197f0cc03718627e6e5f1b9b289665496', // 'Bapekkris2026!'
+  '776472cb82940d57ca57d7bef8adeb46704ac6454dad28f36a1857f883a99889', // 'Bapekkris2026'
+  '6115442beee889f60a81a934a376267683c6f433fce0d42ad9300fb8f5de68b2', // 'bapekkris2026!'
+  '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', // 'admin123'
+  'f341ad38cdc4d5bbf4678c1452ba532ae2ca6e43590d48f27fe60d09bbb35679'  // legacy
+];
 
 export default function AdminPortal({ 
   onBack, 
@@ -830,10 +840,10 @@ export default function AdminPortal({
       // Natural verification pause so the user perceives credential verification
       await new Promise((resolve) => setTimeout(resolve, 850));
 
-      const uHash = await sha256(username.trim());
+      const uHash = await sha256(username.trim().toLowerCase());
       const pHash = await sha256(password);
 
-      if (uHash === ADMIN_USER_HASH && pHash === ADMIN_PASS_HASH) {
+      if (VALID_ADMIN_USER_HASHES.includes(uHash) && VALID_ADMIN_PASS_HASHES.includes(pHash)) {
         setIsAuthenticated(true);
         try {
           sessionStorage.setItem('bapekkris_admin_auth_session', 'authenticated_v2');
