@@ -33,7 +33,6 @@ import { getUnifiedFormQuota } from '../utils/quotaUtils';
 export default function DynamicFormSection({ 
   forms = [], 
   divisions = [], 
-  departments = [],
   events = [], 
   eventRsvps = [],
   submissions = [],
@@ -1379,10 +1378,6 @@ export default function DynamicFormSection({
                         : (divisions || []);
                       const finalDivs = matchedDivisions.length > 0 ? matchedDivisions : (divisions || []);
                       options = finalDivs.map(d => d.name);
-                    } else if (field.source === 'departments') {
-                      options = (departments && departments.length > 0)
-                        ? departments.map(d => d.name)
-                        : (field.options || []);
                     } else if (field.source === 'events') {
                       options = (events || []).filter(e => e.isPublic === true).map(e => `${e.title} (${e.date})`);
                     }

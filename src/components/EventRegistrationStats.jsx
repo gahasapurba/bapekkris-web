@@ -68,7 +68,6 @@ export default function EventRegistrationStats({
   submissions = [],
   eventRsvps = [],
   luckyDraws = [],
-  departments = [],
   divisions = [],
   onAddLuckyDraw,
   onDeleteLuckyDraw,
@@ -356,8 +355,7 @@ export default function EventRegistrationStats({
     return connectedForm.fields.filter(f => {
       const type = (f.type || '').toLowerCase();
       return ['select', 'radio', 'dropdown', 'choice'].includes(type) ||
-        Array.isArray(f.options) ||
-        f.source === 'departments';
+        Array.isArray(f.options);
     });
   }, [connectedForm]);
 
@@ -416,11 +414,6 @@ export default function EventRegistrationStats({
         const val = typeof opt === 'object' ? (opt.value || opt.label || '') : String(opt);
         if (val.trim()) definedOptionsSet.add(val.trim());
       });
-    } else if (activeChoiceField.source === 'departments' && Array.isArray(departments) && departments.length > 0) {
-      departments.forEach(d => {
-        const dName = typeof d === 'object' ? (d.name || d.label || '') : String(d);
-        if (dName.trim()) definedOptionsSet.add(dName.trim());
-      });
     }
 
     // Initialize counts for defined options
@@ -452,7 +445,7 @@ export default function EventRegistrationStats({
       filledCount: items.filter(i => i.count > 0).length,
       totalCategories: items.length
     };
-  }, [activeChoiceField, formSubmissions, departments]);
+  }, [activeChoiceField, formSubmissions]);
 
   // =========================================================================
   // TABLE FILTERING, DYNAMIC MULTI-FILTER, SORTING & PAGINATION
@@ -467,8 +460,7 @@ export default function EventRegistrationStats({
     return connectedForm.fields.filter(f => {
       const type = (f.type || '').toLowerCase();
       return ['select', 'radio', 'dropdown', 'choice'].includes(type) ||
-        Array.isArray(f.options) ||
-        f.source === 'departments';
+        Array.isArray(f.options);
     });
   }, [connectedForm]);
 
@@ -480,11 +472,6 @@ export default function EventRegistrationStats({
         const val = typeof o === 'object' ? (o.value || o.label || '') : String(o);
         if (val.trim()) opts.add(val.trim());
       });
-    } else if (df.source === 'departments' && Array.isArray(departments)) {
-      departments.forEach(d => {
-        const dName = typeof d === 'object' ? (d.name || d.label || '') : String(d);
-        if (dName.trim()) opts.add(dName.trim());
-      });
     }
     // Also include any value that appears in the submissions data
     formSubmissions.forEach(sub => {
@@ -494,7 +481,7 @@ export default function EventRegistrationStats({
       }
     });
     return Array.from(opts);
-  }, [departments, formSubmissions]);
+  }, [formSubmissions]);
 
   // Dynamic search placeholder based on form fields
   const searchPlaceholder = useMemo(() => {

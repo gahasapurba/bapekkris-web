@@ -302,7 +302,7 @@ export default function HomeSection({
         </div>
 
         {/* Quick Stats Grid (Identik dengan presentasi) */}
-        {(isOrganisasiVisible || isEventVisible || isKudosVisible) && (
+        {(isOrganisasiVisible || isEventVisible) && (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -967,8 +967,8 @@ export default function HomeSection({
         )}
       </section>
 
-      {/* 5. AGENDA TERDEKAT & SPOTLIGHT KUDOS TERBARU (Dynamic Activity Hub) */}
-      {(isEventVisible || isKudosVisible) && (
+      {/* 5. AGENDA TERDEKAT & SPOTLIGHT RENUNGAN TERBARU (Dynamic Activity Hub) */}
+      {(isEventVisible || devotions.length > 0) && (
         <section style={{ maxWidth: '1000px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '36px' }}>
           {/* 5A. Agenda Kegiatan Terdekat */}
           {isEventVisible && activeEvents.length > 0 && (
@@ -1494,9 +1494,9 @@ export default function HomeSection({
                       }}
                     >
                       <option value="Kegiatan & Event">Topik: Ibadah & Kegiatan</option>
-                      <option value="Operasional & Sekben">Topik: Pelayanan & Musik</option>
+                      <option value="Pelayanan & Operasional">Topik: Pelayanan & Musik</option>
                       <option value="Pendaftaran & Oprec">Topik: Pendaftaran & Retreat</option>
-                      <option value="Aspirasi & Usulan">Topik: Pokok Doa & Permohonan</option>
+                      <option value="Doa & Pelayanan Kasih">Topik: Pokok Doa & Permohonan</option>
                       <option value="Tentang Bapekkris">Topik: Tentang Bapekkris Bank Mandiri</option>
                     </select>
                   </div>
@@ -1631,7 +1631,7 @@ export default function HomeSection({
               gap: '10px'
             }}>
               <div style={{ fontSize: '0.84rem' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Pengusul / Squad: </span>
+                <span style={{ color: 'var(--text-dim)' }}>Pengusul / Unit Kerja: </span>
                 <strong style={{ color: 'var(--neon-cyan)' }}>{askName.trim() || 'Anonim / Insan Mandiri'}</strong>
               </div>
               <div style={{ fontSize: '0.84rem' }}>

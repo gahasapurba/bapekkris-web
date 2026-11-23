@@ -15,11 +15,7 @@
 -- INSERT INTO public.tenure_roles (id, tenure_id, name, level, max_quota, requires_division, requires_sub_division, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
--- 3. departments (Unit Kerja / Wilayah)
--- INSERT INTO public.departments (id, name, code, description, sort_order)
--- VALUES (...) ON CONFLICT (id) DO NOTHING;
-
--- 4. divisions (Divisi / Komisi Pelayanan)
+-- 3. divisions (Divisi / Komisi Pelayanan)
 -- INSERT INTO public.divisions (id, tenure_id, name, color, motto, description, focus_areas, is_recruiting, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
@@ -39,11 +35,7 @@
 -- INSERT INTO public.galleries (id, tenure_id, division_id, event_id, title, date, description, photos, doc_links, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
--- 9. aspirasi (Kotak Doa & Aspirasi Jemaat)
--- INSERT INTO public.aspirasi (id, sender, title, category, description, status, admin_reply, is_public, sort_order)
--- VALUES (...) ON CONFLICT (id) DO NOTHING;
-
--- 10. forms (Formulir Pendaftaran)
+-- 9. forms (Formulir Pendaftaran)
 -- INSERT INTO public.forms (id, tenure_id, event_id, title, subtitle, category, deadline, description, notes, fields, is_open, requires_tracking, is_show_accepted, is_limited, max_quota, is_event_connected, is_lucky_draw, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
@@ -55,8 +47,8 @@
 -- INSERT INTO public.lucky_draws (id, event_id, submission_id, form_id, prize_name, drawn_at, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
--- 13. event_rsvps (Daftar Hadir & RSVP)
--- INSERT INTO public.event_rsvps (id, event_id, department_id, attendee_name, attendance_mode, notes, sort_order)
+-- 12. event_rsvps (Daftar Hadir & RSVP)
+-- INSERT INTO public.event_rsvps (id, event_id, attendee_name, attendance_mode, notes, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 14. faqs (Tanya Jawab & Panduan)

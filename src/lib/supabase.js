@@ -37,11 +37,9 @@ const TABLE_MAP = {
   tenures: 'tenures',
   divisions: 'divisions',
   subDivisions: 'sub_divisions',
-  departments: 'departments',
   members: 'members',
   events: 'events',
   galleries: 'galleries',
-  aspirasiList: 'aspirasi',
   forms: 'forms',
   submissions: 'submissions',
   brandAssets: 'brand_assets',
@@ -106,26 +104,6 @@ export const rowMappers = {
       max: Number(row.max_quota || 0),
       requiresDivision: Boolean(row.requires_division),
       requiresSubDivision: Boolean(row.requires_sub_division),
-      sortOrder: Number(row.sort_order || 0),
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    })
-  },
-
-  departments: {
-    toDb: (item) => ({
-      id: String(item.id),
-      name: String(item.name || '').trim(),
-      code: item.code || null,
-      description: item.description || null,
-      sort_order: Number(item.sortOrder || 0),
-      updated_at: new Date().toISOString()
-    }),
-    fromDb: (row) => ({
-      id: row.id,
-      name: row.name,
-      code: row.code || '',
-      description: row.description || '',
       sortOrder: Number(row.sort_order || 0),
       createdAt: row.created_at,
       updatedAt: row.updated_at
@@ -288,34 +266,6 @@ export const rowMappers = {
     })
   },
 
-  aspirasiList: {
-    toDb: (item) => ({
-      id: String(item.id),
-      sender: item.sender || 'Anonim',
-      title: item.title || '',
-      category: item.category || 'Pokok Doa',
-      description: item.description || '',
-      status: item.status || 'Menunggu Review',
-      admin_reply: item.adminReply || '',
-      is_public: Boolean(item.isPublic !== false),
-      sort_order: Number(item.sortOrder || 0),
-      updated_at: new Date().toISOString()
-    }),
-    fromDb: (row) => ({
-      id: row.id,
-      sender: row.sender || 'Anonim',
-      title: row.title || '',
-      category: row.category || 'Pokok Doa',
-      description: row.description || '',
-      status: row.status || 'Menunggu Review',
-      adminReply: row.admin_reply || '',
-      isPublic: Boolean(row.is_public !== false),
-      sortOrder: Number(row.sort_order || 0),
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    })
-  },
-
   forms: {
     toDb: (item) => ({
       id: String(item.id),
@@ -419,7 +369,6 @@ export const rowMappers = {
     toDb: (item) => ({
       id: String(item.id),
       event_id: item.eventId,
-      department_id: item.departmentId || null,
       attendee_name: item.attendeeName || '',
       attendance_mode: item.attendanceMode || 'Hadir Onsite',
       notes: item.notes || '',
@@ -429,7 +378,6 @@ export const rowMappers = {
     fromDb: (row) => ({
       id: row.id,
       eventId: row.event_id,
-      departmentId: row.department_id,
       attendeeName: row.attendee_name,
       attendanceMode: row.attendance_mode || 'Hadir Onsite',
       notes: row.notes || '',
@@ -583,13 +531,11 @@ export async function fetchAllCloudState() {
       membersRes,
       eventsRes,
       galleriesRes,
-      aspirasiRes,
       formsRes,
       submissionsRes,
       brandAssetsRes,
       eventRsvpsRes,
       faqsRes,
-      departmentsRes,
       tenureRolesRes,
       luckyDrawsRes,
       devotionsRes,
@@ -603,13 +549,11 @@ export async function fetchAllCloudState() {
       supabase.from('members').select('*').order('sort_order', { ascending: true }),
       supabase.from('events').select('*').order('sort_order', { ascending: true }),
       supabase.from('galleries').select('*').order('sort_order', { ascending: true }),
-      supabase.from('aspirasi').select('*').order('created_at', { ascending: false }),
       supabase.from('forms').select('*').order('sort_order', { ascending: true }),
       supabase.from('submissions').select('*').order('created_at', { ascending: false }),
       supabase.from('brand_assets').select('*').order('sort_order', { ascending: true }),
       supabase.from('event_rsvps').select('*').order('created_at', { ascending: false }),
       supabase.from('faqs').select('*').order('sort_order', { ascending: true }),
-      supabase.from('departments').select('*').order('sort_order', { ascending: true }),
       supabase.from('tenure_roles').select('*').order('sort_order', { ascending: true }),
       supabase.from('lucky_draws').select('*').order('drawn_at', { ascending: false }),
       supabase.from('daily_devotions').select('*').order('devotion_date', { ascending: false }),
@@ -645,10 +589,6 @@ export async function fetchAllCloudState() {
       result.galleries = galleriesRes.data.map(rowMappers.galleries.fromDb);
       saveLocalCache('galleries', result.galleries);
     }
-    if (!aspirasiRes.error && Array.isArray(aspirasiRes.data)) {
-      result.aspirasiList = aspirasiRes.data.map(rowMappers.aspirasiList.fromDb);
-      saveLocalCache('aspirasiList', result.aspirasiList);
-    }
     if (!formsRes.error && Array.isArray(formsRes.data)) {
       result.forms = formsRes.data.map(rowMappers.forms.fromDb);
       saveLocalCache('forms', result.forms);
@@ -668,10 +608,6 @@ export async function fetchAllCloudState() {
     if (!faqsRes.error && Array.isArray(faqsRes.data)) {
       result.faqs = faqsRes.data.map(rowMappers.faqs.fromDb);
       saveLocalCache('faqs', result.faqs);
-    }
-    if (!departmentsRes.error && Array.isArray(departmentsRes.data)) {
-      result.departments = departmentsRes.data.map(rowMappers.departments.fromDb);
-      saveLocalCache('departments', result.departments);
     }
     if (!tenureRolesRes.error && Array.isArray(tenureRolesRes.data)) {
       result.tenureRoles = tenureRolesRes.data.map(rowMappers.tenureRoles.fromDb);

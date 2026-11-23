@@ -34,8 +34,8 @@ if (!token || !projectId || !process.env.VITE_SUPABASE_ANON_KEY) {
 if (!projectId) projectId = process.env.VITE_SUPABASE_PROJECT_ID || '';
 
 const tables = [
-  'tenures', 'tenure_roles', 'departments', 'divisions', 'sub_divisions',
-  'members', 'events', 'galleries', 'aspirasi', 'forms', 'submissions',
+  'tenures', 'tenure_roles', 'divisions', 'sub_divisions',
+  'members', 'events', 'galleries', 'forms', 'submissions',
   'lucky_draws', 'event_rsvps', 'faqs', 'brand_assets', 'page_settings',
   'daily_devotions', 'worship_songs', 'easy_worship_schedules'
 ];

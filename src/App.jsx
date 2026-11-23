@@ -237,7 +237,6 @@ export default function App() {
       };
     });
   });
-  const [departments, setDepartments] = useState(() => loadLocalCache('departments', []));
   const [tenureRoles, setTenureRoles] = useState(() => {
     const cached = loadLocalCache('tenureRoles', null);
     if (Array.isArray(cached)) return cached;
@@ -253,7 +252,6 @@ export default function App() {
   const [easyWorshipInitialItem, setEasyWorshipInitialItem] = useState(null);
   const [forms, setForms] = useState(() => loadLocalCache('forms', []));
   const [submissions, setSubmissions] = useState(() => loadLocalCache('submissions', []));
-  const [aspirasiList, setAspirasiList] = useState(() => loadLocalCache('aspirasiList', []));
   const [brandAssets, setBrandAssets] = useState(() => loadLocalCache('brandAssets', []));
   const [eventRsvps, setEventRsvps] = useState(() => loadLocalCache('eventRsvps', []));
   const [faqs, setFaqs] = useState(() => loadLocalCache('faqs', []));
@@ -357,10 +355,8 @@ export default function App() {
       if (Array.isArray(cloud.easyWorshipSchedules)) setEasyWorshipSchedules(cloud.easyWorshipSchedules);
       if (Array.isArray(cloud.forms)) setForms(cloud.forms);
       if (Array.isArray(cloud.submissions)) setSubmissions(cloud.submissions);
-      if (Array.isArray(cloud.aspirasiList)) setAspirasiList(cloud.aspirasiList);
       if (Array.isArray(cloud.brandAssets)) setBrandAssets(cloud.brandAssets);
       if (Array.isArray(cloud.eventRsvps)) setEventRsvps(cloud.eventRsvps);
-      if (Array.isArray(cloud.departments) && cloud.departments.length > 0) setDepartments(cloud.departments);
       if (Array.isArray(cloud.tenureRoles)) {
         setTenureRoles(cloud.tenureRoles);
         saveLocalCache('tenureRoles', cloud.tenureRoles);
@@ -1106,34 +1102,6 @@ export default function App() {
     await supabase.from('easy_worship_schedules').delete().eq('id', schId);
   };
 
-  // Aspirasi Lifecycle Handlers
-  const handleAddAspirasi = async (newAsp) => {
-    const now = new Date().toISOString();
-    const stampedAsp = { ...newAsp, createdAt: newAsp.createdAt || now, updatedAt: newAsp.updatedAt || now };
-    setAspirasiList((prev) => {
-      const next = [stampedAsp, ...prev];
-      saveLocalCache('aspirasiList', next);
-      return next;
-    });
-    const merged = await mergeAndPushCloudList('aspirasiList', stampedAsp, aspirasiList);
-    if (Array.isArray(merged)) setAspirasiList(merged);
-  };
-  const handleUpdateAspirasi = (updatedAsp) => {
-    const stampedAsp = { ...updatedAsp, updatedAt: new Date().toISOString() };
-    setAspirasiList((prev) => {
-      const next = prev.map(a => a.id === stampedAsp.id ? stampedAsp : a);
-      pushCloudState('aspirasiList', next);
-      return next;
-    });
-  };
-  const handleDeleteAspirasi = (aspId) => {
-    setAspirasiList((prev) => {
-      const next = prev.filter(a => a.id !== aspId);
-      pushCloudState('aspirasiList', next);
-      return next;
-    });
-  };
-
   // Event RSVP Lifecycle Handlers (Atomic merge across devices)
   const handleAddEventRsvp = async (newRsvp) => {
     setEventRsvps((prev) => {
@@ -1199,24 +1167,6 @@ export default function App() {
     });
   };
 
-  // Departments Lifecycle Handlers
-  const handleAddDepartment = (newDept) => {
-    const now = new Date().toISOString();
-    const stampedDept = { ...newDept, createdAt: newDept.createdAt || now, updatedAt: newDept.updatedAt || now };
-    setDepartments((prev) => {
-      const next = [...prev, stampedDept];
-      pushCloudState('departments', next);
-      return next;
-    });
-  };
-  const handleUpdateDepartment = (updatedDept) => {
-    const stampedDept = { ...updatedDept, updatedAt: new Date().toISOString() };
-    setDepartments((prev) => {
-      const next = prev.map(d => d.id === stampedDept.id ? stampedDept : d);
-      pushCloudState('departments', next);
-      return next;
-    });
-  };
   // Tenure Roles Handlers
   const handleAddTenureRole = (newRole) => {
     const now = new Date().toISOString();
@@ -1245,17 +1195,6 @@ export default function App() {
       saveLocalCache('tenureRoles', next);
       return next;
     });
-  };
-
-  const handleDeleteDepartment = (deptId) => {
-    const isUsed = eventRsvps.some(r => r.departmentId === deptId || r.department === deptId);
-    if (isUsed) return false;
-    setDepartments((prev) => {
-      const next = prev.filter(d => d.id !== deptId);
-      pushCloudState('departments', next);
-      return next;
-    });
-    return true;
   };
 
   // Restore full backup snapshot (.json) across all 13 tables
@@ -1303,10 +1242,6 @@ export default function App() {
       setEasyWorshipSchedules(backupData.easyWorshipSchedules);
       tasks.push(pushCloudState('easyWorshipSchedules', backupData.easyWorshipSchedules));
     }
-    if (Array.isArray(backupData.aspirasiList)) {
-      setAspirasiList(backupData.aspirasiList);
-      tasks.push(pushCloudState('aspirasiList', backupData.aspirasiList));
-    }
     if (Array.isArray(backupData.forms)) {
       setForms(backupData.forms);
       tasks.push(pushCloudState('forms', backupData.forms));
@@ -1322,10 +1257,6 @@ export default function App() {
     if (Array.isArray(backupData.eventRsvps)) {
       setEventRsvps(backupData.eventRsvps);
       tasks.push(pushCloudState('eventRsvps', backupData.eventRsvps));
-    }
-    if (Array.isArray(backupData.departments)) {
-      setDepartments(backupData.departments);
-      tasks.push(pushCloudState('departments', backupData.departments));
     }
     if (Array.isArray(backupData.faqs)) {
       setFaqs(backupData.faqs);
@@ -1635,7 +1566,6 @@ export default function App() {
             <ProgramSection
               events={events}
               divisions={divisions}
-              departments={departments}
               activeTenure={activeTenure}
               tenures={tenures}
               theme={theme}
@@ -1661,7 +1591,6 @@ export default function App() {
               submissions={submissions}
               eventRsvps={eventRsvps}
               luckyDraws={luckyDraws}
-              departments={departments}
               divisions={divisions}
               onAddLuckyDraw={handleAddLuckyDraw}
               onDeleteLuckyDraw={handleDeleteLuckyDraw}
@@ -1727,7 +1656,6 @@ export default function App() {
             <DynamicFormSection
               forms={forms}
               divisions={divisions}
-              departments={departments}
               events={events}
               eventRsvps={eventRsvps}
               submissions={submissions}
@@ -1764,10 +1692,6 @@ export default function App() {
               onAddDivision={handleAddDivision}
               onUpdateDivision={handleUpdateDivision}
               onDeleteDivision={handleDeleteDivision}
-              departments={departments}
-              onAddDepartment={handleAddDepartment}
-              onUpdateDepartment={handleUpdateDepartment}
-              onDeleteDepartment={handleDeleteDepartment}
               forms={forms}
               onAddForm={handleAddForm}
               onUpdateForm={handleUpdateForm}
@@ -1803,9 +1727,6 @@ export default function App() {
               onAddEasyWorshipSchedule={handleAddEasyWorshipSchedule}
               onUpdateEasyWorshipSchedule={handleUpdateEasyWorshipSchedule}
               onDeleteEasyWorshipSchedule={handleDeleteEasyWorshipSchedule}
-              aspirasiList={aspirasiList}
-              onUpdateAspirasi={handleUpdateAspirasi}
-              onDeleteAspirasi={handleDeleteAspirasi}
               brandAssets={brandAssets}
               onAddBrandAsset={handleAddBrandAsset}
               onUpdateBrandAsset={handleUpdateBrandAsset}
@@ -1890,16 +1811,6 @@ export default function App() {
             ).slice(0, 3)
           : [];
 
-        const matchedAspirasi = q
-          ? aspirasiList.filter(asp =>
-              asp.isPublic !== false && (
-                (asp.title || '').toLowerCase().includes(q) ||
-                (asp.description || '').toLowerCase().includes(q) ||
-                (asp.adminReply || '').toLowerCase().includes(q)
-              )
-            ).slice(0, 3)
-          : [];
-
         const matchedFaqs = q
           ? faqs.filter(fq =>
               fq.isPublished !== false && (
@@ -1910,7 +1821,7 @@ export default function App() {
             ).slice(0, 3)
           : [];
 
-        const totalResults = matchedMembers.length + matchedEvents.length + matchedForms.length + matchedGalleries.length + matchedAssets.length + matchedDevotions.length + matchedSongs.length + matchedAspirasi.length + matchedFaqs.length;
+        const totalResults = matchedMembers.length + matchedEvents.length + matchedForms.length + matchedGalleries.length + matchedAssets.length + matchedDevotions.length + matchedSongs.length + matchedFaqs.length;
 
         return (
           <div
@@ -2200,12 +2111,12 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* Kudos, Aspirasi & FAQ Results */}
-                  {(matchedKudos.length > 0 || matchedAspirasi.length > 0 || matchedFaqs.length > 0) && (
+                  {/* Renungan & FAQ Results */}
+                  {(matchedDevotions.length > 0 || matchedFaqs.length > 0) && (
                     <div>
                       <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-dim)', textTransform: 'uppercase', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <Search size={13} color="var(--mandiri-gold)" />
-                        <span>Apresiasi Kudos, Aspirasi & Panduan FAQ</span>
+                        <span>Renungan Firman & Panduan FAQ</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {matchedDevotions.map(d => (
@@ -2236,36 +2147,6 @@ export default function App() {
                               <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>"{(d.body || '').slice(0, 75)}..."</div>
                             </div>
                             <ChevronRight size={15} color="var(--mandiri-gold)" />
-                          </button>
-                        ))}
-                        {matchedAspirasi.map(asp => (
-                          <button
-                            key={asp.id}
-                            type="button"
-                            onClick={() => {
-                              setCurrentTab('home');
-                              setIsQuickSearchOpen(false);
-                            }}
-                            style={{
-                              width: '100%',
-                              textAlign: 'left',
-                              padding: '10px 14px',
-                              borderRadius: 'var(--radius-sm)',
-                              background: 'var(--input-bg)',
-                              border: '1px solid var(--border-card)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              gap: '10px',
-                              cursor: 'pointer',
-                              color: 'var(--text-main)'
-                            }}
-                          >
-                            <div>
-                              <div style={{ fontSize: '0.86rem', fontWeight: 800 }}>💡 Aspirasi: {asp.title || asp.description}</div>
-                              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Status: {asp.status} • {asp.category}</div>
-                            </div>
-                            <ChevronRight size={15} color="var(--text-dim)" />
                           </button>
                         ))}
                         {matchedFaqs.map(fq => (

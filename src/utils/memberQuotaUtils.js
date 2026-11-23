@@ -358,7 +358,7 @@ export function getMemberRoleType(category = '', role = '', title = '') {
     if (text.includes('wakil')) return 'wakil_ketua';
     if (text.includes('ketua')) return 'ketua';
     if (text.includes('sekretaris jenderal') || text.includes('sekjen')) return 'sekjen';
-    if (text.includes('sekben') || text.includes('sekretaris') || text.includes('bendahara')) return 'sekben';
+    if (text.includes('sekretaris') || text.includes('bendahara')) return 'sekretaris_bendahara';
     return 'inti_lainnya';
   }
 

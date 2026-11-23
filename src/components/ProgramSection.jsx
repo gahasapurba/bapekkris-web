@@ -67,7 +67,6 @@ function getBadgeTextColor(bgColor) {
 export default function ProgramSection({
   events = [],
   divisions = [],
-  departments = [],
   activeTenure = null,
   eventRsvps = [],
   onAddEventRsvp,
@@ -250,7 +249,6 @@ export default function ProgramSection({
 
   // Quick RSVP form states
   const [rsvpName, setRsvpName] = useState('');
-  const [rsvpDepartmentId, setRsvpDepartmentId] = useState('');
   const [rsvpMode, setRsvpMode] = useState('Hadir Onsite');
   const [rsvpNotes, setRsvpNotes] = useState('');
   const [rsvpErrors, setRsvpErrors] = useState({});
@@ -263,7 +261,6 @@ export default function ProgramSection({
     if (!rsvpModalEvent || isSubmittingRsvp) return;
     const errs = {};
     if (!rsvpName.trim()) errs.rsvpName = 'Nama lengkap wajib diisi';
-    if (!rsvpDepartmentId.trim()) errs.rsvpDepartmentId = 'Departemen wajib dipilih dari daftar';
     setRsvpErrors(errs);
     if (Object.keys(errs).length > 0) return;
     setConfirmRsvpOpen(true);
@@ -278,18 +275,12 @@ export default function ProgramSection({
     const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
     const ts = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
 
-    const selectedDept = departments.find(d => d.id === rsvpDepartmentId);
-    const deptName = selectedDept ? selectedDept.name : rsvpDepartmentId;
-
     if (onAddEventRsvp) {
       onAddEventRsvp({
         id: 'rsvp-' + Date.now(),
         eventId: rsvpModalEvent.id,
         eventTitle: rsvpModalEvent.title,
         attendeeName: rsvpName.trim(),
-        departmentId: rsvpDepartmentId,
-        department: deptName,
-        squadUnit: deptName,
         attendanceMode: rsvpMode,
         notes: rsvpNotes.trim(),
         submittedAt: ts
@@ -298,7 +289,6 @@ export default function ProgramSection({
 
     setRsvpSuccess(true);
     setRsvpName('');
-    setRsvpDepartmentId('');
     setRsvpNotes('');
     setRsvpErrors({});
     setTimeout(() => setIsSubmittingRsvp(false), 500);
@@ -1612,67 +1602,32 @@ export default function ProgramSection({
                           )}
 
                           <form onSubmit={handleOpenConfirmRsvp} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div className="mobile-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                              <div>
-                                <input
-                                  type="text"
-                                  placeholder="Nama Lengkap Anda *"
-                                  value={rsvpName}
-                                  onChange={(e) => {
-                                    setRsvpName(e.target.value);
-                                    if (rsvpErrors.rsvpName) setRsvpErrors(prev => ({ ...prev, rsvpName: null }));
-                                  }}
-                                  style={{
-                                    width: '100%',
-                                    padding: '9px 12px',
-                                    borderRadius: 'var(--radius-sm)',
-                                    background: 'var(--bg-card)',
-                                    border: `1.5px solid ${rsvpErrors.rsvpName ? '#f43f5e' : 'var(--border-card)'}`,
-                                    color: 'var(--text-main)',
-                                    fontSize: '0.82rem',
-                                    outline: 'none'
-                                  }}
-                                />
-                                {rsvpErrors.rsvpName && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f43f5e', fontSize: '0.7rem', marginTop: '3px' }}>
-                                    <AlertCircle size={11} />
-                                    <span>{rsvpErrors.rsvpName}</span>
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <select
-                                  value={rsvpDepartmentId}
-                                  onChange={(e) => {
-                                    setRsvpDepartmentId(e.target.value);
-                                    if (rsvpErrors.rsvpDepartmentId) setRsvpErrors(prev => ({ ...prev, rsvpDepartmentId: null }));
-                                  }}
-                                  style={{
-                                    width: '100%',
-                                    padding: '9px 12px',
-                                    borderRadius: 'var(--radius-sm)',
-                                    background: 'var(--bg-card)',
-                                    border: `1.5px solid ${rsvpErrors.rsvpDepartmentId ? '#f43f5e' : 'var(--border-card)'}`,
-                                    color: rsvpDepartmentId ? 'var(--text-main)' : 'var(--text-dim)',
-                                    fontSize: '0.82rem',
-                                    outline: 'none',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  <option value="">-- Pilih Departemen Asal Kamu * --</option>
-                                  {departments.map((d) => (
-                                    <option key={d.id} value={d.id}>
-                                      {d.name} {d.code ? `(${d.code})` : ''}
-                                    </option>
-                                  ))}
-                                </select>
-                                {rsvpErrors.rsvpDepartmentId && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f43f5e', fontSize: '0.7rem', marginTop: '3px' }}>
-                                    <AlertCircle size={11} />
-                                    <span>{rsvpErrors.rsvpDepartmentId}</span>
-                                  </div>
-                                )}
-                              </div>
+                            <div>
+                              <input
+                                type="text"
+                                placeholder="Nama Lengkap Anda *"
+                                value={rsvpName}
+                                onChange={(e) => {
+                                  setRsvpName(e.target.value);
+                                  if (rsvpErrors.rsvpName) setRsvpErrors(prev => ({ ...prev, rsvpName: null }));
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '9px 12px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: 'var(--bg-card)',
+                                  border: `1.5px solid ${rsvpErrors.rsvpName ? '#f43f5e' : 'var(--border-card)'}`,
+                                  color: 'var(--text-main)',
+                                  fontSize: '0.82rem',
+                                  outline: 'none'
+                                }}
+                              />
+                              {rsvpErrors.rsvpName && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#f43f5e', fontSize: '0.7rem', marginTop: '3px' }}>
+                                  <AlertCircle size={11} />
+                                  <span>{rsvpErrors.rsvpName}</span>
+                                </div>
+                              )}
                             </div>
 
                             <div className="mobile-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '10px' }}>
@@ -1743,34 +1698,28 @@ export default function ProgramSection({
                           Rekan yang sudah konfirmasi hadir:
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '85px', overflowY: 'auto' }}>
-                          {currentEventRsvps.slice(0, 12).map((r) => {
-                            const deptObj = departments.find(d => d.id === r.departmentId || d.id === r.department || d.id === r.squadUnit || d.name === r.department || d.name === r.squadUnit);
-                            const displayDept = deptObj ? deptObj.name : (r.department || r.squadUnit || '');
-                            return (
-                              <span
-                                key={r.id}
-                                style={{
-                                  fontSize: '0.72rem',
-                                  padding: '3px 9px',
-                                  borderRadius: 'var(--radius-full)',
-                                  background: 'var(--bg-card)',
-                                  border: '1px solid var(--border-card)',
-                                  color: 'var(--text-main)',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px'
-                                }}
-                              >
-                                <span>✓</span>
-                                <strong>{r.attendeeName}</strong>
-                                {displayDept && (
-                                  <span style={{ color: 'var(--text-dim)', marginLeft: '2px' }}>
-                                    ({displayDept})
-                                  </span>
-                                )}
+                          {currentEventRsvps.slice(0, 12).map((r) => (
+                            <span
+                              key={r.id}
+                              style={{
+                                fontSize: '0.72rem',
+                                padding: '3px 9px',
+                                borderRadius: 'var(--radius-full)',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border-card)',
+                                color: 'var(--text-main)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                              }}
+                            >
+                              <span>✓</span>
+                              <strong>{r.attendeeName}</strong>
+                              <span style={{ color: 'var(--text-dim)', fontSize: '0.68rem' }}>
+                                ({r.attendanceMode || 'Hadir'})
                               </span>
-                            );
-                          })}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -2040,12 +1989,6 @@ export default function ProgramSection({
               <div style={{ fontSize: '0.84rem' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Nama Peserta: </span>
                 <strong style={{ color: 'var(--neon-cyan)' }}>{rsvpName}</strong>
-              </div>
-              <div style={{ fontSize: '0.84rem' }}>
-                <span style={{ color: 'var(--text-dim)' }}>Departemen: </span>
-                <strong style={{ color: 'var(--text-main)' }}>
-                  {departments.find(d => d.id === rsvpDepartmentId)?.name || rsvpDepartmentId}
-                </strong>
               </div>
               <div style={{ fontSize: '0.84rem' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Status Kehadiran: </span>
