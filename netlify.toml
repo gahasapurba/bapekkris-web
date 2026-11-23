@@ -1,0 +1,20 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[edge_functions]]
+  function = "og-preview"
+  path = "/*"
+
+# Reverse proxy for Supabase Storage to ensure same-origin downloads & avoid corporate CORS/firewall blocks
+[[redirects]]
+  from = "/storage-proxy/*"
+  to = "https://xarcxbfgeoetyhpqsick.supabase.co/storage/v1/:splat"
+  status = 200
+  force = true
+
+# SPA Catch-all navigation fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
