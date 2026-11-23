@@ -67,9 +67,12 @@
 -- INSERT INTO public.brand_assets (id, title, category, description, file_url, preview_url, file_type, file_size, badge, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
--- 16. page_settings (Konfigurasi Visibilitas Global)
--- INSERT INTO public.page_settings (key, value)
--- VALUES (...) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+-- 16. page_settings (Konfigurasi Visibilitas Global & Pengumuman Sistem)
+INSERT INTO public.page_settings (key, value, updated_at)
+VALUES 
+  ('page_visibility', '{"navbar":true,"home":true,"organisasi":true,"event":true,"program":true,"renungan":true,"alkitab":true,"lagu":true,"easyworship":true,"galeri":true,"assets":true,"form":true,"oprec":true}'::jsonb, NOW()),
+  ('announcement_bar', '{"isActive":false,"message":"Selamat Datang di Website Resmi Bapekkris PT Bank Mandiri (Persero) Tbk.","badge":"INFO","ctaText":"Lihat Jadwal","ctaTab":"event"}'::jsonb, NOW())
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- 17. daily_devotions (Renungan Harian)
 -- INSERT INTO public.daily_devotions (id, title, devotion_date, scripture_ref, scripture_text, body, prayer, author, theme, sort_order)
