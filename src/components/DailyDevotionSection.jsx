@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   BookOpen, 
   Calendar, 
@@ -17,6 +17,42 @@ import {
 import { soundFx } from '../utils/audio';
 import { formatToIndonesianDate } from '../utils/dateUtils';
 
+export const DEFAULT_DEVOTIONS = [
+  {
+    id: 'dev-001',
+    title: 'Kekuatan Baru di Tengah Kesibukan Kerja',
+    devotionDate: new Date().toISOString().split('T')[0],
+    scriptureRef: 'Yesaya 40:29-31',
+    scriptureText: 'Dia memberi kekuatan kepada yang lelah dan menambah semangat kepada yang tiada berdaya... tetapi orang-orang yang menanti-nantikan TUHAN mendapat kekuatan baru: mereka seumpama rajawali yang naik terbang dengan kekuatan sayapnya.',
+    body: `Sebagai insan Mandiri yang melayani nasabah, mengelola target, dan menyelesaikan tanggung jawab sehari-hari, rasa lelah baik fisik maupun emosional adalah hal yang wajar kita rasakan. Namun, firman Tuhan hari ini mengingatkan kita bahwa sumber kekuatan sejati bukan berasal dari energi manusia kita yang terbatas, melainkan dari Tuhan yang tidak pernah lelah.\n\nMenanti-nantikan Tuhan berarti mengambil waktu hening sejenak di tengah padatnya hari untuk berdoa, menyerahkan kekhawatiran kita, dan menyandarkan diri kepada pimpinan Roh Kudus. Di saat kita menyadari keterbatasan kita, di situlah kuasa Tuhan bekerja secara sempurna memulihkan semangat kita untuk kembali berkarya dengan integritas dan sukacita.`,
+    prayer: 'Ya Bapa di sorga, terima kasih atas kekuatan dan penyertaan-Mu yang tidak pernah habis. Di tengah dinamika pekerjaan dan pelayananku hari ini, berikanlah hikmat, ketenangan, dan kekuatan baru dari-Mu agar setiap langkahku menjadi berkat bagi sesama dan memuliakan nama-Mu. Di dalam nama Tuhan Yesus Kristus kami berdoa. Amin.',
+    author: 'Tim Rohani Bapekkris Bank Mandiri',
+    theme: 'Kekuatan & Pengharapan'
+  },
+  {
+    id: 'dev-002',
+    title: 'Bekerja dengan Hati Seperti untuk Tuhan',
+    devotionDate: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+    scriptureRef: 'Kolose 3:23-24',
+    scriptureText: 'Apapun juga yang kamu perbuat, perbuatlah dengan segenap hatimu seperti untuk Tuhan dan bukan untuk manusia.',
+    body: `Setiap tugas yang dipercayakan kepada kita di Bank Mandiri—mulai dari melayani nasabah di garis depan, menjaga stabilitas sistem teknologi, mengelola risiko, hingga kepemimpinan operasional—adalah medan ibadah dan kesaksian kita. Ketika kita memandang pekerjaan kita sebagai persembahan bagi Tuhan, motivasi kita berubah bukan sekadar mencari pengakuan manusia, tetapi menghasilkan karya terbaik dengan penuh sukacita dan integritas.`,
+    prayer: 'Tuhan Yesus, terima kasih atas pekerjaan dan talenta yang Kau anugerahkan kepadaku. Bimbinglah hatiku agar selalu tulus, jujur, dan bersemangat dalam menuntaskan setiap tanggung jawabku. Jadikanlah kehadiranku di tempat kerja membawa damai dan berkat bagi rekan kerja serta nasabah. Amin.',
+    author: 'Bapekkris Bank Mandiri',
+    theme: 'Integritas & Pelayanan'
+  },
+  {
+    id: 'dev-003',
+    title: 'Damai Sejahtera yang Melampaui Segala Akal',
+    devotionDate: new Date(Date.now() - 172800000).toISOString().split('T')[0],
+    scriptureRef: 'Filipi 4:6-7',
+    scriptureText: 'Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur. Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus.',
+    body: `Kekhawatiran sering kali datang mengetuk pintu hati kita ketika menghadapi ketidakpastian. Namun, firman Tuhan memberikan resep yang penuh kuasa: ubahlah kekhawatiran menjadi doa dengan ucapan syukur. Saat kita menyerahkan masa depan dan pergumulan kita ke tangan Tuhan, damai sejahtera surgawi yang tak terjelaskan oleh akal akan membentengi hati dan pikiran kita dari kepanikan.`,
+    prayer: 'Bapa yang baik, aku menyerahkan segala kekhawatiran dan beban hidupku ke dalam tangan-Mu. Penuhilah hatiku dengan damai sejahtera-Mu yang melampaui akal pikiran manusia, agar aku tetap tenang dan teguh melangkah bersama-Mu. Dalam nama Yesus, Amin.',
+    author: 'Tim Bapekkris',
+    theme: 'Damai Sejahtera'
+  }
+];
+
 export default function DailyDevotionSection({
   devotions = [],
   theme,
@@ -29,8 +65,19 @@ export default function DailyDevotionSection({
   const [copied, setCopied] = useState(false);
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
 
+  // Combine custom devotions from Supabase with curated built-in devotions
+  const combinedDevotions = useMemo(() => {
+    const list = [...(devotions || [])];
+    DEFAULT_DEVOTIONS.forEach(dd => {
+      if (!list.some(d => d.title.toLowerCase() === dd.title.toLowerCase() || d.id === dd.id)) {
+        list.push(dd);
+      }
+    });
+    return list;
+  }, [devotions]);
+
   // Default selection is the first / latest devotion if available
-  const sortedDevotions = [...(devotions || [])].sort((a, b) => {
+  const sortedDevotions = [...combinedDevotions].sort((a, b) => {
     return new Date(b.devotionDate || b.createdAt || 0) - new Date(a.devotionDate || a.createdAt || 0);
   });
 

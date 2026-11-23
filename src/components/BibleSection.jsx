@@ -141,6 +141,48 @@ export default function BibleSection({
   const [copiedVerse, setCopiedVerse] = useState(null);
   const [fontSize, setFontSize] = useState(16); // px
 
+  // API verses fetch state
+  const [apiVerses, setApiVerses] = useState({});
+  const [isLoadingVerses, setIsLoadingVerses] = useState(false);
+
+  // Fetch real Indonesian TB verses on book/chapter change
+  React.useEffect(() => {
+    const cacheKey = `${selectedBook.name}-${selectedChapter}`;
+    if (apiVerses[cacheKey]) return;
+
+    let isMounted = true;
+    setIsLoadingVerses(true);
+
+    fetch(`https://beeble.vercel.app/api/v1/passage/${encodeURIComponent(selectedBook.name)}/${selectedChapter}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Network error');
+        return res.json();
+      })
+      .then(json => {
+        if (!isMounted) return;
+        if (json?.data?.verses && Array.isArray(json.data.verses)) {
+          // Filter to actual content verses and clean titles
+          const cleaned = json.data.verses
+            .filter(v => v.type === 'content' && v.verse > 0)
+            .map(v => ({
+              verse: v.verse,
+              text: v.content
+            }));
+          if (cleaned.length > 0) {
+            setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback silently if offline, handled by currentVerses
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingVerses(false);
+      });
+
+    return () => { isMounted = false; };
+  }, [selectedBook, selectedChapter]);
+
   const filteredBooks = useMemo(() => {
     return BIBLE_BOOKS.filter(b => {
       const q = searchBookQuery.toLowerCase().trim();
@@ -151,16 +193,20 @@ export default function BibleSection({
   }, [searchBookQuery, testamentFilter]);
 
   const currentVerses = useMemo(() => {
-    const key = `${selectedBook.id}-${selectedChapter}`;
-    if (SAMPLE_SCRIPTURES[key]) {
-      return SAMPLE_SCRIPTURES[key];
+    const cacheKey = `${selectedBook.name}-${selectedChapter}`;
+    if (apiVerses[cacheKey] && apiVerses[cacheKey].length > 0) {
+      return apiVerses[cacheKey];
     }
-    // Generate readable generic chapter verses for any chapter
+    const sampleKey = `${selectedBook.id}-${selectedChapter}`;
+    if (SAMPLE_SCRIPTURES[sampleKey]) {
+      return SAMPLE_SCRIPTURES[sampleKey];
+    }
+    // High-yield fallback verses for smooth UX
     return Array.from({ length: 15 }, (_, i) => ({
       verse: i + 1,
       text: `${selectedBook.name} pasal ${selectedChapter} ayat ${i + 1} — "Sebab firman Allah hidup dan kuat dan lebih tajam dari pada pedang bermata dua manapun... Berbahagialah orang yang mendengarkan firman Tuhan dan memeliharanya."`
     }));
-  }, [selectedBook, selectedChapter]);
+  }, [selectedBook, selectedChapter, apiVerses]);
 
   const handleCopyVerse = (v) => {
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
