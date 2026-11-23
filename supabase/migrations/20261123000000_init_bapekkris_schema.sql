@@ -309,6 +309,15 @@ CREATE INDEX IF NOT EXISTS idx_songs_category ON public.worship_songs(category);
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) & KEBIJAKAN AKSES
 -- ==============================================================================
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated;
+
 ALTER TABLE public.tenures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tenure_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
@@ -367,3 +376,4 @@ CREATE POLICY "Public Access cnt-media" ON storage.objects FOR ALL TO anon, auth
 
 -- Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
+
