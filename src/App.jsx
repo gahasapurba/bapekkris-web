@@ -176,7 +176,7 @@ export default function App() {
       return { ...DEFAULT_PAGE_VISIBILITY, ...cached };
     }
     try {
-      const legacy = localStorage.getItem('cnt_page_visibility');
+      const legacy = localStorage.getItem('bapekkris_page_visibility');
       if (legacy) {
         return { ...DEFAULT_PAGE_VISIBILITY, ...JSON.parse(legacy) };
       }
@@ -186,12 +186,12 @@ export default function App() {
 
   // Default theme is LIGHT THEME as requested
   const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('cnt_theme') || 'light';
+    return localStorage.getItem('bapekkris_theme') || 'light';
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('cnt_theme', theme);
+    localStorage.setItem('bapekkris_theme', theme);
   }, [theme]);
 
   useEffect(() => {
@@ -376,7 +376,7 @@ export default function App() {
       if (cloud.pageVisibility && typeof cloud.pageVisibility === 'object') {
         const mergedVis = { ...DEFAULT_PAGE_VISIBILITY, ...cloud.pageVisibility };
         setPageVisibilityState(mergedVis);
-        try { localStorage.setItem('cnt_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
+        try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
       }
       if (cloud.roleQuotas && typeof cloud.roleQuotas === 'object') {
         setRoleQuotas(cloud.roleQuotas);
@@ -404,7 +404,7 @@ export default function App() {
     let channel;
     try {
       channel = supabase
-        .channel('cnt-cloud-sync-live')
+        .channel('bapekkris-cloud-sync-live')
         .on('postgres_changes', { event: '*', schema: 'public' }, () => {
           syncFromCloud();
         })
@@ -458,7 +458,7 @@ export default function App() {
     };
 
     setPageVisibilityState(merged);
-    try { localStorage.setItem('cnt_page_visibility', JSON.stringify(merged)); } catch (e) {}
+    try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(merged)); } catch (e) {}
     pushCloudState('pageVisibility', merged);
   };
 
@@ -1339,7 +1339,7 @@ export default function App() {
     if (backupData.pageVisibility && typeof backupData.pageVisibility === 'object') {
       const mergedVis = { ...DEFAULT_PAGE_VISIBILITY, ...backupData.pageVisibility };
       setPageVisibilityState(mergedVis);
-      try { localStorage.setItem('cnt_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
+      try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
       tasks.push(pushCloudState('pageVisibility', mergedVis));
     }
 

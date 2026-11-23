@@ -145,7 +145,7 @@ export default function DynamicFormSection({
     const shareUrl = getFormDirectUrl(targetForm.id);
     const dl = getDeadlineStatus(targetForm.deadline);
     const deadlineText = dl.isExpired ? 'Pendaftaran Ditutup' : (dl.formatted || 'Sesuai jadwal');
-    const text = `📋 *Formulir Registrasi CNT IT APD*\n*${targetForm.title}*\n⏳ Batas Pengisian: ${deadlineText}\n\nSilakan isi formulir melalui tautan resmi berikut:\n${shareUrl}`;
+    const text = `📋 *Formulir Registrasi Bapekkris Bank Mandiri*\n*${targetForm.title}*\n⏳ Batas Pengisian: ${deadlineText}\n\nSilakan isi formulir melalui tautan resmi berikut:\n${shareUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -669,7 +669,7 @@ export default function DynamicFormSection({
           Pusat Registrasi & Formulir Terbuka
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-          Pilih dan lengkapi formulir pendaftaran kepengurusan, survei, atau pendaftaran kegiatan CNT IT APD yang ingin Anda ikuti.
+          Pilih dan lengkapi formulir pendaftaran kepengurusan, survei, atau pendaftaran kegiatan Bapekkris Bank Mandiri yang ingin Anda ikuti.
         </p>
 
         {/* Tenure Filter Buttons */}
@@ -980,7 +980,7 @@ export default function DynamicFormSection({
                       Formulir Berhasil Dikirim! 🎉
                     </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', maxWidth: '540px', margin: '0 auto 20px auto', lineHeight: 1.6 }}>
-                      Terima kasih! Isian formulir untuk <strong>"{currentForm.title}"</strong> telah tersimpan aman di database sistem CNT IT APD.
+                      Terima kasih! Isian formulir untuk <strong>"{currentForm.title}"</strong> telah tersimpan aman di database resmi Bapekkris Bank Mandiri.
                     </p>
 
                     {/* ID Pendaftaran Card with One-Click Copy */}
@@ -1778,7 +1778,7 @@ export default function DynamicFormSection({
               color: 'var(--text-muted)',
               lineHeight: 1.4
             }}>
-              💡 <em>Catatan:</em> Data pendaftaran Anda akan langsung diteruskan ke panitia penyelenggara dan tersimpan di database resmi Group IT APD.
+              💡 <em>Catatan:</em> Data pendaftaran Anda akan langsung diteruskan ke panitia penyelenggara dan tersimpan di database resmi Bapekkris Bank Mandiri.
             </div>
 
             {/* Action Buttons */}
@@ -2049,7 +2049,7 @@ export default function DynamicFormSection({
                           lineHeight: 1.5
                         }}>
                           <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--neon-cyan)', textTransform: 'uppercase', marginBottom: '2px' }}>
-                            💬 Catatan / Informasi dari Panitia CNT IT APD:
+                            💬 Catatan / Informasi dari Pengurus / Panitia Bapekkris Bank Mandiri:
                           </div>
                           <div>{sub.adminNotes}</div>
                         </div>
@@ -2124,7 +2124,7 @@ export default function DynamicFormSection({
                     Selamat Datang Peserta & Crew Terpilih ({acceptedList.length})
                   </h3>
                   <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0 }}>
-                    Daftar rekan-rekan Insan IT APD yang telah resmi dinyatakan <strong>Lolos Seleksi / Terdaftar</strong> pada program dan rekrutmen CNT IT APD.
+                    Daftar rekan-rekan Mandirian yang telah resmi dinyatakan <strong>Lolos Seleksi / Terdaftar</strong> pada program dan kegiatan Bapekkris Bank Mandiri.
                   </p>
                 </div>
               </div>

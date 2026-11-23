@@ -117,12 +117,12 @@ export default async function handler(request, context) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           const evt = data[0];
-          let eventImg = evt.banner_image || evt.image || evt.poster_url || `${url.origin}/assets/CNT_IT_APD_LOGO_SUITE/01-APD%20Master%20Brand%20Logo.png`;
+          let eventImg = evt.banner_image || evt.image || evt.poster_url || `${url.origin}/assets/mandiri-club-bapekkris-original.png`;
           if (eventImg.startsWith("/")) {
             eventImg = `${url.origin}${eventImg}`;
           }
 
-          const rawDesc = evt.description || "Agenda kegiatan dan program kerja insan IT Application Delivery Bank Mandiri";
+          const rawDesc = evt.description || "Agenda kegiatan dan ibadah persekutuan Bapekkris PT Bank Mandiri (Persero) Tbk.";
           const snippetDesc = rawDesc.length > 200 ? rawDesc.slice(0, 197) + "..." : rawDesc;
           const canonicalUrl = `${url.origin}/?event=${encodeURIComponent(evt.id)}#event`;
 
@@ -185,12 +185,12 @@ export default async function handler(request, context) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           const frm = data[0];
-          let formImg = frm.banner_image || frm.poster_url || frm.image || `${url.origin}/assets/CNT_IT_APD_LOGO_SUITE/01-APD%20Master%20Brand%20Logo.png`;
+          let formImg = frm.banner_image || frm.poster_url || frm.image || `${url.origin}/assets/mandiri-club-bapekkris-original.png`;
           if (formImg.startsWith("/")) {
             formImg = `${url.origin}${formImg}`;
           }
 
-          const rawDesc = frm.subtitle || frm.description || "Formulir pendaftaran dan registrasi resmi Culture Network Team IT APD Bank Mandiri";
+          const rawDesc = frm.subtitle || frm.description || "Formulir pendaftaran dan registrasi kegiatan resmi Bapekkris PT Bank Mandiri (Persero) Tbk.";
           const snippetDesc = rawDesc.length > 200 ? rawDesc.slice(0, 197) + "..." : rawDesc;
           const canonicalUrl = `${url.origin}/?form=${encodeURIComponent(frm.id)}#form`;
 

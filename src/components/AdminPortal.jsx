@@ -210,7 +210,7 @@ export default function AdminPortal({
   const isDark = theme === 'dark';
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     try {
-      return sessionStorage.getItem('cnt_admin_auth_session') === 'authenticated_v2';
+      return sessionStorage.getItem('bapekkris_admin_auth_session') === 'authenticated_v2';
     } catch (e) {
       return false;
     }
@@ -255,7 +255,7 @@ export default function AdminPortal({
   // Admin Dashboard Tabs: 'members' | 'visibility' | 'events' | 'forms' | 'submissions' | 'aspirasi' | 'gallery' | 'assets' | 'divisions' | 'tenure' | 'devotions' | 'songs' | 'easyworship'
   const [activeTab, setActiveTabState] = useState(() => {
     try {
-      return sessionStorage.getItem('cnt_admin_active_tab') || 'members';
+      return sessionStorage.getItem('bapekkris_admin_active_tab') || 'members';
     } catch (e) {
       return 'members';
     }
@@ -263,7 +263,7 @@ export default function AdminPortal({
   const setActiveTab = (tabId) => {
     setActiveTabState(tabId);
     try {
-      sessionStorage.setItem('cnt_admin_active_tab', tabId);
+      sessionStorage.setItem('bapekkris_admin_active_tab', tabId);
     } catch (e) {}
   };
 
@@ -836,7 +836,7 @@ export default function AdminPortal({
       if (uHash === ADMIN_USER_HASH && pHash === ADMIN_PASS_HASH) {
         setIsAuthenticated(true);
         try {
-          sessionStorage.setItem('cnt_admin_auth_session', 'authenticated_v2');
+          sessionStorage.setItem('bapekkris_admin_auth_session', 'authenticated_v2');
         } catch (e) {}
         setLoginError('');
         setFormErrors({});
@@ -2149,7 +2149,7 @@ export default function AdminPortal({
           <button
             onClick={() => {
               try {
-                sessionStorage.removeItem('cnt_admin_auth_session');
+                sessionStorage.removeItem('bapekkris_admin_auth_session');
               } catch (e) {}
               setIsAuthenticated(false);
             }}
@@ -4229,7 +4229,7 @@ export default function AdminPortal({
               </label>
               <input
                 type="text"
-                placeholder="Contoh: APD E-Sports Championship"
+                placeholder="Contoh: Ibadah Kebangunan Rohani Akbar"
                 value={eventTitle}
                 onChange={(e) => {
                   setEventTitle(e.target.value);

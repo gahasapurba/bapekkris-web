@@ -4,7 +4,7 @@ import { getPublicBaseUrl } from './urlUtils';
 
 /**
  * Generate a high-resolution, professionally styled Printable Poster Card (PNG)
- * for a Form with QR Code, Mandiri & CNT branding, title, subtitle, and URL.
+ * for a Form with QR Code, Mandiri & Bapekkris branding, title, subtitle, and URL.
  */
 export async function generateFormQrPoster(options = {}) {
   // Gracefully handle both { form, event, baseUrl } and direct { title, description, formUrl, ... }

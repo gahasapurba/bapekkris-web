@@ -96,46 +96,8 @@ export const BIBLE_VERSIONS = [
   { id: 'WEB', name: 'WEB (World English)', short: 'WEB', source: 'English' }
 ];
 
-// Curated Scripture Verses Repository for instant loading without heavy external latency
-const SAMPLE_SCRIPTURES = {
-  'JHN-3': [
-    { verse: 16, text: 'Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal.' },
-    { verse: 17, text: 'Sebab Allah mengutus Anak-Nya ke dalam dunia bukan untuk menghakimi dunia, melainkan untuk menyelamatkannya oleh Dia.' },
-    { verse: 18, text: 'Barangsiapa percaya kepada-Nya, ia tidak akan dihukum; barangsiapa tidak percaya, ia telah berada di bawah hukuman, sebab ia tidak percaya dalam nama Anak Tunggal Allah.' }
-  ],
-  'PSA-23': [
-    { verse: 1, text: 'TUHAN adalah gembalaku, takkan kekurangan aku.' },
-    { verse: 2, text: 'Ia membaringkan aku di padang yang berumput hijau, Ia membimbing aku ke air yang tenang;' },
-    { verse: 3, text: 'Ia menyegarkan jiwaku. Ia menuntun aku di jalan yang benar oleh karena nama-Nya.' },
-    { verse: 4, text: 'Sekalipun aku berjalan dalam lembah kekelaman, aku tidak takut bahaya, sebab Engkau besertaku; gada-Mu dan tongkat-Mu, itulah yang menghibur aku.' },
-    { verse: 5, text: 'Engkau menyediakan hidangan bagiku, di hadapan lawanku; Engkau mengurapi kepalaku dengan minyak; pialaku penuh melimpah.' },
-    { verse: 6, text: 'Kebajikan dan kemurahan belaka akan mengikuti aku, seumur hidupku; dan aku akan diam dalam rumah TUHAN sepanjang masa.' }
-  ],
-  'PHP-4': [
-    { verse: 4, text: 'Bersukacitalah senantiasa dalam Tuhan! Sekali lagi kukatakan: Bersukacitalah!' },
-    { verse: 6, text: 'Janganlah hendaknya kamu kuatir tentang apapun juga, tetapi nyatakanlah dalam segala hal keinginanmu kepada Allah dalam doa dan permohonan dengan ucapan syukur.' },
-    { verse: 7, text: 'Damai sejahtera Allah, yang melampaui segala akal, akan memelihara hati dan pikiranmu dalam Kristus Yesus.' },
-    { verse: 13, text: 'Segala perkara dapat kutanggung di dalam Dia yang memberi kekuatan kepadaku.' }
-  ],
-  'PRO-3': [
-    { verse: 5, text: 'Percayalah kepada TUHAN dengan segenap hatimu, dan janganlah bersandar kepada pengertianmu sendiri.' },
-    { verse: 6, text: 'Akuilah Dia dalam segala lakumu, maka Ia akan meluruskan jalanmu.' }
-  ],
-  'MAT-6': [
-    { verse: 33, text: 'Tetapi carilah dahulu Kerajaan Allah dan kebenarannya, maka semuanya itu akan ditambahkan kepadamu.' },
-    { verse: 34, text: 'Sebab itu janganlah kamu kuatir akan hari besok, karena hari besok mempunyai kesusahannya sendiri. Kesusahan sehari cukuplah untuk sehari.' }
-  ],
-  'ISA-40': [
-    { verse: 29, text: 'Dia memberi kekuatan kepada yang lelah dan menambah semangat kepada yang tiada berdaya.' },
-    { verse: 31, text: 'tetapi orang-orang yang menanti-nantikan TUHAN mendapat kekuatan baru: mereka seumpama rajawali yang naik terbang dengan kekuatan sayapnya; mereka berlari dan tidak menjadi lesu, mereka berjalan dan tidak menjadi lelah.' }
-  ],
-  'ROM-8': [
-    { verse: 28, text: 'Kita tahu sekarang, bahwa Allah turut bekerja dalam segala sesuatu untuk mendatangkan kebaikan bagi mereka yang mengasihi Dia, yaitu bagi mereka yang terpanggil sesuai dengan rencana Allah.' },
-    { verse: 31, text: 'Jika Allah di pihak kita, siapakah yang akan melawan kita?' },
-    { verse: 38, text: 'Sebab aku yakin, bahwa baik maut, maupun hidup, baik malaikat-malaikat, maupun pemerintah-pemerintah, baik yang ada sekarang, maupun yang akan datang,' },
-    { verse: 39, text: 'atau kuasa-kuasa, baik yang di atas, maupun yang di bawah, ataupun sesuatu makhluk lain, tidak akan dapat memisahkan kita dari kasih Allah, yang ada dalam Kristus Yesus, Tuhan kita.' }
-  ]
-};
+// Zero mock data repository
+const SAMPLE_SCRIPTURES = {};
 
 export default function BibleSection({
   theme,
@@ -228,14 +190,7 @@ export default function BibleSection({
     if (apiVerses[cacheKey] && apiVerses[cacheKey].length > 0) {
       return apiVerses[cacheKey];
     }
-    const sampleKey = `${selectedBook.id}-${selectedChapter}`;
-    if (SAMPLE_SCRIPTURES[sampleKey] && selectedVersion === 'TB') {
-      return SAMPLE_SCRIPTURES[sampleKey];
-    }
-    return Array.from({ length: 15 }, (_, i) => ({
-      verse: i + 1,
-      text: `${selectedBook.name} pasal ${selectedChapter} ayat ${i + 1} — "Sebab firman Allah hidup dan kuat dan lebih tajam dari pada pedang bermata dua manapun... Berbahagialah orang yang mendengarkan firman Tuhan dan memeliharanya."`
-    }));
+    return [];
   }, [selectedBook, selectedChapter, selectedVersion, apiVerses]);
 
   const handleCopyVerse = (v) => {
@@ -357,8 +312,8 @@ export default function BibleSection({
                 >
                   {t.label}
                 </button>
-              ))}
-            </div>
+                ))}
+              </div>
 
             {/* Book Search */}
             <div style={{ position: 'relative' }}>
@@ -581,8 +536,24 @@ export default function BibleSection({
             </div>
 
             {/* Verses Content List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {currentVerses.map(v => (
+            {isLoadingVerses ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                <Sparkles size={28} className="pulse-glow" style={{ margin: '0 auto 12px auto' }} />
+                <p style={{ fontWeight: 600 }}>Memuat nats firman Tuhan...</p>
+              </div>
+            ) : currentVerses.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                <BookOpen size={36} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+                <p style={{ fontWeight: 700, fontSize: '0.96rem', color: 'var(--text-main)', marginBottom: '4px' }}>
+                  Teks ayat belum dapat dimuat dari server Alkitab.
+                </p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-dim)', maxWidth: '420px', margin: '0 auto' }}>
+                  Pastikan koneksi internet aktif atau coba pilih versi terjemahan lainnya di atas.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {currentVerses.map(v => (
                 <div
                   key={v.verse}
                   style={{
@@ -698,6 +669,7 @@ export default function BibleSection({
                 </div>
               ))}
             </div>
+          )}
 
             {/* Pagination between Chapters */}
             <div style={{

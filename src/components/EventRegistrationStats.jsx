@@ -282,7 +282,7 @@ export default function EventRegistrationStats({
             await navigator.share({
               files: [file],
               title: `Poster QR: ${connectedForm.title}`,
-              text: `Pendaftaran Acara ${event?.title || ''} via Formulir CNT IT APD`
+              text: `Pendaftaran Acara ${event?.title || ''} via Formulir Bapekkris Bank Mandiri`
             });
             setIsGeneratingPoster(false);
             return;
@@ -341,7 +341,7 @@ export default function EventRegistrationStats({
     return {
       id: sub.id,
       name: name || sub.name || `Pendaftar #${sub.id.slice(-4)}`,
-      department: dept || sub.department || 'Direktorat IT APD',
+      department: dept || sub.department || 'Bank Mandiri',
       identifier: emailOrPhone || sub.email || sub.phone || sub.nip || '-',
       submittedAt: sub.createdAt || sub.created_at || '',
       source: 'Form Pendaftaran'
@@ -2368,7 +2368,7 @@ export default function EventRegistrationStats({
               <div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)', color: '#fff', padding: '3px 12px', borderRadius: 'var(--radius-full)', fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
                   <Trophy size={13} />
-                  <span>Sistem Pengundian Doorprize Resmi CNT IT APD</span>
+                  <span>Sistem Pengundian Doorprize Resmi Bapekkris Bank Mandiri</span>
                 </div>
                 <h2 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
                   Undian Doorprize (Lucky Draw)

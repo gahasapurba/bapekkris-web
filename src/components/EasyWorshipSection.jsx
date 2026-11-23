@@ -24,83 +24,8 @@ import {
 import { soundFx } from '../utils/audio';
 import { BIBLE_BOOKS } from './BibleSection';
 
-// Initial default liturgy template for Sunday / Friday fellowship service
-const DEFAULT_LITURGY_ITEMS = [
-  {
-    id: 'item-1',
-    type: 'song',
-    title: 'KJ 001 - Haleluya! Pujilah',
-    subtitle: 'Nyanyian Pembuka',
-    text: `Bait 1:
-Haleluya! Pujilah Allah Yang Mahatinggi!
-Sang Pencipta semesta, Khalik langit dan bumi.
-Mahaagung nama-Nya, patutlah disembah.
-Puji Dia selamanya, haleluya!
-
-Bait 2:
-Haleluya! Pujilah Yesus Kristus Penebus!
-Oleh darah yang kudus, dosa kita terhapus.
-Bangkit dari kubur-Nya, menang atas maut!
-Puji Dia selamanya, haleluya!
-
-Bait 3:
-Haleluya! Pujilah Roh Kudus Penghibur hati!
-Membimbing umat-Nya setia sampai mati.
-Puji Allah Tritunggal, Mahakuasa dan kekal,
-Puji Dia selamanya, haleluya!`
-  },
-  {
-    id: 'item-2',
-    type: 'bible',
-    title: 'Mazmur 23:1-3',
-    subtitle: 'Pembacaan Votum & Mazmur',
-    text: `(1) TUHAN adalah gembalaku, takkan kekurangan aku.
-(2) Ia membaringkan aku di padang yang berumput hijau, Ia membimbing aku ke air yang tenang;
-(3) Ia menyegarkan jiwaku. Ia menuntun aku di jalan yang benar oleh karena nama-Nya.`
-  },
-  {
-    id: 'item-3',
-    type: 'song',
-    title: 'PW 01 - Sentuh Hatiku',
-    subtitle: 'Pujian Persiapan Firman',
-    text: `Bait 1:
-Betapa kumencintai segala yang tlah Terjadi
-Tak pernah terpikir olehku takdir-Mu jadi begini
-Engkau berikan batu ujian 'tuk membuktikan imanku
-Sampai kusadar tiada yang mustahil bagi-Mu
-
-Reff / Chorus:
-Sentuh hatiku, ubah hidupku menjadi yang Kau mau
-Biar kemuliaan-Mu nyata di dalam hidupku
-Kuasa darah-Mu pulihkan jiwa yang hancur dan luluh
-Jadikan hidupku alat kebenaran-Mu`
-  },
-  {
-    id: 'item-4',
-    type: 'bible',
-    title: 'Yohanes 3:16-17',
-    subtitle: 'Nats Khotbah Kebaktian',
-    text: `(16) Karena begitu besar kasih Allah akan dunia ini, sehingga Ia telah mengaruniakan Anak-Nya yang tunggal, supaya setiap orang yang percaya kepada-Nya tidak binasa, melainkan beroleh hidup yang kekal.
-(17) Sebab Allah mengutus Anak-Nya ke dalam dunia bukan untuk menghakimi dunia, melainkan untuk menyelamatkannya oleh Dia.`
-  },
-  {
-    id: 'item-5',
-    type: 'song',
-    title: 'PW 04 - Hidup Ini Adalah Kesempatan',
-    subtitle: 'Lagu Persembahan & Penutup',
-    text: `Bait 1:
-Hidup ini adalah kesempatan
-Hidup ini untuk melayani Tuhan
-Jangan sia-siakan waktu yang Tuhan bri
-Hidup ini harus jadi berkat
-
-Reff / Chorus:
-Oh Tuhan pakailah hidupku
-Selagi aku masih kuat
-Bila saatnya nanti ku tak berdaya lagi
-Hidup ini sudah jadi berkat`
-  }
-];
+// Initial empty template - zero mock data
+const DEFAULT_LITURGY_ITEMS = [];
 
 // Helper to break song lyrics into distinct slide stanzas
 function parseTextToSlides(rawText = '') {
@@ -436,7 +361,21 @@ export default function EasyWorshipSection({
 
             {/* Playlist Items Scroll */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
-              {playlist.map((item, idx) => {
+              {playlist.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '36px 14px',
+                  color: 'var(--text-muted)',
+                  border: '1px dashed var(--border-card)',
+                  borderRadius: 'var(--radius-sm)'
+                }}>
+                  <BookOpen size={24} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
+                  <p style={{ fontSize: '0.82rem', margin: 0, fontWeight: 700, color: 'var(--text-main)' }}>Tata Ibadah Masih Kosong</p>
+                  <p style={{ fontSize: '0.74rem', margin: '4px 0 0 0', color: 'var(--text-dim)' }}>
+                    Klik "+ Tambah Item" atau kirim lagu/ayat dari menu Kidung Jemaat & Alkitab.
+                  </p>
+                </div>
+              ) : playlist.map((item, idx) => {
                 const isSelected = activeItem?.id === item.id;
                 return (
                   <div
@@ -926,16 +865,28 @@ export default function EasyWorshipSection({
                   />
 
                   <div style={{ maxHeight: '240px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    {DEFAULT_LITURGY_ITEMS.filter(it => it.type === 'song').map((s) => (
+                    {(songs || []).filter(s => {
+                      const q = songSearchQuery.toLowerCase().trim();
+                      if (!q) return true;
+                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q);
+                    }).length === 0 ? (
+                      <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-dim)', fontSize: '0.8rem' }}>
+                        Belum ada lagu rohani di database. Anda dapat menambahkan slide kustom pada tab Teks Kustom di atas.
+                      </div>
+                    ) : (songs || []).filter(s => {
+                      const q = songSearchQuery.toLowerCase().trim();
+                      if (!q) return true;
+                      return (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q);
+                    }).map((s) => (
                       <button
                         key={s.id}
                         type="button"
                         onClick={() => handleAddItemToPlaylist({
                           id: `ew-${Date.now()}`,
                           type: 'song',
-                          title: s.title,
-                          subtitle: 'Lagu Pujian',
-                          text: s.text
+                          title: `${s.songNumber ? `${s.songNumber} - ` : ''}${s.title}`,
+                          subtitle: s.category || 'Lagu Pujian',
+                          text: s.lyrics || s.text || ''
                         })}
                         style={{
                           padding: '10px 12px',
@@ -994,7 +945,7 @@ export default function EasyWorshipSection({
                       type: 'bible',
                       title: `${selectedBibleBook.name} ${selectedBibleChapter}:${selectedBibleVerse}`,
                       subtitle: 'Pembacaan Alkitab',
-                      text: `"${selectedBibleBook.name} ${selectedBibleChapter}:${selectedBibleVerse} — Sebab firman-Mu itu pelita bagi kakiku dan terang bagi jalanku."`
+                      text: `${selectedBibleBook.name} ${selectedBibleChapter}:${selectedBibleVerse}`
                     })}
                     style={{
                       padding: '10px',

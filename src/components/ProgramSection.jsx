@@ -348,10 +348,10 @@ export default function ProgramSection({
           Kalender & Event Budaya
         </span>
         <h1 style={{ fontSize: '2.8rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '16px' }}>
-          Event CNT IT APD
+          Event Bapekkris Bank Mandiri
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-          Rangkaian inisiatif terpadu untuk membangun keakraban tim, kesehatan mental & fisik, serta wadah ekspresi bakat seluruh insan IT APD.
+          Rangkaian persekutuan doa, kebaktian, pembinaan rohani, dan aksi kasih keluarga besar Bapekkris PT Bank Mandiri (Persero) Tbk.
         </p>
       </div>
 
@@ -402,7 +402,7 @@ export default function ProgramSection({
                 Kegiatan Ini Belum Dipublikasikan
               </h2>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: 0, maxWidth: '520px' }}>
-                Agenda kegiatan yang Anda tuju saat ini masih dalam tahap persiapan (Draft) oleh pengurus dan belum dirilis untuk pendaftaran publik. Silakan kembali lagi nanti atau pantau pengumuman resmi dari Culture Network Team IT APD.
+                Agenda kegiatan yang Anda tuju saat ini masih dalam tahap persiapan (Draft) oleh pengurus dan belum dirilis untuk pendaftaran publik. Silakan kembali lagi nanti atau pantau pengumuman resmi dari Pengurus Bapekkris Bank Mandiri.
               </p>
             </div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '6px' }}>
@@ -774,7 +774,7 @@ export default function ProgramSection({
                 ? `Belum ada agenda kegiatan atau event budaya yang dipublikasikan untuk periode kepengurusan ini (${activeTenure?.title || activeTenure?.code || 'Tenure Aktif'}).`
                 : (filterDiv !== 'all' || activeTab !== 'all'
                   ? 'Tidak ada agenda kegiatan yang cocok dengan pilihan filter divisi atau status saat ini. Coba pilih filter lain atau reset filter.'
-                  : 'Belum ada agenda kegiatan atau event budaya yang dipublikasikan. Pantau terus informasi terbaru dari pengurus CNT IT APD!')
+                  : 'Belum ada agenda kegiatan atau event budaya yang dipublikasikan. Pantau terus informasi terbaru dari pengurus Bapekkris Bank Mandiri!')
               }
             </p>
             {scopedEvents.length > 0 && (filterDiv !== 'all' || activeTab !== 'all') && (
@@ -843,7 +843,7 @@ export default function ProgramSection({
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em'
                         }}>
-                          {evt.divisionName || divInfo?.name || 'CNT IT APD'}
+                          {evt.divisionName || divInfo?.name || 'Bapekkris Bank Mandiri'}
                         </span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span className="badge-gold" style={{ fontSize: '0.7rem' }}>
@@ -914,7 +914,7 @@ export default function ProgramSection({
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: isDark ? 'var(--neon-cyan)' : '#0284c7', fontWeight: 700 }}>
                               <Users size={15} color={isDark ? 'var(--neon-cyan)' : '#0284c7'} />
                               <span>
-                                {count} Insan IT APD telah terdaftar
+                                {count} Mandirian telah terdaftar
                               </span>
                             </div>
                           ) : null;
@@ -1308,7 +1308,7 @@ export default function ProgramSection({
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Users size={14} color="var(--neon-emerald)" />
-                  <strong>Divisi Penyelenggara:</strong> <span>{rsvpModalEvent.divisionName || 'CNT IT APD'}</span>
+                  <strong>Divisi Penyelenggara:</strong> <span>{rsvpModalEvent.divisionName || 'Bapekkris Bank Mandiri'}</span>
                 </div>
               </div>
 
@@ -1791,13 +1791,13 @@ export default function ProgramSection({
                     const icsContent = [
                       'BEGIN:VCALENDAR',
                       'VERSION:2.0',
-                      'PRODID:-//CNT IT APD Bank Mandiri//ID',
+                      'PRODID:-//Bapekkris Bank Mandiri//ID',
                       'BEGIN:VEVENT',
-                      `UID:${rsvpModalEvent.id}@cntitapd.netlify.app`,
+                      `UID:${rsvpModalEvent.id}@bapekkris-mandiri.netlify.app`,
                       `DTSTAMP:${sRaw}T010000Z`,
                       `DTSTART;VALUE=DATE:${sRaw}`,
                       `DTEND;VALUE=DATE:${eRaw}`,
-                      `SUMMARY:${rsvpModalEvent.title} - CNT IT APD`,
+                      `SUMMARY:${rsvpModalEvent.title} - Bapekkris Bank Mandiri`,
                       `DESCRIPTION:${(rsvpModalEvent.description || '').replace(/\n/g, '\\n')}`,
                       `LOCATION:${rsvpModalEvent.location || 'Plaza Mandiri'}`,
                       'END:VEVENT',
@@ -1843,7 +1843,7 @@ export default function ProgramSection({
                     const eRaw = eDateObj.toISOString().split('T')[0].replace(/-/g, '');
                     const params = new URLSearchParams({
                       action: 'TEMPLATE',
-                      text: `${rsvpModalEvent.title} (CNT IT APD)`,
+                      text: `${rsvpModalEvent.title} (Bapekkris Bank Mandiri)`,
                       dates: `${sRaw}/${eRaw}`,
                       details: rsvpModalEvent.description || '',
                       location: rsvpModalEvent.location || 'Plaza Mandiri'

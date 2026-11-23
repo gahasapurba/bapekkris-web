@@ -1,24 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Download, 
-  Sparkles,
-  Play,
-  RotateCcw,
-  Search,
-  FolderOpen,
-  ExternalLink,
-  FileText,
-  Clock
+  Search, 
+  FolderOpen, 
+  Clock 
 } from 'lucide-react';
 import { formatLastUpdatedWib } from '../utils/dateUtils';
 
 export default function AssetKitSection({ theme, brandAssets = [] }) {
   const isDark = theme === 'dark';
-
-  // State for Logo Morph Evolution Animation
-  // 0: Initial Ribbon Logo, 1: Morphing phase, 2: New APD Modern Logo
-  const [logoPhase, setLogoPhase] = useState(0); 
-  const [isPlaying, setIsPlaying] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -56,15 +46,6 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
     return matchesCat && matchesSearch;
   });
 
-  useEffect(() => {
-    if (!isPlaying) return;
-    const timer = setInterval(() => {
-      setLogoPhase(prev => (prev === 0 ? 1 : 0));
-    }, 3200);
-
-    return () => clearInterval(timer);
-  }, [isPlaying]);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '48px', paddingTop: '48px', paddingBottom: '80px' }}>
       
@@ -81,165 +62,26 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
         </p>
       </div>
 
-      {/* INTERACTIVE LOGO EVOLUTION ANIMATION SHOWCASE */}
-      <div style={{ maxWidth: '780px', margin: '0 auto', width: '100%' }}>
-        <div className="glass-panel" style={{
-          padding: '30px',
-          border: '1.5px solid var(--border-card)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={18} color="var(--mandiri-gold)" />
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                Identitas Resmi & Logo Bapekkris Bank Mandiri
-              </h3>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={() => setLogoPhase(0)}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  border: logoPhase === 0 ? '1px solid var(--mandiri-gold)' : '1px solid var(--border-card)',
-                  background: logoPhase === 0 ? 'rgba(255,184,0,0.15)' : 'transparent',
-                  color: logoPhase === 0 ? 'var(--mandiri-gold)' : 'var(--text-muted)',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                1. Logo Original (Light BG)
-              </button>
-              <button
-                onClick={() => setLogoPhase(1)}
-                style={{
-                  padding: '4px 12px',
-                  borderRadius: 'var(--radius-full)',
-                  border: logoPhase === 1 ? '1px solid var(--neon-cyan)' : '1px solid var(--border-card)',
-                  background: logoPhase === 1 ? 'rgba(14,165,233,0.15)' : 'transparent',
-                  color: logoPhase === 1 ? '#0284c7' : 'var(--text-muted)',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                2. Logo White Variant (Dark BG)
-              </button>
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                title={isPlaying ? "Jeda animasi" : "Putar animasi otomatis"}
-                style={{
-                  padding: '5px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid var(--border-card)',
-                  background: 'var(--input-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.74rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                {isPlaying ? <RotateCcw size={12} /> : <Play size={12} />}
-                <span>{isPlaying ? 'Auto Loop' : 'Manual'}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Morphing Arena */}
-          <div style={{
-            width: '100%',
-            height: '240px',
-            borderRadius: 'var(--radius-md)',
-            background: isDark ? 'rgba(0,0,0,0.3)' : '#ffffff',
-            border: '1px solid var(--border-card)',
-            boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.04)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            {/* Background Glow */}
-            <div style={{
-              position: 'absolute',
-              width: '180px',
-              height: '180px',
-              borderRadius: '50%',
-              background: logoPhase === 0 ? 'rgba(255, 184, 0, 0.15)' : 'rgba(14, 165, 233, 0.15)',
-              filter: 'blur(45px)',
-              transition: 'all 0.8s ease'
-            }} />
-
-            {/* Legacy Ribbon Logo View */}
-            <div style={{
-              position: 'absolute',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              opacity: logoPhase === 0 ? 1 : 0,
-              transform: logoPhase === 0 ? 'scale(1) translateY(0)' : 'scale(0.85) translateY(-14px)',
-              transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              pointerEvents: logoPhase === 0 ? 'auto' : 'none'
-            }}>
-              <img
-                src="/assets/mandiri-club-bapekkris-original.png"
-                alt="Logo Bapekkris Original"
-                style={{
-                  maxHeight: '90px',
-                  maxWidth: '320px',
-                  objectFit: 'contain'
-                }}
-              />
-              <span className="badge-gold" style={{ fontSize: '0.68rem' }}>
-                Logo Resmi Original (Full Color)
-              </span>
-            </div>
-
-            {/* Current Modern APD Delivery Logo View */}
-            <div style={{
-              position: 'absolute',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              opacity: logoPhase === 1 ? 1 : 0,
-              transform: logoPhase === 1 ? 'scale(1) translateY(0)' : 'scale(0.85) translateY(14px)',
-              transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-              pointerEvents: logoPhase === 1 ? 'auto' : 'none'
-            }}>
-              <img
-                src="/assets/mandiri-club-bapekkris-white.png"
-                alt="Logo Bapekkris White Variant"
-                style={{
-                  maxHeight: '90px',
-                  maxWidth: '320px',
-                  objectFit: 'contain'
-                }}
-              />
-              <span className="badge-cyan" style={{ fontSize: '0.68rem' }}>
-                Logo Versi Putih (Latar Gelap)
-              </span>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '14px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {logoPhase === 0 ? (
-              <span>Logo Resmi Mandiri Club Bapekkris versi original (full color) untuk latar belakang terang.</span>
-            ) : (
-              <span>Logo Resmi Mandiri Club Bapekkris versi putih kontras tinggi untuk latar belakang gelap.</span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Dynamic Brand Assets & Templates Catalog (Synced with Supabase `brand_assets`) */}
-      {brandAssets.length > 0 && (
+      {brandAssets.length === 0 ? (
+        <div className="glass-panel" style={{
+          textAlign: 'center',
+          padding: '60px 24px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px dashed var(--border-card)',
+          maxWidth: '680px',
+          margin: '0 auto',
+          width: '100%'
+        }}>
+          <FolderOpen size={48} color="var(--mandiri-gold)" style={{ opacity: 0.6, margin: '0 auto 16px auto', display: 'block' }} />
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '8px' }}>
+            Belum Ada Panduan atau Asset Resmi
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: 1.6, maxWidth: '480px', margin: '0 auto' }}>
+            Berkas logo resmi, virtual background, atau template dokumen belum diunggah ke database. Silakan kelola melalui Admin Portal.
+          </p>
+        </div>
+      ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
           <div style={{
             display: 'flex',
@@ -255,7 +97,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
                 Katalog Digital & Template Resmi
               </span>
               <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                Daftar Asset CNT IT APD ({filteredAssets.length})
+                Daftar Asset Bapekkris Bank Mandiri ({filteredAssets.length})
               </h2>
             </div>
 
@@ -362,7 +204,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
                         alt={item.title}
                         style={{ maxHeight: '86px', maxWidth: '220px', objectFit: 'contain' }}
                         onError={(e) => {
-                          e.currentTarget.src = "/assets/CNT_IT_APD_LOGO_SUITE/01-APD Master Brand Logo.png";
+                          e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
                         }}
                       />
                     ) : (

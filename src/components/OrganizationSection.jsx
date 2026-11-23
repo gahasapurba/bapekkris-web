@@ -95,7 +95,7 @@ export default function OrganizationSection({
     const blob = new Blob([vcardLines], { type: 'text/vcard;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const safeName = String(member.name || 'cnt-apd').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const safeName = String(member.name || 'bapekkris').toLowerCase().replace(/[^a-z0-9]+/g, '-');
     a.href = url;
     a.download = `kontak-${safeName}.vcf`;
     document.body.appendChild(a);
@@ -507,7 +507,7 @@ export default function OrganizationSection({
             letterSpacing: '0.08em',
             textTransform: 'uppercase'
           }}>
-            🏛️ BANK MANDIRI • DIREKTORAT IT • GROUP IT APD
+            🏛️ PT BANK MANDIRI (PERSERO) TBK
           </div>
           <h2 style={{
             fontSize: '1.4rem',
@@ -516,7 +516,7 @@ export default function OrganizationSection({
             margin: 0,
             letterSpacing: '-0.02em'
           }}>
-            STRUKTUR ORGANISASI CULTURE NETWORK TEAM (CNT)
+            STRUKTUR ORGANISASI BAPEKKRIS BANK MANDIRI
           </h2>
           <div style={{
             fontSize: '0.84rem',
