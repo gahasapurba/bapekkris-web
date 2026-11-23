@@ -14714,7 +14714,8 @@ export default function AdminPortal({
                   <div style={{
                     border: '1px solid var(--border-card)',
                     borderRadius: 'var(--radius-md)',
-                    overflow: 'hidden'
+                    overflowX: 'auto',
+                    WebkitOverflowScrolling: 'touch'
                   }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.82rem' }}>
                       <thead>

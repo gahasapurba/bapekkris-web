@@ -274,7 +274,7 @@ export default function BibleSection({
         }} className="bible-grid-layout">
           
           {/* Column 1: Book Selector */}
-          <div className="glass-panel" style={{
+          <div className="glass-panel bible-book-col" style={{
             padding: '20px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-card)',
@@ -373,7 +373,7 @@ export default function BibleSection({
           </div>
 
           {/* Column 2: Chapter Selector */}
-          <div className="glass-panel" style={{
+          <div className="glass-panel bible-chapter-col" style={{
             padding: '20px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-card)',

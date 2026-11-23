@@ -200,7 +200,7 @@ export default function WorshipSongSection({
             }} className="worship-grid-layout">
               
               {/* Left Column: Song List */}
-              <div className="glass-panel" style={{
+              <div className="glass-panel worship-list-col" style={{
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-card)',
                 padding: '16px',

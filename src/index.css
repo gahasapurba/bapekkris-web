@@ -357,6 +357,35 @@ select option {
 }
 
 /* 2. Responsive Layout Utilities */
+.worship-grid-layout,
+.worship-grid,
+.devotion-grid-layout,
+.bible-grid-layout,
+.easyworship-3col-layout {
+  display: grid;
+  width: 100%;
+}
+
+@media screen and (max-width: 1024px) {
+  .easyworship-3col-layout {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .bible-grid-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .bible-book-col {
+    max-height: 260px !important;
+  }
+  .bible-chapter-col {
+    max-height: 190px !important;
+  }
+}
+
 .mobile-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -482,9 +511,15 @@ select option {
     padding-right: 14px !important;
   }
 
-  .worship-grid {
+  .worship-grid,
+  .worship-grid-layout,
+  .devotion-grid-layout {
     grid-template-columns: 1fr !important;
     gap: 24px !important;
+  }
+
+  .worship-list-col {
+    max-height: 290px !important;
   }
 
   .mobile-stack-grid {
