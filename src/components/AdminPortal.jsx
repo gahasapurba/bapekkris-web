@@ -100,8 +100,8 @@ async function sha256(message) {
 }
 
 // Stored SHA-256 hashes (Single secure admin credential, zero plaintext in code/repository)
-const ADMIN_USER_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-const ADMIN_PASS_HASH = 'dbf177a717c70efa4d4252c32ae532b197f0cc03718627e6e5f1b9b289665496';
+const ADMIN_USER_HASH = '95e63f93f3149a27fb636d3cb5a14ed71fa1810bb64f4afda8fe729b2536710d';
+const ADMIN_PASS_HASH = '2b713d6cdc4cd249c3aa758850da2e155b88ba4661489c023764bc70413af018';
 
 export default function AdminPortal({ 
   onBack, 
