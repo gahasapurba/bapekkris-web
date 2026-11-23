@@ -28,6 +28,7 @@ import {
   X
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { DEFAULT_DEVOTIONS } from './DailyDevotionSection';
 import { getDivisionLead, getDivisionStructure, getMemberLevel } from '../utils/memberQuotaUtils';
 import { getDeadlineStatus, formatWibTimestamp, formatDeadlineWib } from '../utils/dateUtils';
 import { getUnifiedEventAttendees } from '../utils/quotaUtils';
@@ -1104,7 +1105,7 @@ export default function HomeSection({
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
-                {devotions.slice(0, 3).map((d) => (
+                {((devotions && devotions.length > 0) ? devotions : DEFAULT_DEVOTIONS).slice(0, 3).map((d) => (
                   <div
                     key={d.id}
                     onClick={() => handleTabChange('renungan')}
