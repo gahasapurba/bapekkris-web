@@ -283,7 +283,8 @@ select option {
   display: flex !important;
 }
 
-.mobile-burger-btn {
+.mobile-burger-btn,
+.mobile-hamburger {
   display: none !important;
 }
 
@@ -466,16 +467,17 @@ select option {
   max-width: 100%;
 }
 
-/* TABLET & MOBILE NAVBAR BREAKPOINT (<= 1024px) */
-@media screen and (max-width: 1024px) {
+/* TABLET & MOBILE NAVBAR BREAKPOINT (<= 1120px) */
+@media screen and (max-width: 1120px) {
   .desktop-nav {
     display: none !important;
   }
 
-  .mobile-burger-btn {
+  .mobile-burger-btn,
+  .mobile-hamburger {
     display: flex !important;
-    width: 34px !important;
-    height: 34px !important;
+    width: 36px !important;
+    height: 36px !important;
     flex-shrink: 0 !important;
   }
 

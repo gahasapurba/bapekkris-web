@@ -156,7 +156,7 @@ export default function Navbar({
           justifyContent: 'center',
           minWidth: 0,
           padding: '2px 0',
-          overflowX: 'auto'
+          overflow: 'visible'
         }}>
           {navItems.map((tab) => {
             const Icon = tab.icon;
@@ -344,22 +344,21 @@ export default function Navbar({
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="mobile-hamburger"
+            className="mobile-burger-btn mobile-hamburger"
             aria-label="Buka Menu Navigasi"
             style={{
               width: '36px',
               height: '36px',
               borderRadius: 'var(--radius-md)',
-              background: 'transparent',
-              border: '1px solid var(--border-card)',
-              color: 'var(--text-main)',
-              display: 'none',
+              background: isMobileMenuOpen ? (isDark ? 'rgba(255, 184, 0, 0.15)' : '#fef3c7') : 'transparent',
+              border: `1px solid ${isMobileMenuOpen ? 'var(--mandiri-gold)' : 'var(--border-card)'}`,
+              color: isMobileMenuOpen ? 'var(--mandiri-gold)' : 'var(--text-main)',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer'
             }}
           >
-            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
       </div>
@@ -372,16 +371,17 @@ export default function Navbar({
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'var(--bg-nav)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: isDark ? 'rgba(7, 13, 30, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderTop: '1px solid var(--border-card)',
           padding: '20px 16px',
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
           overflowY: 'auto',
-          zIndex: 49
+          zIndex: 999999,
+          boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
         }}>
           {navItems.map((tab) => {
             const Icon = tab.icon;
