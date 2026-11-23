@@ -212,3 +212,4 @@ export default function CrewMemberCard({ member, onClick, compact = false, theme
     </div>
   );
 }
+

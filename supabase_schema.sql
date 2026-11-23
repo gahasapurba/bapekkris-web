@@ -368,3 +368,4 @@ CREATE POLICY "Public Access cnt-media" ON storage.objects FOR ALL TO anon, auth
 
 -- Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
+
