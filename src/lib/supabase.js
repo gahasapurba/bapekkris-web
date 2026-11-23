@@ -804,14 +804,7 @@ export async function uploadMediaToCloud(file, path) {
       upsert: true
     });
     if (error) {
-      // try fallback bucket
-      const { data: d2, error: err2 } = await supabase.storage.from('cnt-media').upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-      if (err2) throw err2;
-      const { data: pubData } = supabase.storage.from('cnt-media').getPublicUrl(filePath);
-      return pubData.publicUrl;
+      throw error;
     }
     const { data: pubData } = supabase.storage.from(bucket).getPublicUrl(filePath);
     return pubData.publicUrl;
