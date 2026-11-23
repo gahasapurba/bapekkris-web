@@ -47,7 +47,10 @@ import {
   Copy,
   Sparkles,
   Camera,
-  Grid
+  Grid,
+  BookOpen,
+  Music,
+  MonitorPlay
 } from 'lucide-react';
 import EventCalendarView from './EventCalendarView';
 import { uploadMediaToCloud } from '../lib/supabase';
