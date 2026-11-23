@@ -11,87 +11,88 @@ import {
   Sparkles,
   ArrowLeft,
   Sliders,
-  Type
+  Type,
+  ExternalLink
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 // Complete 66 Books of the Holy Bible with Indonesian and English designations
 export const BIBLE_BOOKS = [
   // Perjanjian Lama (39 Kitab)
-  { id: 'GEN', name: 'Kejadian', en: 'Genesis', abbr: 'Kej', testament: 'PL', category: 'Taurat', chapters: 50 },
-  { id: 'EXO', name: 'Keluaran', en: 'Exodus', abbr: 'Kel', testament: 'PL', category: 'Taurat', chapters: 40 },
-  { id: 'LEV', name: 'Imamat', en: 'Leviticus', abbr: 'Im', testament: 'PL', category: 'Taurat', chapters: 27 },
-  { id: 'NUM', name: 'Bilangan', en: 'Numbers', abbr: 'Bil', testament: 'PL', category: 'Taurat', chapters: 36 },
-  { id: 'DEU', name: 'Ulangan', en: 'Deuteronomy', abbr: 'Ul', testament: 'PL', category: 'Taurat', chapters: 34 },
-  { id: 'JOS', name: 'Yosua', en: 'Joshua', abbr: 'Yos', testament: 'PL', category: 'Sejarah', chapters: 24 },
-  { id: 'JDG', name: 'Hakim-hakim', en: 'Judges', abbr: 'Hak', testament: 'PL', category: 'Sejarah', chapters: 21 },
-  { id: 'RUT', name: 'Rut', en: 'Ruth', abbr: 'Rut', testament: 'PL', category: 'Sejarah', chapters: 4 },
-  { id: '1SA', name: '1 Samuel', en: '1 Samuel', abbr: '1Sam', testament: 'PL', category: 'Sejarah', chapters: 31 },
-  { id: '2SA', name: '2 Samuel', en: '2 Samuel', abbr: '2Sam', testament: 'PL', category: 'Sejarah', chapters: 24 },
-  { id: '1KI', name: '1 Raja-raja', en: '1 Kings', abbr: '1Raj', testament: 'PL', category: 'Sejarah', chapters: 22 },
-  { id: '2KI', name: '2 Raja-raja', en: '2 Kings', abbr: '2Raj', testament: 'PL', category: 'Sejarah', chapters: 25 },
-  { id: '1CH', name: '1 Tawarikh', en: '1 Chronicles', abbr: '1Taw', testament: 'PL', category: 'Sejarah', chapters: 29 },
-  { id: '2CH', name: '2 Tawarikh', en: '2 Chronicles', abbr: '2Taw', testament: 'PL', category: 'Sejarah', chapters: 36 },
-  { id: 'EZR', name: 'Ezra', en: 'Ezra', abbr: 'Ezr', testament: 'PL', category: 'Sejarah', chapters: 10 },
-  { id: 'NEH', name: 'Nehemia', en: 'Nehemiah', abbr: 'Neh', testament: 'PL', category: 'Sejarah', chapters: 13 },
-  { id: 'EST', name: 'Ester', en: 'Esther', abbr: 'Est', testament: 'PL', category: 'Sejarah', chapters: 10 },
-  { id: 'JOB', name: 'Ayub', en: 'Job', abbr: 'Ayb', testament: 'PL', category: 'Puisi', chapters: 42 },
-  { id: 'PSA', name: 'Mazmur', en: 'Psalms', abbr: 'Mzm', testament: 'PL', category: 'Puisi', chapters: 150 },
-  { id: 'PRO', name: 'Amsal', en: 'Proverbs', abbr: 'Ams', testament: 'PL', category: 'Puisi', chapters: 31 },
-  { id: 'ECC', name: 'Pengkhotbah', en: 'Ecclesiastes', abbr: 'Pkh', testament: 'PL', category: 'Puisi', chapters: 12 },
-  { id: 'SNG', name: 'Kidung Agung', en: 'Song of Solomon', abbr: 'Kid', testament: 'PL', category: 'Puisi', chapters: 8 },
-  { id: 'ISA', name: 'Yesaya', en: 'Isaiah', abbr: 'Yes', testament: 'PL', category: 'Nabi-nabi', chapters: 66 },
-  { id: 'JER', name: 'Yeremia', en: 'Jeremiah', abbr: 'Yer', testament: 'PL', category: 'Nabi-nabi', chapters: 52 },
-  { id: 'LAM', name: 'Ratapan', en: 'Lamentations', abbr: 'Rat', testament: 'PL', category: 'Nabi-nabi', chapters: 5 },
-  { id: 'EZK', name: 'Yehezkiel', en: 'Ezekiel', abbr: 'Yeh', testament: 'PL', category: 'Nabi-nabi', chapters: 48 },
-  { id: 'DAN', name: 'Daniel', en: 'Daniel', abbr: 'Dan', testament: 'PL', category: 'Nabi-nabi', chapters: 12 },
-  { id: 'HOS', name: 'Hosea', en: 'Hosea', abbr: 'Hos', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
-  { id: 'JOL', name: 'Yoel', en: 'Joel', abbr: 'Yol', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'AMO', name: 'Amos', en: 'Amos', abbr: 'Am', testament: 'PL', category: 'Nabi-nabi', chapters: 9 },
-  { id: 'OBA', name: 'Obaja', en: 'Obadiah', abbr: 'Ob', testament: 'PL', category: 'Nabi-nabi', chapters: 1 },
-  { id: 'JON', name: 'Yunus', en: 'Jonah', abbr: 'Yun', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
-  { id: 'MIC', name: 'Mikha', en: 'Micah', abbr: 'Mik', testament: 'PL', category: 'Nabi-nabi', chapters: 7 },
-  { id: 'NAM', name: 'Nahum', en: 'Nahum', abbr: 'Nah', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'HAB', name: 'Habakuk', en: 'Habakkuk', abbr: 'Hab', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'ZEP', name: 'Zefanya', en: 'Zephaniah', abbr: 'Zef', testament: 'PL', category: 'Nabi-nabi', chapters: 3 },
-  { id: 'HAG', name: 'Hagai', en: 'Haggai', abbr: 'Hag', testament: 'PL', category: 'Nabi-nabi', chapters: 2 },
-  { id: 'ZEC', name: 'Zakharia', en: 'Zechariah', abbr: 'Zak', testament: 'PL', category: 'Nabi-nabi', chapters: 14 },
-  { id: 'MAL', name: 'Maleakhi', en: 'Malachi', abbr: 'Mal', testament: 'PL', category: 'Nabi-nabi', chapters: 4 },
+  { id: 'GEN', name: 'Kejadian', en: 'Genesis', abbr: 'Kej', testament: 'PL', category: 'Taurat', chapters: 50, slug: 'kejadian' },
+  { id: 'EXO', name: 'Keluaran', en: 'Exodus', abbr: 'Kel', testament: 'PL', category: 'Taurat', chapters: 40, slug: 'keluaran' },
+  { id: 'LEV', name: 'Imamat', en: 'Leviticus', abbr: 'Im', testament: 'PL', category: 'Taurat', chapters: 27, slug: 'imamat' },
+  { id: 'NUM', name: 'Bilangan', en: 'Numbers', abbr: 'Bil', testament: 'PL', category: 'Taurat', chapters: 36, slug: 'bilangan' },
+  { id: 'DEU', name: 'Ulangan', en: 'Deuteronomy', abbr: 'Ul', testament: 'PL', category: 'Taurat', chapters: 34, slug: 'ulangan' },
+  { id: 'JOS', name: 'Yosua', en: 'Joshua', abbr: 'Yos', testament: 'PL', category: 'Sejarah', chapters: 24, slug: 'yosua' },
+  { id: 'JDG', name: 'Hakim-hakim', en: 'Judges', abbr: 'Hak', testament: 'PL', category: 'Sejarah', chapters: 21, slug: 'hakim_hakim' },
+  { id: 'RUT', name: 'Rut', en: 'Ruth', abbr: 'Rut', testament: 'PL', category: 'Sejarah', chapters: 4, slug: 'rut' },
+  { id: '1SA', name: '1 Samuel', en: '1 Samuel', abbr: '1Sam', testament: 'PL', category: 'Sejarah', chapters: 31, slug: '1_samuel' },
+  { id: '2SA', name: '2 Samuel', en: '2 Samuel', abbr: '2Sam', testament: 'PL', category: 'Sejarah', chapters: 24, slug: '2_samuel' },
+  { id: '1KI', name: '1 Raja-raja', en: '1 Kings', abbr: '1Raj', testament: 'PL', category: 'Sejarah', chapters: 22, slug: '1_raja_raja' },
+  { id: '2KI', name: '2 Raja-raja', en: '2 Kings', abbr: '2Raj', testament: 'PL', category: 'Sejarah', chapters: 25, slug: '2_raja_raja' },
+  { id: '1CH', name: '1 Tawarikh', en: '1 Chronicles', abbr: '1Taw', testament: 'PL', category: 'Sejarah', chapters: 29, slug: '1_tawarikh' },
+  { id: '2CH', name: '2 Tawarikh', en: '2 Chronicles', abbr: '2Taw', testament: 'PL', category: 'Sejarah', chapters: 36, slug: '2_tawarikh' },
+  { id: 'EZR', name: 'Ezra', en: 'Ezra', abbr: 'Ezr', testament: 'PL', category: 'Sejarah', chapters: 10, slug: 'ezra' },
+  { id: 'NEH', name: 'Nehemia', en: 'Nehemiah', abbr: 'Neh', testament: 'PL', category: 'Sejarah', chapters: 13, slug: 'nehemia' },
+  { id: 'EST', name: 'Ester', en: 'Esther', abbr: 'Est', testament: 'PL', category: 'Sejarah', chapters: 10, slug: 'ester' },
+  { id: 'JOB', name: 'Ayub', en: 'Job', abbr: 'Ayb', testament: 'PL', category: 'Puisi', chapters: 42, slug: 'ayub' },
+  { id: 'PSA', name: 'Mazmur', en: 'Psalms', abbr: 'Mzm', testament: 'PL', category: 'Puisi', chapters: 150, slug: 'mazmur' },
+  { id: 'PRO', name: 'Amsal', en: 'Proverbs', abbr: 'Ams', testament: 'PL', category: 'Puisi', chapters: 31, slug: 'amsal' },
+  { id: 'ECC', name: 'Pengkhotbah', en: 'Ecclesiastes', abbr: 'Pkh', testament: 'PL', category: 'Puisi', chapters: 12, slug: 'pengkotbah' },
+  { id: 'SNG', name: 'Kidung Agung', en: 'Song of Solomon', abbr: 'Kid', testament: 'PL', category: 'Puisi', chapters: 8, slug: 'kidung_agung' },
+  { id: 'ISA', name: 'Yesaya', en: 'Isaiah', abbr: 'Yes', testament: 'PL', category: 'Nabi-nabi', chapters: 66, slug: 'yesaya' },
+  { id: 'JER', name: 'Yeremia', en: 'Jeremiah', abbr: 'Yer', testament: 'PL', category: 'Nabi-nabi', chapters: 52, slug: 'yeremia' },
+  { id: 'LAM', name: 'Ratapan', en: 'Lamentations', abbr: 'Rat', testament: 'PL', category: 'Nabi-nabi', chapters: 5, slug: 'ratapan' },
+  { id: 'EZK', name: 'Yehezkiel', en: 'Ezekiel', abbr: 'Yeh', testament: 'PL', category: 'Nabi-nabi', chapters: 48, slug: 'yehezkiel' },
+  { id: 'DAN', name: 'Daniel', en: 'Daniel', abbr: 'Dan', testament: 'PL', category: 'Nabi-nabi', chapters: 12, slug: 'daniel' },
+  { id: 'HOS', name: 'Hosea', en: 'Hosea', abbr: 'Hos', testament: 'PL', category: 'Nabi-nabi', chapters: 14, slug: 'hosea' },
+  { id: 'JOL', name: 'Yoel', en: 'Joel', abbr: 'Yol', testament: 'PL', category: 'Nabi-nabi', chapters: 3, slug: 'yoel' },
+  { id: 'AMO', name: 'Amos', en: 'Amos', abbr: 'Am', testament: 'PL', category: 'Nabi-nabi', chapters: 9, slug: 'amos' },
+  { id: 'OBA', name: 'Obaja', en: 'Obadiah', abbr: 'Ob', testament: 'PL', category: 'Nabi-nabi', chapters: 1, slug: 'obaja' },
+  { id: 'JON', name: 'Yunus', en: 'Jonah', abbr: 'Yun', testament: 'PL', category: 'Nabi-nabi', chapters: 4, slug: 'yunus' },
+  { id: 'MIC', name: 'Mikha', en: 'Micah', abbr: 'Mik', testament: 'PL', category: 'Nabi-nabi', chapters: 7, slug: 'mikha' },
+  { id: 'NAM', name: 'Nahum', en: 'Nahum', abbr: 'Nah', testament: 'PL', category: 'Nabi-nabi', chapters: 3, slug: 'nahum' },
+  { id: 'HAB', name: 'Habakuk', en: 'Habakkuk', abbr: 'Hab', testament: 'PL', category: 'Nabi-nabi', chapters: 3, slug: 'habakuk' },
+  { id: 'ZEP', name: 'Zefanya', en: 'Zephaniah', abbr: 'Zef', testament: 'PL', category: 'Nabi-nabi', chapters: 3, slug: 'zefanya' },
+  { id: 'HAG', name: 'Hagai', en: 'Haggai', abbr: 'Hag', testament: 'PL', category: 'Nabi-nabi', chapters: 2, slug: 'hagai' },
+  { id: 'ZEC', name: 'Zakharia', en: 'Zechariah', abbr: 'Zak', testament: 'PL', category: 'Nabi-nabi', chapters: 14, slug: 'zakaria' },
+  { id: 'MAL', name: 'Maleakhi', en: 'Malachi', abbr: 'Mal', testament: 'PL', category: 'Nabi-nabi', chapters: 4, slug: 'maleakhi' },
 
   // Perjanjian Baru (27 Kitab)
-  { id: 'MAT', name: 'Matius', en: 'Matthew', abbr: 'Mat', testament: 'PB', category: 'Injil', chapters: 28 },
-  { id: 'MRK', name: 'Markus', en: 'Mark', abbr: 'Mrk', testament: 'PB', category: 'Injil', chapters: 16 },
-  { id: 'LUK', name: 'Lukas', en: 'Luke', abbr: 'Luk', testament: 'PB', category: 'Injil', chapters: 24 },
-  { id: 'JHN', name: 'Yohanes', en: 'John', abbr: 'Yoh', testament: 'PB', category: 'Injil', chapters: 21 },
-  { id: 'ACT', name: 'Kisah Para Rasul', en: 'Acts', abbr: 'Kis', testament: 'PB', category: 'Sejarah', chapters: 28 },
-  { id: 'ROM', name: 'Roma', en: 'Romans', abbr: 'Rom', testament: 'PB', category: 'Surat', chapters: 16 },
-  { id: '1CO', name: '1 Korintus', en: '1 Corinthians', abbr: '1Kor', testament: 'PB', category: 'Surat', chapters: 16 },
-  { id: '2CO', name: '2 Korintus', en: '2 Corinthians', abbr: '2Kor', testament: 'PB', category: 'Surat', chapters: 13 },
-  { id: 'GAL', name: 'Galatia', en: 'Galatians', abbr: 'Gal', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: 'EPH', name: 'Efesus', en: 'Ephesians', abbr: 'Efe', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: 'PHP', name: 'Filipi', en: 'Philippians', abbr: 'Flp', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: 'COL', name: 'Kolose', en: 'Colossians', abbr: 'Kol', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: '1TH', name: '1 Tesalonika', en: '1 Thessalonians', abbr: '1Tes', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2TH', name: '2 Tesalonika', en: '2 Thessalonians', abbr: '2Tes', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: '1TI', name: '1 Timotius', en: '1 Timothy', abbr: '1Tim', testament: 'PB', category: 'Surat', chapters: 6 },
-  { id: '2TI', name: '2 Timotius', en: '2 Timothy', abbr: '2Tim', testament: 'PB', category: 'Surat', chapters: 4 },
-  { id: 'TIT', name: 'Titus', en: 'Titus', abbr: 'Tit', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: 'PHM', name: 'Filemon', en: 'Philemon', abbr: 'Flm', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'HEB', name: 'Ibrani', en: 'Hebrews', abbr: 'Ibr', testament: 'PB', category: 'Surat', chapters: 13 },
-  { id: 'JAS', name: 'Yakobus', en: 'James', abbr: 'Yak', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '1PE', name: '1 Petrus', en: '1 Peter', abbr: '1Pet', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2PE', name: '2 Petrus', en: '2 Peter', abbr: '2Pet', testament: 'PB', category: 'Surat', chapters: 3 },
-  { id: '1JN', name: '1 Yohanes', en: '1 John', abbr: '1Yoh', testament: 'PB', category: 'Surat', chapters: 5 },
-  { id: '2JN', name: '2 Yohanes', en: '2 John', abbr: '2Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: '3JN', name: '3 Yohanes', en: '3 John', abbr: '3Yoh', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'JUD', name: 'Yudas', en: 'Jude', abbr: 'Yud', testament: 'PB', category: 'Surat', chapters: 1 },
-  { id: 'REV', name: 'Wahyu', en: 'Revelation', abbr: 'Why', testament: 'PB', category: 'Nubuat', chapters: 22 }
+  { id: 'MAT', name: 'Matius', en: 'Matthew', abbr: 'Mat', testament: 'PB', category: 'Injil', chapters: 28, slug: 'matius' },
+  { id: 'MRK', name: 'Markus', en: 'Mark', abbr: 'Mrk', testament: 'PB', category: 'Injil', chapters: 16, slug: 'markus' },
+  { id: 'LUK', name: 'Lukas', en: 'Luke', abbr: 'Luk', testament: 'PB', category: 'Injil', chapters: 24, slug: 'lukas' },
+  { id: 'JHN', name: 'Yohanes', en: 'John', abbr: 'Yoh', testament: 'PB', category: 'Injil', chapters: 21, slug: 'yohanes' },
+  { id: 'ACT', name: 'Kisah Para Rasul', en: 'Acts', abbr: 'Kis', testament: 'PB', category: 'Sejarah', chapters: 28, slug: 'kisah_para_rasul' },
+  { id: 'ROM', name: 'Roma', en: 'Romans', abbr: 'Rom', testament: 'PB', category: 'Surat', chapters: 16, slug: 'roma' },
+  { id: '1CO', name: '1 Korintus', en: '1 Corinthians', abbr: '1Kor', testament: 'PB', category: 'Surat', chapters: 16, slug: '1_korintus' },
+  { id: '2CO', name: '2 Korintus', en: '2 Corinthians', abbr: '2Kor', testament: 'PB', category: 'Surat', chapters: 13, slug: '2_korintus' },
+  { id: 'GAL', name: 'Galatia', en: 'Galatians', abbr: 'Gal', testament: 'PB', category: 'Surat', chapters: 6, slug: 'galatia' },
+  { id: 'EPH', name: 'Efesus', en: 'Ephesians', abbr: 'Efe', testament: 'PB', category: 'Surat', chapters: 6, slug: 'efesus' },
+  { id: 'PHP', name: 'Filipi', en: 'Philippians', abbr: 'Flp', testament: 'PB', category: 'Surat', chapters: 4, slug: 'filipi' },
+  { id: 'COL', name: 'Kolose', en: 'Colossians', abbr: 'Kol', testament: 'PB', category: 'Surat', chapters: 4, slug: 'kolose' },
+  { id: '1TH', name: '1 Tesalonika', en: '1 Thessalonians', abbr: '1Tes', testament: 'PB', category: 'Surat', chapters: 5, slug: '1_tesalonika' },
+  { id: '2TH', name: '2 Tesalonika', en: '2 Thessalonians', abbr: '2Tes', testament: 'PB', category: 'Surat', chapters: 3, slug: '2_tesalonika' },
+  { id: '1TI', name: '1 Timotius', en: '1 Timothy', abbr: '1Tim', testament: 'PB', category: 'Surat', chapters: 6, slug: '1_timotius' },
+  { id: '2TI', name: '2 Timotius', en: '2 Timothy', abbr: '2Tim', testament: 'PB', category: 'Surat', chapters: 4, slug: '2_timotius' },
+  { id: 'TIT', name: 'Titus', en: 'Titus', abbr: 'Tit', testament: 'PB', category: 'Surat', chapters: 3, slug: 'titus' },
+  { id: 'PHM', name: 'Filemon', en: 'Philemon', abbr: 'Flm', testament: 'PB', category: 'Surat', chapters: 1, slug: 'filemon' },
+  { id: 'HEB', name: 'Ibrani', en: 'Hebrews', abbr: 'Ibr', testament: 'PB', category: 'Surat', chapters: 13, slug: 'ibrani' },
+  { id: 'JAS', name: 'Yakobus', en: 'James', abbr: 'Yak', testament: 'PB', category: 'Surat', chapters: 5, slug: 'yakobus' },
+  { id: '1PE', name: '1 Petrus', en: '1 Peter', abbr: '1Pet', testament: 'PB', category: 'Surat', chapters: 5, slug: '1_petrus' },
+  { id: '2PE', name: '2 Petrus', en: '2 Peter', abbr: '2Pet', testament: 'PB', category: 'Surat', chapters: 3, slug: '2_petrus' },
+  { id: '1JN', name: '1 Yohanes', en: '1 John', abbr: '1Yoh', testament: 'PB', category: 'Surat', chapters: 5, slug: '1_yohanes' },
+  { id: '2JN', name: '2 Yohanes', en: '2 John', abbr: '2Yoh', testament: 'PB', category: 'Surat', chapters: 1, slug: '2_yohanes' },
+  { id: '3JN', name: '3 Yohanes', en: '3 John', abbr: '3Yoh', testament: 'PB', category: 'Surat', chapters: 1, slug: '3_yohanes' },
+  { id: 'JUD', name: 'Yudas', en: 'Jude', abbr: 'Yud', testament: 'PB', category: 'Surat', chapters: 1, slug: 'yudas' },
+  { id: 'REV', name: 'Wahyu', en: 'Revelation', abbr: 'Why', testament: 'PB', category: 'Nubuat', chapters: 22, slug: 'wahyu' }
 ];
 
 export const BIBLE_VERSIONS = [
-  { id: 'TB', name: 'TB (Terjemahan Baru)', short: 'TB', source: 'LAI 1974' },
-  { id: 'TB2', name: 'TB2 (Edisi 2)', short: 'TB2', source: 'LAI 2023' },
-  { id: 'BIMK', name: 'BIMK (Masa Kini)', short: 'BIMK', source: 'Kabar Baik' },
+  { id: 'TB', name: 'TB (Terjemahan Baru)', short: 'TB', source: 'LAI' },
+  { id: 'TB2', name: 'TB2 (Edisi 2)', short: 'TB2', source: 'LAI' },
+  { id: 'BIMK', name: 'BIMK (Masa Kini)', short: 'BIMK', source: 'LAI' },
   { id: 'KJV', name: 'KJV (King James)', short: 'KJV', source: 'English' },
   { id: 'WEB', name: 'WEB (World English)', short: 'WEB', source: 'English' }
 ];
@@ -109,14 +110,29 @@ export default function BibleSection({
   const [copiedVerse, setCopiedVerse] = useState(null);
   const [fontSize, setFontSize] = useState(16); // px
 
+  // In-memory cache for downloaded book chapters: { [bookId]: { "1": [...], "2": [...] } }
+  const [bookChapterCache, setBookChapterCache] = useState({});
   // API verses fetch state
   const [apiVerses, setApiVerses] = useState({});
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
 
-  // Fetch real verses on book/chapter/version change
+  // Fetch verses with multi-tier official LAI & CDN fallback
   React.useEffect(() => {
     const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
     if (apiVerses[cacheKey]) return;
+
+    // Check in-memory full book chapter cache for Indonesian versions
+    if (selectedVersion === 'TB' || selectedVersion === 'TB2' || selectedVersion === 'BIMK') {
+      const cachedChapters = bookChapterCache[selectedBook.id];
+      if (cachedChapters && cachedChapters[String(selectedChapter)]) {
+        const cleaned = cachedChapters[String(selectedChapter)].map(v => ({
+          verse: v.verse,
+          text: (v.text || '').trim()
+        }));
+        setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+        return;
+      }
+    }
 
     let isMounted = true;
     setIsLoadingVerses(true);
@@ -145,33 +161,79 @@ export default function BibleSection({
           if (isMounted) setIsLoadingVerses(false);
         });
     } else {
-      fetch(`https://beeble.vercel.app/api/v1/passage/${encodeURIComponent(selectedBook.name)}/${selectedChapter}`)
-        .then(res => {
-          if (!res.ok) throw new Error('Network error');
-          return res.json();
-        })
-        .then(json => {
-          if (!isMounted) return;
-          if (json?.data?.verses && Array.isArray(json.data.verses)) {
-            const cleaned = json.data.verses
-              .filter(v => v.type === 'content' && v.verse > 0)
-              .map(v => ({
+      // Indonesian versions (TB - Lembaga Alkitab Indonesia)
+      const slug = selectedBook.slug || selectedBook.name.toLowerCase().replace(/[\s-]+/g, '_');
+      const dir = (selectedBook.testament || 'PL').toLowerCase();
+      const laiApiKey = import.meta.env.VITE_LAI_BIBLE_API_KEY;
+
+      const loadFromCdn = () => {
+        const cdnUrl = `https://cdn.jsdelivr.net/gh/tobiasagyasta/alkitab-api@master/lib/${dir}/${slug}.json`;
+        const rawUrl = `https://raw.githubusercontent.com/tobiasagyasta/alkitab-api/master/lib/${dir}/${slug}.json`;
+
+        fetch(cdnUrl)
+          .catch(() => fetch(rawUrl))
+          .then(res => {
+            if (!res.ok) throw new Error('CDN error');
+            return res.json();
+          })
+          .then(json => {
+            if (!isMounted) return;
+            if (json?.chapters) {
+              setBookChapterCache(prev => ({ ...prev, [selectedBook.id]: json.chapters }));
+              const chVerses = json.chapters[String(selectedChapter)] || [];
+              const cleaned = chVerses.map(v => ({
                 verse: v.verse,
-                text: v.content
+                text: (v.text || '').trim()
               }));
-            if (cleaned.length > 0) {
-              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+              if (cleaned.length > 0) {
+                setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+              }
             }
+          })
+          .catch(err => {
+            console.error('Alkitab fetch error:', err);
+          })
+          .finally(() => {
+            if (isMounted) setIsLoadingVerses(false);
+          });
+      };
+
+      if (laiApiKey) {
+        // Official LAI API endpoint
+        fetch(`https://bible-api.alkitab.or.id/bible-api/api/v1/bible/tb/${slug}/${selectedChapter}`, {
+          headers: {
+            'Authorization': `Bearer ${laiApiKey}`,
+            'Accept': 'application/json'
           }
         })
-        .catch(() => {})
-        .finally(() => {
-          if (isMounted) setIsLoadingVerses(false);
-        });
+          .then(res => {
+            if (!res.ok) throw new Error('LAI status ' + res.status);
+            return res.json();
+          })
+          .then(json => {
+            if (!isMounted) return;
+            const versesList = json?.data?.verses || json?.verses || [];
+            if (Array.isArray(versesList) && versesList.length > 0) {
+              const cleaned = versesList.map(v => ({
+                verse: v.verse || v.number,
+                text: (v.text || v.content || '').trim()
+              }));
+              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
+              setIsLoadingVerses(false);
+            } else {
+              loadFromCdn();
+            }
+          })
+          .catch(() => {
+            loadFromCdn();
+          });
+      } else {
+        loadFromCdn();
+      }
     }
 
     return () => { isMounted = false; };
-  }, [selectedBook, selectedChapter, selectedVersion]);
+  }, [selectedBook, selectedChapter, selectedVersion, bookChapterCache]);
 
   const filteredBooks = useMemo(() => {
     return BIBLE_BOOKS.filter(b => {
@@ -240,7 +302,7 @@ export default function BibleSection({
             marginBottom: '16px'
           }}>
             <BookmarkCheck size={14} />
-            <span>Alkitab Terjemahan Baru (TB)</span>
+            <span>Alkitab Terjemahan Baru (TB) — LAI</span>
           </div>
 
           <h1 style={{
@@ -257,9 +319,33 @@ export default function BibleSection({
             }}>DIGITAL</span>
           </h1>
 
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6 }}>
-            Eksplorasi firman Tuhan 66 Kitab Perjanjian Lama & Perjanjian Baru. Dilengkapi fitur salin ayat, bagikan ke WhatsApp, dan integrasi langsung ke Layar Multimedia EasyWorship Bapekkris.
+          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', lineHeight: 1.6, marginBottom: '12px' }}>
+            Akses 66 Kitab Perjanjian Lama dan Perjanjian Baru lengkap dalam teks resmi Terjemahan Baru Lembaga Alkitab Indonesia (LAI), terintegrasi dengan EasyWorship dan penayangan ibadah.
           </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <a
+              href="https://bible-api.alkitab.or.id"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'var(--mandiri-gold)',
+                fontSize: '0.78rem',
+                textDecoration: 'none',
+                fontWeight: 700,
+                background: 'rgba(255, 184, 0, 0.1)',
+                border: '1px solid rgba(255, 184, 0, 0.3)',
+                padding: '5px 14px',
+                borderRadius: 'var(--radius-full)'
+              }}
+            >
+              <span>Sumber Resmi: Lembaga Alkitab Indonesia (LAI)</span>
+              <ExternalLink size={12} />
+            </a>
+          </div>
         </div>
 
         {/* 3-Column Navigation: Books list -> Chapters -> Verses Content */}
