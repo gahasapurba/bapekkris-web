@@ -60,15 +60,8 @@
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 14. faqs (Tanya Jawab & Panduan)
-INSERT INTO public.faqs (id, question, answer, category, asked_by, is_published, sort_order)
-VALUES 
-  ('faq-1', 'Apa itu Bapekkris (Badan Pembinaan Kerohanian Kristen) Bank Mandiri?', 'Bapekkris (Badan Pembinaan Kerohanian Kristen) PT Bank Mandiri (Persero) Tbk adalah wadah pembinaan kerohanian Kristen dan Katolik bagi seluruh insan Mandirian. Bapekkris hadir untuk membangun persekutuan yang berakar kuat, mempererat tali kasih persaudaraan, dan membina integritas spiritual dalam bekerja serta melayani bagi kemuliaan Tuhan.', 'Tentang Bapekkris', 'Admin Bapekkris', true, 0),
-  ('faq-2', 'Siapa saja yang boleh mengikuti persekutuan doa dan ibadah Bapekkris?', 'Seluruh pegawai Bank Mandiri (organik maupun non-organik), pensiunan, tenaga alih daya, magang, serta keluarga besar Mandirian Kristen dan Katolik di seluruh unit kerja, kantor cabang, maupun anak perusahaan terbuka penuh untuk mengikuti seluruh rangkaian ibadah dan kegiatan Bapekkris.', 'Ibadah & Persekutuan', 'Admin Bapekkris', true, 1),
-  ('faq-3', 'Kapan dan di mana jadwal ibadah rutin Bapekkris dilaksanakan?', 'Ibadah rutin persekutuan doa diadakan secara hybrid setiap hari Jumat pukul 12.00 - 13.00 WIB (on-site di Chapel/Auditorium Plaza Mandiri dan disiarkan secara langsung via Zoom/MS Teams). Tautan streaming dan pengingat jadwal selalu diperbarui di portal ini.', 'Jadwal & Lokasi', 'Admin Bapekkris', true, 2),
-  ('faq-4', 'Bagaimana cara menyampaikan permohonan pokok doa syafaat atau konseling?', 'Anda dapat menyampaikan permohonan doa syafaat melalui fitur Kotak Doa & Aspirasi di website ini atau menghubungi langsung Tim Pelayanan Doa Bapekkris. Setiap pokok doa akan dijaga kerahasiaannya dan didoakan bersama oleh tim pendoa syafaat.', 'Pelayanan Doa', 'Admin Bapekkris', true, 3),
-  ('faq-5', 'Bagaimana cara mendaftar kegiatan besar seperti Retret, Paskah, atau Natal Bapekkris?', 'Setiap agenda besar akan diumumkan pada menu Program Kerja & Ibadah serta Hub Registrasi. Anda cukup memilih event yang sedang dibuka, mengisi formulir online, dan menyimpan kartu konfirmasi QR Code untuk kehadiran di lokasi acara.', 'Event & Pendaftaran', 'Admin Bapekkris', true, 4),
-  ('faq-6', 'Bagaimana cara bergabung dalam tim pelayanan Bapekkris (Pemusik, Singers, Multimedia, Diakonia)?', 'Bapekkris senantiasa membuka pintu bagi Mandirian yang rindu melayani, baik di bidang musik & pujian (worship team), multimedia, dokumentasi, usher, maupun bakti sosial diakonia. Silakan hubungi pengurus melalui kontak yang tersedia di halaman Organisasi atau mendaftar pada pembukaan pendaftaran pelayanan.', 'Pelayanan & Pengurus', 'Admin Bapekkris', true, 5)
-ON CONFLICT (id) DO NOTHING;
+-- INSERT INTO public.faqs (id, question, answer, category, asked_by, is_published, sort_order)
+-- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 15. brand_assets (Katalog Logo & Liturgi Resmi)
 -- INSERT INTO public.brand_assets (id, title, category, description, file_url, preview_url, file_type, file_size, badge, sort_order)
