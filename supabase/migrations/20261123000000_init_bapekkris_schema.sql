@@ -6,6 +6,7 @@
 -- dan Storage Bucket (bapekkris-media).
 --
 -- MURNI STRUKTUR TABEL & RELASI TANPA DATA MOCK / SEED APAPUN (ZERO MOCK DATA).
+-- Jalankan file ini langsung pada SQL Editor project Supabase baru Anda.
 -- ==============================================================================
 
 -- 1. Tabel Master Periode Kepengurusan (tenures)
@@ -38,18 +39,7 @@ CREATE TABLE IF NOT EXISTS public.tenure_roles (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 3. Tabel Master Unit Kerja / Departemen / Wilayah (departments)
-CREATE TABLE IF NOT EXISTS public.departments (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    code TEXT,
-    description TEXT,
-    sort_order INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- 4. Tabel Divisi / Komisi Pelayanan (divisions)
+-- 3. Tabel Divisi / Komisi Pelayanan (divisions)
 CREATE TABLE IF NOT EXISTS public.divisions (
     id TEXT PRIMARY KEY,
     tenure_id TEXT REFERENCES public.tenures(id) ON DELETE SET NULL,
@@ -132,21 +122,6 @@ CREATE TABLE IF NOT EXISTS public.galleries (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 9. Tabel Kotak Doa & Aspirasi Jemaat (aspirasi)
-CREATE TABLE IF NOT EXISTS public.aspirasi (
-    id TEXT PRIMARY KEY,
-    sender TEXT DEFAULT 'Anonim',
-    title TEXT DEFAULT '',
-    category TEXT DEFAULT 'Pokok Doa',
-    description TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL DEFAULT 'Menunggu Review',
-    admin_reply TEXT DEFAULT '',
-    is_public BOOLEAN DEFAULT true,
-    sort_order INT DEFAULT 0,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-
 -- 10. Tabel Formulir Pendaftaran Dinamis Kegiatan (forms)
 CREATE TABLE IF NOT EXISTS public.forms (
     id TEXT PRIMARY KEY,
@@ -196,11 +171,10 @@ CREATE TABLE IF NOT EXISTS public.lucky_draws (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- 13. Tabel Daftar Hadir & RSVP Ibadah (event_rsvps)
+-- 12. Tabel Daftar Hadir & RSVP Ibadah (event_rsvps)
 CREATE TABLE IF NOT EXISTS public.event_rsvps (
     id TEXT PRIMARY KEY,
     event_id TEXT NOT NULL REFERENCES public.events(id) ON DELETE CASCADE,
-    department_id TEXT REFERENCES public.departments(id) ON DELETE SET NULL,
     attendee_name TEXT NOT NULL,
     attendance_mode TEXT NOT NULL DEFAULT 'Hadir Onsite',
     notes TEXT DEFAULT '',
@@ -318,15 +292,16 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authentic
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO anon, authenticated;
 
+DROP TABLE IF EXISTS public.departments CASCADE;
+DROP TABLE IF EXISTS public.aspirasi CASCADE;
+
 ALTER TABLE public.tenures ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tenure_roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.divisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sub_divisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.galleries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.aspirasi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.forms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lucky_draws ENABLE ROW LEVEL SECURITY;
@@ -345,8 +320,8 @@ BEGIN
     FOR tbl IN 
         SELECT tablename FROM pg_tables WHERE schemaname = 'public' 
         AND tablename IN (
-            'tenures', 'tenure_roles', 'departments', 'divisions', 'sub_divisions',
-            'members', 'events', 'galleries', 'aspirasi', 'forms', 'submissions', 
+            'tenures', 'tenure_roles', 'divisions', 'sub_divisions',
+            'members', 'events', 'galleries', 'forms', 'submissions', 
             'lucky_draws', 'event_rsvps', 'faqs', 'brand_assets', 'page_settings',
             'daily_devotions', 'worship_songs', 'easy_worship_schedules'
         )
