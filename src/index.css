@@ -285,7 +285,7 @@ select option {
 
 .mobile-burger-btn,
 .mobile-hamburger {
-  display: none !important;
+  display: none;
 }
 
 .navbar-brand-logo {
@@ -479,11 +479,16 @@ select option {
     width: 36px !important;
     height: 36px !important;
     flex-shrink: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .navbar-right-actions {
-    margin-left: 6px !important;
+    margin-left: auto !important;
     gap: 6px !important;
+    flex-shrink: 0 !important;
   }
 
   .navbar-search-btn {
@@ -519,6 +524,15 @@ select option {
     padding: 5px 20px 5px 8px !important;
     font-size: 0.72rem !important;
     max-width: 80px !important;
+  }
+
+  /* Admin Tabs Responsive Toggle */
+  .admin-desktop-tabs {
+    display: none !important;
+  }
+
+  .admin-mobile-tabs-bar {
+    display: flex !important;
   }
 
   .container {

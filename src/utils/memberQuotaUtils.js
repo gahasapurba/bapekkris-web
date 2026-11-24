@@ -72,6 +72,7 @@ export function getTenureRoles(tenureId, roleQuotas = {}, tenureRoles = []) {
       max: Number(r.max ?? r.maxQuota ?? 0),
       maxQuota: Number(r.maxQuota ?? r.max ?? 0),
       requiresDivision: Boolean(r.requiresDivision),
+      requiresSubDivision: Boolean(r.requiresDivision && (r.requiresSubDivision ?? r.requires_sub_division)),
       sortOrder: Number(r.sortOrder ?? idx),
       createdAt: r.createdAt || '',
       updatedAt: r.updatedAt || r.createdAt || null
@@ -89,6 +90,7 @@ export function getTenureRoles(tenureId, roleQuotas = {}, tenureRoles = []) {
       max: Number(r.max ?? r.maxQuota ?? 0),
       maxQuota: Number(r.maxQuota ?? r.max ?? 0),
       requiresDivision: Boolean(r.requiresDivision),
+      requiresSubDivision: Boolean(r.requiresDivision && (r.requiresSubDivision ?? r.requires_sub_division)),
       sortOrder: Number(r.sortOrder ?? idx),
       createdAt: r.createdAt || '',
       updatedAt: r.updatedAt || r.createdAt || null
@@ -109,6 +111,7 @@ export function getTenureRoles(tenureId, roleQuotas = {}, tenureRoles = []) {
       max: Number(r.max ?? r.maxQuota ?? 0),
       maxQuota: Number(r.maxQuota ?? r.max ?? 0),
       requiresDivision: Boolean(r.requiresDivision),
+      requiresSubDivision: Boolean(r.requiresDivision && (r.requiresSubDivision ?? r.requires_sub_division)),
       sortOrder: Number(r.sortOrder ?? idx),
       createdAt: r.createdAt || '',
       updatedAt: r.updatedAt || r.createdAt || null

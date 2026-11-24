@@ -372,6 +372,8 @@ export default function AdminPortal({
   const [newSubDivName, setNewSubDivName] = useState('');
   const [newSubDivCode, setNewSubDivCode] = useState('');
   const [newSubDivDivisionId, setNewSubDivDivisionId] = useState('');
+  const [subDivError, setSubDivError] = useState({ divId: null, message: '' });
+  const [isAdminMobileMenuOpen, setIsAdminMobileMenuOpen] = useState(false);
   const [newRoleRequiresSubDivision, setNewRoleRequiresSubDivision] = useState(false);
 
   // Devotions State
@@ -1671,9 +1673,12 @@ export default function AdminPortal({
         <div className="glass-panel" style={{ padding: '36px 32px' }}>
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <img 
-              src="/assets/mandiri-club-bapekkris-original.png" 
+              src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
               alt="Bapekkris Bank Mandiri" 
               style={{ height: '48px', width: 'auto', objectFit: 'contain', margin: '0 auto 14px auto', display: 'block' }} 
+              onError={(e) => {
+                e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
+              }}
             />
             <div style={{
               width: '46px',
@@ -2247,14 +2252,9 @@ export default function AdminPortal({
         );
       })()}
 
-      {/* Tabs */}
-      <div className="glass-panel" style={{
-        padding: '8px',
-        display: 'flex',
-        gap: '6px',
-        flexWrap: 'wrap'
-      }}>
-        {[
+      {/* Tabs Desktop & Mobile */}
+      {(() => {
+        const adminTabList = [
           { id: 'members', label: `Pengurus & Pelayan (${members.length})`, icon: Users },
           { id: 'roles', label: `Role & Jabatan (${tenureRoles.length})`, icon: Shield },
           { id: 'divisions', label: `Kelola Divisi (${divisions.length})`, icon: Layers },
@@ -2269,33 +2269,146 @@ export default function AdminPortal({
           { id: 'faqs', label: `Panduan & FAQ (${faqs.length})`, icon: MessageSquare },
           { id: 'tenure', label: `Periode Kepengurusan (${tenures.length})`, icon: Calendar },
           { id: 'visibility', label: 'Visibilitas Menu Website', icon: Eye },
-        ].map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 16px',
-                borderRadius: 'var(--radius-md)',
-                background: isActive ? 'var(--mandiri-gold)' : 'transparent',
-                color: isActive ? '#040914' : 'var(--text-muted)',
-                border: 'none',
-                fontWeight: 700,
-                fontSize: '0.86rem',
-                cursor: 'pointer'
-              }}
-            >
-              <Icon size={16} />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+        ];
+        const activeTabObj = adminTabList.find(t => t.id === activeTab) || adminTabList[0];
+        const ActiveTabIcon = activeTabObj.icon;
+
+        return (
+          <>
+            {/* Mobile Admin Navigation Header & Hamburger Bar */}
+            <div className="admin-mobile-tabs-bar glass-panel" style={{
+              padding: '10px 14px',
+              display: 'none',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '10px',
+              borderRadius: 'var(--radius-md)',
+              position: 'relative'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
+                  Tab Admin:
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, fontSize: '0.88rem', color: 'var(--mandiri-gold)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <ActiveTabIcon size={16} />
+                  <span>{activeTabObj.label}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAdminMobileMenuOpen(!isAdminMobileMenuOpen)}
+                className="admin-mobile-burger-btn"
+                aria-label="Pilih Menu Admin"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '7px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: isAdminMobileMenuOpen ? 'var(--mandiri-gold)' : 'rgba(255, 184, 0, 0.15)',
+                  border: '1px solid var(--mandiri-gold)',
+                  color: isAdminMobileMenuOpen ? '#040914' : 'var(--mandiri-gold)',
+                  fontSize: '0.78rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  flexShrink: 0
+                }}
+              >
+                {isAdminMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
+                <span>Menu Admin</span>
+              </button>
+
+              {/* Mobile Admin Navigation Dropdown */}
+              {isAdminMobileMenuOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: 9999,
+                  background: 'var(--bg-page)',
+                  border: '1px solid var(--border-card)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+                  padding: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  maxHeight: '70vh',
+                  overflowY: 'auto'
+                }}>
+                  {adminTabList.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setIsAdminMobileMenuOpen(false);
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 14px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: isActive ? 'var(--mandiri-gold)' : 'transparent',
+                          color: isActive ? '#040914' : 'var(--text-main)',
+                          border: 'none',
+                          fontWeight: isActive ? 800 : 600,
+                          fontSize: '0.86rem',
+                          textAlign: 'left',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Icon size={16} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Tabs */}
+            <div className="admin-desktop-tabs glass-panel" style={{
+              padding: '8px',
+              display: 'flex',
+              gap: '6px',
+              flexWrap: 'wrap'
+            }}>
+              {adminTabList.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '9px 16px',
+                      borderRadius: 'var(--radius-md)',
+                      background: isActive ? 'var(--mandiri-gold)' : 'transparent',
+                      color: isActive ? '#040914' : 'var(--text-muted)',
+                      border: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Icon size={16} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        );
+      })()}
 
       {/* TAB CONTENT: VISIBILITAS HALAMAN & NAVBAR (VIEW / HIDE) */}
       {activeTab === 'visibility' && (() => {
@@ -6845,7 +6958,7 @@ export default function AdminPortal({
                       {isExpanded && (
                         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-card)' }}>
                           {/* Form Tambah Sub-Divisi */}
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-end', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
                             <div style={{ flex: '2', minWidth: '160px' }}>
                               <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Nama Sub-Divisi *</label>
                               <input
@@ -6855,9 +6968,23 @@ export default function AdminPortal({
                                 onChange={(e) => {
                                   setNewSubDivDivisionId(d.id);
                                   setNewSubDivName(e.target.value);
+                                  if (subDivError.divId === d.id) setSubDivError({ divId: null, message: '' });
                                 }}
-                                style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                                style={{
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  background: 'var(--input-bg)',
+                                  border: `1px solid ${subDivError.divId === d.id && subDivError.message ? '#f43f5e' : 'var(--border-card)'}`,
+                                  color: 'var(--text-main)',
+                                  fontSize: '0.8rem'
+                                }}
                               />
+                              {subDivError.divId === d.id && subDivError.message && (
+                                <span style={{ color: '#f43f5e', fontSize: '0.72rem', display: 'block', marginTop: '3px', fontWeight: 600 }}>
+                                  {subDivError.message}
+                                </span>
+                              )}
                             </div>
                             <div style={{ flex: '1', minWidth: '100px' }}>
                               <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Kode Singkat</label>
@@ -6875,25 +7002,38 @@ export default function AdminPortal({
                             <button
                               type="button"
                               onClick={() => {
-                                if (newSubDivDivisionId !== d.id || !newSubDivName.trim()) {
+                                const cleanName = (newSubDivDivisionId === d.id ? newSubDivName : '').trim();
+                                const cleanCode = (newSubDivDivisionId === d.id ? newSubDivCode : '').trim().toUpperCase();
+
+                                if (!cleanName) {
+                                  setSubDivError({ divId: d.id, message: 'Nama sub-divisi wajib diisi.' });
                                   showToast('Nama Sub-Divisi wajib diisi', 'error');
                                   return;
                                 }
+
+                                const isDup = currentSubs.some(s => s.name.trim().toLowerCase() === cleanName.toLowerCase());
+                                if (isDup) {
+                                  setSubDivError({ divId: d.id, message: `Sub-divisi "${cleanName}" sudah terdaftar pada divisi ini.` });
+                                  showToast(`Sub-divisi "${cleanName}" sudah terdaftar pada divisi ini!`, 'error');
+                                  return;
+                                }
+
+                                setSubDivError({ divId: null, message: '' });
                                 if (onAddSubDivision) {
                                   onAddSubDivision({
                                     id: 'subdiv-' + Date.now(),
                                     divisionId: d.id,
-                                    name: newSubDivName.trim(),
-                                    code: newSubDivCode.trim().toUpperCase() || undefined,
+                                    name: cleanName,
+                                    code: cleanCode || undefined,
                                     description: '',
                                     sortOrder: currentSubs.length
                                   });
                                   setNewSubDivName('');
                                   setNewSubDivCode('');
-                                  showToast(`Sub-divisi "${newSubDivName.trim()}" berhasil ditambahkan ke divisi ${d.name}!`);
+                                  showToast(`Sub-divisi "${cleanName}" berhasil ditambahkan ke divisi ${d.name}!`);
                                 }
                               }}
-                              style={{ padding: '7px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--mandiri-gold)', color: '#040914', border: 'none', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', height: '32px' }}
+                              style={{ padding: '7px 16px', borderRadius: 'var(--radius-sm)', background: 'var(--mandiri-gold)', color: '#040914', border: 'none', fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', height: '32px', marginTop: '18px' }}
                             >
                               + Simpan
                             </button>
@@ -6906,27 +7046,84 @@ export default function AdminPortal({
                             </div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {currentSubs.map((sd) => (
-                                <div key={sd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>{sd.name}</span>
-                                    {sd.code && <span className="badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>{sd.code}</span>}
+                              {currentSubs.map((sd) => {
+                                const assignedMemCount = (members || []).filter(m => m.subDivisionId === sd.id).length;
+                                return (
+                                  <div key={sd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>{sd.name}</span>
+                                      {sd.code && <span className="badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>{sd.code}</span>}
+                                      {assignedMemCount > 0 && (
+                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                          {assignedMemCount} Anggota
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      {/* Tombol Edit Sub-Divisi */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setEditModalError('');
+                                          setEditingItem({
+                                            type: 'sub_division',
+                                            item: { ...sd }
+                                          });
+                                        }}
+                                        title="Edit Sub-Divisi"
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          background: 'rgba(255, 184, 0, 0.12)',
+                                          border: '1px solid rgba(255, 184, 0, 0.35)',
+                                          color: 'var(--mandiri-gold)',
+                                          cursor: 'pointer',
+                                          fontSize: '0.72rem',
+                                          fontWeight: 700
+                                        }}
+                                      >
+                                        <Edit2 size={12} />
+                                        <span>Edit</span>
+                                      </button>
+
+                                      {/* Tombol Hapus Sub-Divisi (Modal Custom) */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setDeleteConfirm({
+                                            type: 'sub_division',
+                                            id: sd.id,
+                                            name: sd.name,
+                                            divName: d.name,
+                                            memCount: assignedMemCount,
+                                            isBlocked: assignedMemCount > 0
+                                          });
+                                        }}
+                                        title="Hapus Sub-Divisi"
+                                        style={{
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          gap: '4px',
+                                          padding: '4px 8px',
+                                          borderRadius: '4px',
+                                          background: 'rgba(244, 63, 94, 0.12)',
+                                          border: '1px solid rgba(244, 63, 94, 0.35)',
+                                          color: '#f43f5e',
+                                          cursor: 'pointer',
+                                          fontSize: '0.72rem',
+                                          fontWeight: 700
+                                        }}
+                                      >
+                                        <Trash2 size={12} />
+                                        <span>Hapus</span>
+                                      </button>
+                                    </div>
                                   </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (window.confirm(`Hapus sub-divisi "${sd.name}"?`)) {
-                                        if (onDeleteSubDivision) onDeleteSubDivision(sd.id);
-                                        showToast(`Sub-divisi "${sd.name}" berhasil dihapus.`);
-                                      }
-                                    }}
-                                    title="Hapus Sub-Divisi"
-                                    style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: '2px 4px' }}
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -10600,6 +10797,7 @@ export default function AdminPortal({
                     editingItem.type === 'member' ? 'Data Personel' :
                     editingItem.type === 'role' ? 'Data Role & Struktur' :
                     editingItem.type === 'division' ? 'Data Divisi' :
+                    editingItem.type === 'sub_division' ? 'Data Sub-Divisi' :
                     editingItem.type === 'gallery' ? 'Dokumentasi Galeri' :
                     editingItem.type === 'devotion' ? 'Renungan Harian' : editingItem.type === 'song' ? 'Lagu Rohani' :
                     editingItem.type === 'form' ? 'Formulir Pendaftaran' :
@@ -11072,6 +11270,44 @@ export default function AdminPortal({
                       <span>Ketik fokus area dipisahkan koma (contoh: <code>Internal Engagement, Wellness, Learning</code>)</span>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Edit Sub-Division Form */}
+            {editingItem.type === 'sub_division' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="mobile-two-col" style={{ gap: '10px' }}>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nama Sub-Divisi <span style={{ color: '#f43f5e' }}>*</span></label>
+                    <input
+                      type="text"
+                      value={editingItem.item.name || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
+                      placeholder="Contoh: Sie Multimedia / Sie Musik"
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Kode Singkat</label>
+                    <input
+                      type="text"
+                      value={editingItem.item.code || ''}
+                      onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, code: e.target.value.toUpperCase() } })}
+                      placeholder="Contoh: MULTI"
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi Tugas / Lingkup Kerja (Opsional)</label>
+                  <textarea
+                    rows={3}
+                    value={editingItem.item.description || ''}
+                    onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
+                    placeholder="Deskripsi tugas atau tanggung jawab sub-divisi ini..."
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
+                  />
                 </div>
               </div>
             )}
@@ -13343,7 +13579,7 @@ export default function AdminPortal({
                 onClick={async () => {
                   setEditModalError('');
                   const it = editingItem.item || {};
-                  if ((editingItem.type === 'member' || editingItem.type === 'division' || editingItem.type === 'role') && !(it.name || '').trim()) {
+                  if ((editingItem.type === 'member' || editingItem.type === 'division' || editingItem.type === 'sub_division' || editingItem.type === 'role') && !(it.name || '').trim()) {
                     setEditModalError('Nama wajib diisi sebelum menyimpan perubahan');
                     showToast('Nama wajib diisi sebelum menyimpan perubahan', 'error');
                     return;
@@ -13526,6 +13762,24 @@ export default function AdminPortal({
                       image: finalImage,
                       responsibilities: finalResp
                     });
+                  }
+                  if (editingItem.type === 'sub_division') {
+                    const cleanName = (editingItem.item.name || '').trim();
+                    const targetDivId = editingItem.item.divisionId;
+                    const isDup = subDivisions.some(s => s.divisionId === targetDivId && s.id !== editingItem.item.id && s.name.toLowerCase().trim() === cleanName.toLowerCase());
+                    if (isDup) {
+                      setEditModalError('Nama sub-divisi "' + cleanName + '" sudah terdaftar pada divisi ini.');
+                      showToast('Nama sub-divisi "' + cleanName + '" sudah terdaftar pada divisi ini.', 'error');
+                      return;
+                    }
+                    if (onUpdateSubDivision) {
+                      onUpdateSubDivision({
+                        ...editingItem.item,
+                        name: cleanName,
+                        code: (editingItem.item.code || '').trim().toUpperCase() || undefined,
+                        description: (editingItem.item.description || '').trim()
+                      });
+                    }
                   }
                   if (editingItem.type === 'division' && onUpdateDivision) {
                     const finalFocus = editingItem.item.rawFocusAreas !== undefined
@@ -14499,6 +14753,7 @@ export default function AdminPortal({
                   gallery_photo: 'Konfirmasi Hapus Foto',
                   tenure: 'Konfirmasi Hapus Periode',
                   division: 'Konfirmasi Hapus Divisi',
+                  sub_division: 'Konfirmasi Hapus Sub-Divisi',
                   role: 'Konfirmasi Hapus Role',
                   member: 'Konfirmasi Hapus Personel',
                   event: 'Konfirmasi Hapus Event',
@@ -14792,6 +15047,72 @@ export default function AdminPortal({
                     lineHeight: 1.45
                   }}>
                     ✓ <strong>Aman Dihapus:</strong> Divisi ini tidak menaungi anggota maupun event (0 Anggota, 0 Event).
+                  </div>
+                </>
+              )
+            )}
+
+            {/* SUB-DIVISION BODY */}
+            {deleteConfirm.type === 'sub_division' && (
+              deleteConfirm.isBlocked ? (
+                <>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    Sub-divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih memiliki <strong>{deleteConfirm.memCount} personel / anggota</strong> yang ditempatkan di sub-divisi ini.
+                  </p>
+                  <div style={{
+                    background: 'var(--input-bg)',
+                    border: '1px solid var(--border-card)',
+                    borderRadius: '10px',
+                    padding: '12px',
+                    textAlign: 'left'
+                  }}>
+                    <div style={{
+                      background: 'rgba(244, 63, 94, 0.12)',
+                      border: '1px solid rgba(244, 63, 94, 0.3)',
+                      borderRadius: '8px',
+                      padding: '8px 10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}>
+                      <Users size={18} color="#f43f5e" />
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Personel di Sub-Divisi Ini</div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f43f5e' }}>
+                          {deleteConfirm.memCount} Orang
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{
+                    background: 'rgba(255, 184, 0, 0.1)',
+                    border: '1px solid rgba(255, 184, 0, 0.3)',
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.78rem',
+                    color: 'var(--mandiri-gold)',
+                    textAlign: 'left',
+                    lineHeight: 1.45
+                  }}>
+                    💡 <strong>Petunjuk:</strong> Buka tab <strong>Pengurus & Pelayan</strong> untuk mengalihkan sub-divisi personel tersebut terlebih dahulu sebelum menghapus sub-divisi ini.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    Apakah Anda yakin ingin menghapus sub-divisi <strong>"{deleteConfirm.name}"</strong>?
+                  </p>
+                  <div style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    padding: '10px 14px',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '0.8rem',
+                    color: '#10b981',
+                    textAlign: 'left',
+                    lineHeight: 1.45
+                  }}>
+                    ✓ <strong>Aman Dihapus:</strong> Sub-divisi ini kosong dan tidak memiliki personel terdaftar (0 Anggota).
                   </div>
                 </>
               )
@@ -15346,6 +15667,7 @@ export default function AdminPortal({
                     onClick={() => {
                       if (deleteConfirm.type === 'member' && onDeleteMember) onDeleteMember(deleteConfirm.id);
                       if (deleteConfirm.type === 'division' && onDeleteDivision) onDeleteDivision(deleteConfirm.id);
+                      if (deleteConfirm.type === 'sub_division' && onDeleteSubDivision) onDeleteSubDivision(deleteConfirm.id);
                       if (deleteConfirm.type === 'role' && onDeleteTenureRole) onDeleteTenureRole(deleteConfirm.id);
                       if (deleteConfirm.type === 'gallery' && onDeleteGallery) onDeleteGallery(deleteConfirm.id);
                       if (deleteConfirm.type === 'tenure' && onDeleteTenure) onDeleteTenure(deleteConfirm.id);
@@ -15363,23 +15685,26 @@ export default function AdminPortal({
                         }
                       }
 
-                      const toastMsg = deleteConfirm.type === 'reset_all' 
-                        ? 'Cache berhasil dibersihkan & data berhasil dimuat ulang!' 
-                        : (deleteConfirm.type === 'gallery_photo'
-                            ? `${deleteConfirm.name} berhasil dihapus dari daftar!`
-                            : (deleteConfirm.type === 'tenure'
-                            ? `Periode "${deleteConfirm.name}" berhasil dihapus!`
-                            : (deleteConfirm.type === 'division'
-                                ? `Divisi "${deleteConfirm.name}" berhasil dihapus!`
-                                : (deleteConfirm.type === 'member'
-                                    ? `Personel "${deleteConfirm.name}" berhasil dihapus!`
-                                    : (deleteConfirm.type === 'role'
-                                        ? `Role "${deleteConfirm.name}" berhasil dihapus!`
-                                        : (deleteConfirm.type === 'event'
-                                            ? `Event "${deleteConfirm.name}" berhasil dihapus!`
-                                            : (deleteConfirm.type === 'form'
-                                                ? `Formulir "${deleteConfirm.name}" berhasil dihapus!`
-                                                : 'Data berhasil dihapus & disinkronkan!')))))));
+                      let toastMsg = 'Data berhasil dihapus & disinkronkan!';
+                      if (deleteConfirm.type === 'reset_all') {
+                        toastMsg = 'Cache berhasil dibersihkan & data berhasil dimuat ulang!';
+                      } else if (deleteConfirm.type === 'gallery_photo') {
+                        toastMsg = `${deleteConfirm.name} berhasil dihapus dari daftar!`;
+                      } else if (deleteConfirm.type === 'tenure') {
+                        toastMsg = `Periode "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'division') {
+                        toastMsg = `Divisi "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'sub_division') {
+                        toastMsg = `Sub-divisi "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'member') {
+                        toastMsg = `Personel "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'role') {
+                        toastMsg = `Role "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'event') {
+                        toastMsg = `Event "${deleteConfirm.name}" berhasil dihapus!`;
+                      } else if (deleteConfirm.type === 'form') {
+                        toastMsg = `Formulir "${deleteConfirm.name}" berhasil dihapus!`;
+                      }
 
                       setDeleteConfirm(null);
                       showToast(toastMsg);
@@ -15396,25 +15721,21 @@ export default function AdminPortal({
                       boxShadow: deleteConfirm.type === 'reset_all' ? '0 4px 14px rgba(2, 132, 199, 0.35)' : 'none'
                     }}
                   >
-                    {deleteConfirm.type === 'reset_all' 
-                      ? 'Ya, Sync Data' 
-                      : (deleteConfirm.type === 'gallery_photo'
-                          ? 'Hapus Foto'
-                          : (deleteConfirm.type === 'tenure' 
-                              ? 'Ya, Hapus Periode' 
-                              : (deleteConfirm.type === 'division'
-                                  ? 'Ya, Hapus Divisi'
-                                  : (deleteConfirm.type === 'member'
-                                      ? 'Ya, Hapus Personel'
-                                      : (deleteConfirm.type === 'role'
-                                          ? 'Ya, Hapus Role'
-                                          : (deleteConfirm.type === 'event'
-                                              ? 'Ya, Hapus Event'
-                                              : (deleteConfirm.type === 'form'
-                                                  ? 'Ya, Hapus Formulir'
-                                                  : (deleteConfirm.type === 'submission'
-                                                      ? 'Ya, Hapus Berkas'
-                                                      : 'Ya, Hapus Data'))))))))}
+                    {(() => {
+                      const labelMap = {
+                        reset_all: 'Ya, Sync Data',
+                        gallery_photo: 'Hapus Foto',
+                        tenure: 'Ya, Hapus Periode',
+                        division: 'Ya, Hapus Divisi',
+                        sub_division: 'Ya, Hapus Sub-Divisi',
+                        member: 'Ya, Hapus Personel',
+                        role: 'Ya, Hapus Role',
+                        event: 'Ya, Hapus Event',
+                        form: 'Ya, Hapus Formulir',
+                        submission: 'Ya, Hapus Berkas'
+                      };
+                      return labelMap[deleteConfirm.type] || 'Ya, Hapus Data';
+                    })()}
                   </button>
                 </>
               )}

@@ -288,8 +288,9 @@ export default function Navbar({
 
           {/* Tenure Switcher Dropdown */}
           {Array.isArray(tenures) && tenures.length > 1 && (
-            <div style={{ position: 'relative' }}>
+            <div className="navbar-tenure-container" style={{ position: 'relative' }}>
               <select
+                className="navbar-tenure-select"
                 value={activeTenure?.id || ''}
                 onChange={(e) => {
                   const selected = tenures.find(t => t.id === e.target.value);
@@ -306,7 +307,11 @@ export default function Navbar({
                   cursor: 'pointer',
                   appearance: 'none',
                   WebkitAppearance: 'none',
-                  outline: 'none'
+                  outline: 'none',
+                  maxWidth: '120px',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden'
                 }}
               >
                 {tenures.map((t) => (
