@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 2 — React Router selesai).
+Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 3 — TanStack Query selesai).
 
 ---
 
@@ -93,8 +93,14 @@ Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 2 — React Router selesai
    - Komponen anak memakai `useAppNavigate()` (bukan `window.location.href`, yang memuat ulang seluruh halaman).
    - Bonus perbaikan: link `?galeri=` lama kini membuka galeri yang benar; pindah tab tidak lagi meninggalkan query lama (`/?form=X#home`); pencarian/filter galeri tidak di-reset tiap refresh data.
    - Diuji Playwright ke `localhost`: 37/37 skenario (navbar, Back/Forward, modal acara, deep link, galeri dengan data tiruan, `/admin`, projector).
-   - ⏭️ Berikutnya: langkah 3 (TanStack Query).
 3. **TanStack Query** sebagai lapisan data (menggantikan `fetchAllCloudState` + polling 60 dtk + state besar di `App.jsx`), invalidasi per tabel dari realtime.
+   - ✅ `@tanstack/react-query` v5; `src/lib/queries.ts` (QueryClient, `useTableData`, `usePageSettings`, `useRegistrationCounts`, `useRealtimeInvalidation`, `useSyncStatus`). `fetchAllCloudState` diganti `fetchTableRows` / `fetchPageSettings` / `fetchRegistrationCounts` di `supabase.ts`.
+   - Tiap tabel = satu query (`['table', key]`). `useTableData` berbentuk seperti `useState`, jadi handler lama (`setEvents(prev => ...)`) tetap; edit optimistis membatalkan refetch yang sedang jalan agar tidak tertimpa data lama.
+   - Realtime kini memuat ulang **hanya tabel yang berubah** (+ hitungan pendaftar bila perlu); polling 60 dtk (berhenti saat tab tersembunyi) & refetch saat fokus ditangani TanStack.
+   - Nama divisi di acara/galeri, ketua divisi, kategori anggota, status "Completed", dan tenure aktif kini diturunkan (`useMemo`) dari data mentah — selalu konsisten, bukan hanya saat sinkronisasi.
+   - Tabel pribadi (`submissions`, `event_rsvps`, `lucky_draws`) hanya di-query saat admin login dan dihapus dari memori saat logout; ganti peran memuat ulang semua data.
+   - Diuji Playwright: 15 skenario lapisan data (termasuk login/logout admin, hanya baca) + 37 skenario navigasi.
+   - ⏭️ Berikutnya: langkah 4 (pecah `AdminPortal.jsx` dkk. ke `.tsx`).
 4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
 5. Validasi form admin dengan zod + react-hook-form.
 

@@ -580,10 +580,14 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
 
 // Tables holding personal data of registrants: readable by authorized admins only and
 // never persisted in the browser cache.
-const PRIVATE_KEYS: readonly TableKey[] = ['submissions', 'eventRsvps', 'luckyDraws'];
-PRIVATE_KEYS.forEach((key) => {
+export const PRIVATE_TABLE_KEYS: readonly TableKey[] = ['submissions', 'eventRsvps', 'luckyDraws'];
+PRIVATE_TABLE_KEYS.forEach((key) => {
   try { localStorage.removeItem(LOCAL_PREFIX + key); } catch (e) { /* storage unavailable */ }
 });
+
+export function isPrivateTableKey(key: TableKey): boolean {
+  return PRIVATE_TABLE_KEYS.includes(key);
+}
 
 const FETCH_ORDER: Record<TableKey, string> = {
   tenures: 'sort_order',
@@ -605,6 +609,13 @@ const FETCH_ORDER: Record<TableKey, string> = {
 };
 const DESCENDING_ORDER = new Set(['created_at', 'drawn_at', 'devotion_date']);
 
+export const TABLE_KEYS = Object.keys(FETCH_ORDER) as TableKey[];
+
+/** Web-state key of a database table, for routing realtime change events. */
+export const TABLE_KEY_BY_DB_TABLE: Record<string, TableKey> = Object.fromEntries(
+  TABLE_KEYS.map((key) => [TABLE_MAP[key], key])
+);
+
 const SETTING_KEYS = {
   pageVisibility: 'page_visibility',
   activeTenureId: 'active_tenure_id',
@@ -619,85 +630,83 @@ export interface RegistrationCounts {
   events: Record<string, number>;
 }
 
-export type CloudState = Partial<Record<TableKey, AppItem[]>> & {
-  registrationCounts?: RegistrationCounts;
+export interface PageSettings {
   pageVisibility?: AppItem;
   activeTenureId?: string;
   announcementBar?: AppItem;
   roleQuotas?: Json;
-  failed: string[];
-};
+}
+
+const SETTING_STATE_KEYS = Object.keys(SETTING_KEYS) as SettingKey[];
 
 /**
- * Loads all public tables, plus the private ones when an admin is signed in. Visitors receive
- * aggregated registration counts instead. Only data that was fetched successfully is present
- * in the result, so callers never mistake a failed request for an empty table.
+ * Loads one table (mapped to web-state shape). Throws on failure so the caller keeps the data it
+ * already has instead of mistaking a failed request for an empty table. Public tables are also
+ * cached in localStorage for an instant first paint on the next visit.
  */
-export async function fetchAllCloudState({ includePrivate = false } = {}): Promise<CloudState> {
-  const keys = (Object.keys(FETCH_ORDER) as TableKey[]).filter((key) => includePrivate || !PRIVATE_KEYS.includes(key));
-  const [settingsRes, countsRes, ...tableResults] = await Promise.all([
-    supabase.from('page_settings').select('*'),
-    includePrivate ? Promise.resolve(null) : supabase.rpc('get_registration_counts'),
-    ...keys.map((key) => {
-      const column = FETCH_ORDER[key];
-      return dynamicDb.from(TABLE_MAP[key]).select('*').order(column, { ascending: !DESCENDING_ORDER.has(column) });
-    })
-  ]);
+export async function fetchTableRows(key: TableKey): Promise<AppItem[]> {
+  const column = FETCH_ORDER[key];
+  const { data, error } = await dynamicDb
+    .from(tableFor(key))
+    .select('*')
+    .order(column, { ascending: !DESCENDING_ORDER.has(column) });
+  if (error || !Array.isArray(data)) {
+    throw new Error(`Gagal memuat data ${tableFor(key)}: ${error?.message || 'respons tidak valid'}`);
+  }
+  // Rows come from the table that `key` maps to, so they match that mapper's row type.
+  const fromDb = rowMappers[key].fromDb as (row: unknown) => AppItem;
+  const rows = data.map(fromDb);
+  if (!isPrivateTableKey(key)) saveLocalCache(key, rows);
+  return rows;
+}
 
-  const result: CloudState = { failed: [] };
-  const failed: string[] = [];
+/** Last page settings stored in this browser, used until the server responds. */
+export function loadCachedPageSettings(): PageSettings {
+  const cached: PageSettings = {};
+  for (const key of SETTING_STATE_KEYS) {
+    const value = loadLocalCache<unknown>(key, undefined);
+    if (value !== undefined && value !== null) (cached as Record<string, unknown>)[key] = value;
+  }
+  return cached;
+}
 
-  tableResults.forEach((res, idx) => {
-    const key = keys[idx];
-    if (res.error || !Array.isArray(res.data)) {
-      failed.push(key);
-      return;
+export async function fetchPageSettings(): Promise<PageSettings> {
+  const { data, error } = await supabase.from('page_settings').select('*');
+  if (error || !Array.isArray(data)) {
+    throw new Error(`Gagal memuat pengaturan halaman: ${error?.message || 'respons tidak valid'}`);
+  }
+  const result: PageSettings = {};
+  for (const row of data) {
+    if (!row.value) continue;
+    const value = row.value as AppItem;
+    if (row.key === SETTING_KEYS.pageVisibility) {
+      result.pageVisibility = { ...value, _updatedAt: row.updated_at };
+    } else if (row.key === SETTING_KEYS.activeTenureId && value.id) {
+      result.activeTenureId = value.id;
+    } else if (row.key === SETTING_KEYS.announcementBar) {
+      result.announcementBar = { ...value, _updatedAt: row.updated_at };
+    } else if (row.key === SETTING_KEYS.roleQuotas) {
+      result.roleQuotas = row.value;
     }
-    // Rows come from the table that `key` maps to, so they match that mapper's row type.
-    const fromDb = rowMappers[key].fromDb as (row: unknown) => AppItem;
-    result[key] = res.data.map(fromDb);
-    if (!PRIVATE_KEYS.includes(key)) saveLocalCache(key, result[key]);
+  }
+  SETTING_STATE_KEYS.forEach((key) => {
+    if (result[key] !== undefined) saveLocalCache(key, result[key]);
   });
-
-  if (countsRes) {
-    if (countsRes.error || !Array.isArray(countsRes.data)) {
-      failed.push('registrationCounts');
-    } else {
-      const counts: RegistrationCounts = { forms: {}, events: {} };
-      countsRes.data.forEach(({ kind, ref_id: refId, total }) => {
-        if (kind === 'form') counts.forms[refId] = total;
-        if (kind === 'event') counts.events[refId] = total;
-      });
-      result.registrationCounts = counts;
-    }
-  }
-
-  if (settingsRes.error || !Array.isArray(settingsRes.data)) {
-    failed.push('pageSettings');
-  } else {
-    for (const row of settingsRes.data) {
-      if (!row.value) continue;
-      const value = row.value as AppItem;
-      if (row.key === SETTING_KEYS.pageVisibility) {
-        result.pageVisibility = { ...value, _updatedAt: row.updated_at };
-      } else if (row.key === SETTING_KEYS.activeTenureId && value.id) {
-        result.activeTenureId = value.id;
-      } else if (row.key === SETTING_KEYS.announcementBar) {
-        result.announcementBar = { ...value, _updatedAt: row.updated_at };
-      } else if (row.key === SETTING_KEYS.roleQuotas) {
-        result.roleQuotas = row.value;
-      }
-    }
-    (['pageVisibility', 'activeTenureId', 'announcementBar', 'roleQuotas'] as const).forEach((key) => {
-      if (result[key] !== undefined) saveLocalCache(key, result[key]);
-    });
-  }
-
-  if (failed.length > 0) {
-    console.error('Gagal memuat sebagian data dari Supabase:', failed.join(', '));
-  }
-  result.failed = failed;
   return result;
+}
+
+/** Aggregated registration counts for visitors, who cannot read submissions or RSVPs. */
+export async function fetchRegistrationCounts(): Promise<RegistrationCounts> {
+  const { data, error } = await supabase.rpc('get_registration_counts');
+  if (error || !Array.isArray(data)) {
+    throw new Error(`Gagal memuat jumlah pendaftar: ${error?.message || 'respons tidak valid'}`);
+  }
+  const counts: RegistrationCounts = { forms: {}, events: {} };
+  data.forEach(({ kind, ref_id: refId, total }) => {
+    if (kind === 'form') counts.forms[refId] = total;
+    if (kind === 'event') counts.events[refId] = total;
+  });
+  return counts;
 }
 
 // ============================================================================
