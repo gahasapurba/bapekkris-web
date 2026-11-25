@@ -16,9 +16,9 @@ const WorshipSongSection = lazy(() => import('./components/WorshipSongSection'))
 const EasyWorshipSection = lazy(() => import('./components/EasyWorshipSection'));
 const ProjectorDisplay = lazy(() => import('./components/ProjectorDisplay'));
 const AssetKitSection = lazy(() => import('./components/AssetKitSection'));
-const DynamicFormSection = lazy(() => import('./components/DynamicFormSection'));
+const DynamicFormSection = lazy(() => import('./components/dynamic-form/DynamicFormSection'));
 const AdminPortal = lazy(() => import('./components/AdminPortal'));
-const EventRegistrationStats = lazy(() => import('./components/EventRegistrationStats'));
+const EventRegistrationStats = lazy(() => import('./components/registration-stats/EventRegistrationStats'));
 
 const DEFAULT_ANNOUNCEMENT_BAR = {
   badge: '',
