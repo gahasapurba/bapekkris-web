@@ -167,9 +167,13 @@ CREATE TABLE IF NOT EXISTS public.lucky_draws (
     prize_name TEXT NOT NULL DEFAULT 'Doorprize Utama',
     drawn_at TIMESTAMPTZ DEFAULT now(),
     sort_order INT DEFAULT 0,
+    details JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Detail pemenang (nama, identitas, nomor undian, field undian, snapshot data pendaftaran)
+ALTER TABLE public.lucky_draws ADD COLUMN IF NOT EXISTS details JSONB DEFAULT '{}'::jsonb;
 
 -- 12. Tabel Daftar Hadir & RSVP Ibadah (event_rsvps)
 CREATE TABLE IF NOT EXISTS public.event_rsvps (

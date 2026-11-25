@@ -514,7 +514,7 @@ export default function DynamicFormSection({
     }
     setUploadingFieldId(null);
 
-    const newSubId = 'sub-' + Date.now();
+    const newSubId = 'sub-' + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`);
     const submission = {
       id: newSubId,
       formId: currentForm.id,
@@ -528,7 +528,15 @@ export default function DynamicFormSection({
     };
 
     if (onSubmitSubmission) {
-      onSubmitSubmission(submission);
+      try {
+        await onSubmitSubmission(submission);
+      } catch (err) {
+        console.error(err);
+        setIsSubmitting(false);
+        setIsConfirmOpen(false);
+        alert('Pendaftaran gagal dikirim ke server. Data Anda belum tersimpan, silakan periksa koneksi lalu coba lagi.');
+        return;
+      }
     }
 
     confetti({

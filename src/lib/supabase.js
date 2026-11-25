@@ -1,6 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { formatWibEventRange, toDatetimeLocalSecondsValue, toDatetimeLocalValue } from '../utils/dateUtils.js';
-import { getCategoryFromLevel } from '../utils/memberQuotaUtils.js';
 
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
@@ -417,22 +415,46 @@ export const rowMappers = {
       event_id: item.eventId,
       submission_id: item.submissionId,
       form_id: item.formId || null,
-      prize_name: item.prizeName || 'Doorprize Utama',
+      prize_name: item.prizeName || item.prizeTitle || 'Doorprize Utama',
       drawn_at: item.drawnAt || new Date().toISOString(),
-      sort_order: Number(item.sortOrder || 0),
+      sort_order: Number(item.drawNumber || item.sortOrder || 0),
+      details: {
+        winnerName: item.winnerName || '',
+        winnerIdentifier: item.winnerIdentifier || '',
+        winnerDepartment: item.winnerDepartment || '',
+        drawNumber: Number(item.drawNumber || 0),
+        source: item.source || '',
+        drawnFieldLabel: item.drawnFieldLabel || '',
+        drawnFieldValue: item.drawnFieldValue || '',
+        submissionData: item.submissionData || {}
+      },
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
-      id: row.id,
-      eventId: row.event_id,
-      submissionId: row.submission_id,
-      formId: row.form_id,
-      prizeName: row.prize_name,
-      drawnAt: row.drawn_at,
-      sortOrder: Number(row.sort_order || 0),
-      createdAt: row.created_at,
-      updatedAt: row.updated_at
-    })
+    fromDb: (row) => {
+      const details = row.details || {};
+      return {
+        id: row.id,
+        eventId: row.event_id,
+        submissionId: row.submission_id,
+        formId: row.form_id,
+        prizeName: row.prize_name,
+        prizeTitle: row.prize_name,
+        drawnAt: row.drawn_at,
+        winnerName: details.winnerName || '',
+        winnerIdentifier: details.winnerIdentifier || '-',
+        winnerPhone: details.winnerIdentifier || '-',
+        winnerDepartment: details.winnerDepartment || '',
+        winnerUnit: details.winnerDepartment || '',
+        drawNumber: Number(details.drawNumber || row.sort_order || 0),
+        source: details.source || '',
+        drawnFieldLabel: details.drawnFieldLabel || '',
+        drawnFieldValue: details.drawnFieldValue || '',
+        submissionData: details.submissionData || {},
+        sortOrder: Number(row.sort_order || 0),
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      };
+    }
   },
 
   devotions: {
@@ -519,246 +541,224 @@ export const rowMappers = {
 };
 
 // ============================================================================
-// DATA FETCHING & SYNCHRONIZATION (ZERO MOCK DATA GUARANTEE)
+// DATA FETCHING
 // ============================================================================
 
+// Tables holding personal data of registrants are never persisted in the browser cache.
+const UNCACHED_KEYS = ['submissions', 'eventRsvps', 'luckyDraws'];
+UNCACHED_KEYS.forEach((key) => {
+  try { localStorage.removeItem(LOCAL_PREFIX + key); } catch (e) { /* storage unavailable */ }
+});
+
+const FETCH_ORDER = {
+  tenures: 'sort_order',
+  divisions: 'sort_order',
+  subDivisions: 'sort_order',
+  members: 'sort_order',
+  events: 'sort_order',
+  galleries: 'sort_order',
+  forms: 'sort_order',
+  submissions: 'created_at',
+  brandAssets: 'sort_order',
+  eventRsvps: 'created_at',
+  faqs: 'sort_order',
+  tenureRoles: 'sort_order',
+  luckyDraws: 'drawn_at',
+  devotions: 'devotion_date',
+  worshipSongs: 'sort_order',
+  easyWorshipSchedules: 'created_at'
+};
+const DESCENDING_ORDER = new Set(['created_at', 'drawn_at', 'devotion_date']);
+
+const SETTING_KEYS = {
+  pageVisibility: 'page_visibility',
+  activeTenureId: 'active_tenure_id',
+  announcementBar: 'announcement_bar',
+  roleQuotas: 'role_quotas'
+};
+
+/**
+ * Loads every table. Only tables that were fetched successfully are present in the result,
+ * so callers never mistake a failed request for an empty table.
+ */
 export async function fetchAllCloudState() {
-  try {
-    const [
-      tenuresRes,
-      divisionsRes,
-      subDivisionsRes,
-      membersRes,
-      eventsRes,
-      galleriesRes,
-      formsRes,
-      submissionsRes,
-      brandAssetsRes,
-      eventRsvpsRes,
-      faqsRes,
-      tenureRolesRes,
-      luckyDrawsRes,
-      devotionsRes,
-      worshipSongsRes,
-      easyWorshipRes,
-      settingsRes
-    ] = await Promise.all([
-      supabase.from('tenures').select('*').order('sort_order', { ascending: true }),
-      supabase.from('divisions').select('*').order('sort_order', { ascending: true }),
-      supabase.from('sub_divisions').select('*').order('sort_order', { ascending: true }),
-      supabase.from('members').select('*').order('sort_order', { ascending: true }),
-      supabase.from('events').select('*').order('sort_order', { ascending: true }),
-      supabase.from('galleries').select('*').order('sort_order', { ascending: true }),
-      supabase.from('forms').select('*').order('sort_order', { ascending: true }),
-      supabase.from('submissions').select('*').order('created_at', { ascending: false }),
-      supabase.from('brand_assets').select('*').order('sort_order', { ascending: true }),
-      supabase.from('event_rsvps').select('*').order('created_at', { ascending: false }),
-      supabase.from('faqs').select('*').order('sort_order', { ascending: true }),
-      supabase.from('tenure_roles').select('*').order('sort_order', { ascending: true }),
-      supabase.from('lucky_draws').select('*').order('drawn_at', { ascending: false }),
-      supabase.from('daily_devotions').select('*').order('devotion_date', { ascending: false }),
-      supabase.from('worship_songs').select('*').order('sort_order', { ascending: true }),
-      supabase.from('easy_worship_schedules').select('*').order('created_at', { ascending: false }),
-      supabase.from('page_settings').select('*')
-    ]);
+  const keys = Object.keys(FETCH_ORDER);
+  const [settingsRes, ...tableResults] = await Promise.all([
+    supabase.from('page_settings').select('*'),
+    ...keys.map((key) => {
+      const column = FETCH_ORDER[key];
+      return supabase.from(TABLE_MAP[key]).select('*').order(column, { ascending: !DESCENDING_ORDER.has(column) });
+    })
+  ]);
 
-    const result = {};
+  const result = {};
+  const failed = [];
 
-    // Map each table cleanly. If empty array, it sets empty array []. ZERO MOCK DATA!
-    if (!tenuresRes.error && Array.isArray(tenuresRes.data)) {
-      result.tenures = tenuresRes.data.map(rowMappers.tenures.fromDb);
-      saveLocalCache('tenures', result.tenures);
-    }
-    if (!divisionsRes.error && Array.isArray(divisionsRes.data)) {
-      result.divisions = divisionsRes.data.map(rowMappers.divisions.fromDb);
-      saveLocalCache('divisions', result.divisions);
-    }
-    if (!subDivisionsRes.error && Array.isArray(subDivisionsRes.data)) {
-      result.subDivisions = subDivisionsRes.data.map(rowMappers.subDivisions.fromDb);
-      saveLocalCache('subDivisions', result.subDivisions);
-    }
-    if (!membersRes.error && Array.isArray(membersRes.data)) {
-      result.members = membersRes.data.map(rowMappers.members.fromDb);
-      saveLocalCache('members', result.members);
-    }
-    if (!eventsRes.error && Array.isArray(eventsRes.data)) {
-      result.events = eventsRes.data.map(rowMappers.events.fromDb);
-      saveLocalCache('events', result.events);
-    }
-    if (!galleriesRes.error && Array.isArray(galleriesRes.data)) {
-      result.galleries = galleriesRes.data.map(rowMappers.galleries.fromDb);
-      saveLocalCache('galleries', result.galleries);
-    }
-    if (!formsRes.error && Array.isArray(formsRes.data)) {
-      result.forms = formsRes.data.map(rowMappers.forms.fromDb);
-      saveLocalCache('forms', result.forms);
-    }
-    if (!submissionsRes.error && Array.isArray(submissionsRes.data)) {
-      result.submissions = submissionsRes.data.map(rowMappers.submissions.fromDb);
-      saveLocalCache('submissions', result.submissions);
-    }
-    if (!brandAssetsRes.error && Array.isArray(brandAssetsRes.data)) {
-      result.brandAssets = brandAssetsRes.data.map(rowMappers.brandAssets.fromDb);
-      saveLocalCache('brandAssets', result.brandAssets);
-    }
-    if (!eventRsvpsRes.error && Array.isArray(eventRsvpsRes.data)) {
-      result.eventRsvps = eventRsvpsRes.data.map(rowMappers.eventRsvps.fromDb);
-      saveLocalCache('eventRsvps', result.eventRsvps);
-    }
-    if (!faqsRes.error && Array.isArray(faqsRes.data)) {
-      result.faqs = faqsRes.data.map(rowMappers.faqs.fromDb);
-      saveLocalCache('faqs', result.faqs);
-    }
-    if (!tenureRolesRes.error && Array.isArray(tenureRolesRes.data)) {
-      result.tenureRoles = tenureRolesRes.data.map(rowMappers.tenureRoles.fromDb);
-      saveLocalCache('tenureRoles', result.tenureRoles);
-    }
-    if (!luckyDrawsRes.error && Array.isArray(luckyDrawsRes.data)) {
-      result.luckyDraws = luckyDrawsRes.data.map(rowMappers.luckyDraws.fromDb);
-      saveLocalCache('luckyDraws', result.luckyDraws);
-    }
-    if (!devotionsRes.error && Array.isArray(devotionsRes.data)) {
-      result.devotions = devotionsRes.data.map(rowMappers.devotions.fromDb);
-      saveLocalCache('devotions', result.devotions);
-    }
-    if (!worshipSongsRes.error && Array.isArray(worshipSongsRes.data)) {
-      result.worshipSongs = worshipSongsRes.data.map(rowMappers.worshipSongs.fromDb);
-      saveLocalCache('worshipSongs', result.worshipSongs);
-    }
-    if (!easyWorshipRes.error && Array.isArray(easyWorshipRes.data)) {
-      result.easyWorshipSchedules = easyWorshipRes.data.map(rowMappers.easyWorshipSchedules.fromDb);
-      saveLocalCache('easyWorshipSchedules', result.easyWorshipSchedules);
-    }
-
-    if (!settingsRes.error && Array.isArray(settingsRes.data)) {
-      for (const row of settingsRes.data) {
-        if (row.key === 'page_visibility' && row.value) {
-          result.pageVisibility = { ...row.value, _updatedAt: row.updated_at };
-          saveLocalCache('pageVisibility', result.pageVisibility);
-        }
-        if (row.key === 'active_tenure_id' && row.value?.id) {
-          result.activeTenureId = row.value.id;
-          saveLocalCache('activeTenureId', row.value.id);
-        }
-        if (row.key === 'announcement_bar' && row.value) {
-          result.announcementBar = { ...row.value, _updatedAt: row.updated_at };
-          saveLocalCache('announcementBar', result.announcementBar);
-        }
-        if (row.key === 'role_quotas' && row.value) {
-          result.roleQuotas = row.value;
-          saveLocalCache('roleQuotas', result.roleQuotas);
-        }
-      }
-    }
-
-    return result;
-  } catch (err) {
-    console.error('Error fetching cloud state:', err);
-    return {};
-  }
-}
-
-// Push state directly to Supabase table
-export async function pushCloudState(key, data) {
-  try {
-    saveLocalCache(key, data);
-    const tableName = TABLE_MAP[key];
-
-    // Settings / configuration keys
-    if (!tableName) {
-      if (key === 'pageVisibility') {
-        await supabase.from('page_settings').upsert({ key: 'page_visibility', value: data, updated_at: new Date().toISOString() });
-      } else if (key === 'activeTenureId') {
-        await supabase.from('page_settings').upsert({ key: 'active_tenure_id', value: { id: data }, updated_at: new Date().toISOString() });
-      } else if (key === 'announcementBar') {
-        await supabase.from('page_settings').upsert({ key: 'announcement_bar', value: data, updated_at: new Date().toISOString() });
-      } else if (key === 'roleQuotas') {
-        await supabase.from('page_settings').upsert({ key: 'role_quotas', value: data, updated_at: new Date().toISOString() });
-      }
+  tableResults.forEach((res, idx) => {
+    const key = keys[idx];
+    if (res.error || !Array.isArray(res.data)) {
+      failed.push(key);
       return;
     }
+    result[key] = res.data.map(rowMappers[key].fromDb);
+    if (!UNCACHED_KEYS.includes(key)) saveLocalCache(key, result[key]);
+  });
 
-    const mapper = rowMappers[key];
-    if (!mapper) return;
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        // Table cleared
-        await supabase.from(tableName).delete().neq('id', '__keep_none__');
-        return;
+  if (settingsRes.error || !Array.isArray(settingsRes.data)) {
+    failed.push('pageSettings');
+  } else {
+    for (const row of settingsRes.data) {
+      if (!row.value) continue;
+      if (row.key === SETTING_KEYS.pageVisibility) {
+        result.pageVisibility = { ...row.value, _updatedAt: row.updated_at };
+      } else if (row.key === SETTING_KEYS.activeTenureId && row.value.id) {
+        result.activeTenureId = row.value.id;
+      } else if (row.key === SETTING_KEYS.announcementBar) {
+        result.announcementBar = { ...row.value, _updatedAt: row.updated_at };
+      } else if (row.key === SETTING_KEYS.roleQuotas) {
+        result.roleQuotas = row.value;
       }
-      const dbRows = data.map(mapper.toDb);
-      const existingIds = dbRows.map(r => r.id);
-      
-      // Upsert current rows
-      await supabase.from(tableName).upsert(dbRows, { onConflict: 'id' });
-      // Delete rows no longer present
-      if (existingIds.length > 0) {
-        await supabase.from(tableName).delete().not('id', 'in', `(${existingIds.map(id => `"${id}"`).join(',')})`);
-      }
-    } else if (data && typeof data === 'object') {
-      const row = mapper.toDb(data);
-      await supabase.from(tableName).upsert(row, { onConflict: 'id' });
     }
-  } catch (err) {
-    console.error(`Error pushing cloud state for ${key}:`, err);
+    ['pageVisibility', 'activeTenureId', 'announcementBar', 'roleQuotas'].forEach((key) => {
+      if (result[key] !== undefined) saveLocalCache(key, result[key]);
+    });
+  }
+
+  if (failed.length > 0) {
+    console.error('Gagal memuat sebagian data dari Supabase:', failed.join(', '));
+  }
+  result.failed = failed;
+  return result;
+}
+
+// ============================================================================
+// ROW-LEVEL WRITES
+// Every write targets explicit rows and throws when Supabase reports an error,
+// so callers can roll back or inform the user instead of silently diverging.
+// ============================================================================
+
+const WRITE_CHUNK_SIZE = 200;
+const DELETE_CHUNK_SIZE = 100;
+
+function tableFor(key) {
+  const table = TABLE_MAP[key];
+  if (!table) throw new Error(`Tabel untuk "${key}" tidak dikenal`);
+  return table;
+}
+
+function assertOk(response, action) {
+  if (response.error) {
+    throw new Error(`${action}: ${response.error.message}`);
   }
 }
 
-export async function mergeAndPushCloudList(key, singleItem, currentList = []) {
-  try {
-    const nextList = [singleItem, ...currentList.filter(item => item.id !== singleItem.id)];
-    await pushCloudState(key, nextList);
-    return nextList;
-  } catch (e) {
-    console.error(`Error merging list for ${key}:`, e);
-    return currentList;
+function chunk(list, size) {
+  const chunks = [];
+  for (let i = 0; i < list.length; i += size) chunks.push(list.slice(i, i + size));
+  return chunks;
+}
+
+/** Inserts a new row without overwriting an existing one (used for public submissions). */
+export async function insertRow(key, item) {
+  const table = tableFor(key);
+  assertOk(await supabase.from(table).insert(rowMappers[key].toDb(item)), `Gagal menambah data ${table}`);
+}
+
+export async function insertRows(key, items) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  const table = tableFor(key);
+  for (const part of chunk(items, WRITE_CHUNK_SIZE)) {
+    assertOk(await supabase.from(table).insert(part.map(rowMappers[key].toDb)), `Gagal menambah data ${table}`);
   }
 }
 
-export async function pushRoleQuotas(tenureId, roles = []) {
-  try {
-    const existingQuotas = loadLocalCache('roleQuotas', {}) || {};
-    const updated = {
-      ...existingQuotas,
-      [tenureId]: { roles, updatedAt: new Date().toISOString() }
-    };
-    await pushCloudState('roleQuotas', updated);
-  } catch (e) {
-    console.error('Error saving role quotas:', e);
+/** Creates or updates a single row identified by its id. */
+export async function saveRow(key, item) {
+  const table = tableFor(key);
+  assertOk(
+    await supabase.from(table).upsert(rowMappers[key].toDb(item), { onConflict: 'id' }),
+    `Gagal menyimpan data ${table}`
+  );
+}
+
+/** Creates or updates several rows. Never deletes rows that are absent from the list. */
+export async function saveRows(key, items) {
+  if (!Array.isArray(items) || items.length === 0) return;
+  const table = tableFor(key);
+  for (const part of chunk(items, WRITE_CHUNK_SIZE)) {
+    assertOk(
+      await supabase.from(table).upsert(part.map(rowMappers[key].toDb), { onConflict: 'id' }),
+      `Gagal menyimpan data ${table}`
+    );
   }
+}
+
+export async function deleteRow(key, id) {
+  const table = tableFor(key);
+  assertOk(await supabase.from(table).delete().eq('id', String(id)), `Gagal menghapus data ${table}`);
+}
+
+export async function deleteRows(key, ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return;
+  const table = tableFor(key);
+  for (const part of chunk(ids.map(String), DELETE_CHUNK_SIZE)) {
+    assertOk(await supabase.from(table).delete().in('id', part), `Gagal menghapus data ${table}`);
+  }
+}
+
+export async function deleteRowsWhere(key, column, value) {
+  const table = tableFor(key);
+  assertOk(await supabase.from(table).delete().eq(column, value), `Gagal menghapus data ${table}`);
+}
+
+export async function saveSetting(key, value) {
+  const settingKey = SETTING_KEYS[key];
+  if (!settingKey) throw new Error(`Pengaturan "${key}" tidak dikenal`);
+  const storedValue = key === 'activeTenureId' ? { id: value } : value;
+  assertOk(
+    await supabase.from('page_settings').upsert({ key: settingKey, value: storedValue, updated_at: new Date().toISOString() }),
+    `Gagal menyimpan pengaturan ${settingKey}`
+  );
+  saveLocalCache(key, value);
+}
+
+// ============================================================================
+// MEDIA STORAGE
+// ============================================================================
+
+const MEDIA_BUCKET = 'bapekkris-media';
+
+function uniqueSuffix() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export async function uploadMediaToCloud(file, path) {
-  try {
-    const bucket = 'bapekkris-media';
-    const filePath = `${path}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true
-    });
-    if (error) {
-      throw error;
-    }
-    const { data: pubData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-    return pubData.publicUrl;
-  } catch (e) {
-    console.error('Upload error:', e);
-    throw e;
-  }
+  const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const filePath = `${path}/${uniqueSuffix()}_${safeName}`;
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(filePath, file, {
+    cacheControl: '3600',
+    upsert: false
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(MEDIA_BUCKET).getPublicUrl(filePath);
+  return data.publicUrl;
 }
 
+/** Best-effort removal of a stored file. Returns false when the file could not be removed. */
 export async function deleteMediaFromCloud(fullUrl) {
-  try {
-    if (!fullUrl) return;
-    const urlParts = fullUrl.split('/storage/v1/object/public/');
-    if (urlParts.length < 2) return;
-    const rest = urlParts[1];
-    const slashIdx = rest.indexOf('/');
-    const bucket = rest.slice(0, slashIdx);
-    const filePath = rest.slice(slashIdx + 1);
-    await supabase.storage.from(bucket).remove([filePath]);
-  } catch (e) {
-    console.error('Delete media error:', e);
+  if (!fullUrl) return false;
+  const urlParts = fullUrl.split('/storage/v1/object/public/');
+  if (urlParts.length < 2) return false;
+  const rest = urlParts[1];
+  const slashIdx = rest.indexOf('/');
+  if (slashIdx < 0) return false;
+  const bucket = rest.slice(0, slashIdx);
+  const filePath = decodeURIComponent(rest.slice(slashIdx + 1));
+  const { error } = await supabase.storage.from(bucket).remove([filePath]);
+  if (error) {
+    console.error('Gagal menghapus berkas media:', error.message);
+    return false;
   }
+  return true;
 }

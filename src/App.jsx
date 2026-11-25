@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
-import { Lock, EyeOff, Sun, Moon, Search, X, Users, Calendar, Image as ImageIcon, ClipboardList, Download, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { EyeOff, Sun, Moon, Search, X, Users, Calendar, ClipboardList, Download, ChevronRight } from 'lucide-react';
 import StarfieldBackground from './components/StarfieldBackground';
 import Navbar from './components/Navbar';
 import HomeSection from './components/HomeSection';
@@ -29,15 +29,76 @@ const DEFAULT_ANNOUNCEMENT_BAR = {
 import {
   supabase,
   loadLocalCache,
-  saveLocalCache,
   fetchAllCloudState,
-  pushCloudState,
-  mergeAndPushCloudList,
-  deleteMediaFromCloud,
-  pushRoleQuotas
+  insertRow,
+  insertRows,
+  saveRow,
+  saveRows,
+  deleteRow,
+  deleteRowsWhere,
+  saveSetting,
+  deleteMediaFromCloud
 } from './lib/supabase';
 import { formatDeadlineWib, isEventPassed } from './utils/dateUtils';
-import { getTenureRoles, getDivisionLead } from './utils/memberQuotaUtils';
+import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
+
+const CLOUD_POLL_INTERVAL_MS = 60000;
+const REALTIME_DEBOUNCE_MS = 1000;
+
+// Parents are restored before children so foreign keys always resolve.
+const RESTORE_ORDER = [
+  'tenures', 'tenureRoles', 'divisions', 'subDivisions', 'members', 'events', 'forms',
+  'submissions', 'eventRsvps', 'luckyDraws', 'galleries', 'devotions', 'worshipSongs',
+  'easyWorshipSchedules', 'brandAssets', 'faqs'
+];
+
+function replaceById(list, updates) {
+  if (updates.length === 0) return list;
+  const byId = new Map(updates.map(item => [item.id, item]));
+  return list.map(item => byId.get(item.id) || item);
+}
+
+// Member category (pembina, inti, pimpro, anggota, ...) follows the level of the member's role.
+function withMemberCategories(members, roles) {
+  return members.map(m => {
+    const role = roles.find(r => r.id === m.roleId);
+    return role ? { ...m, category: getCategoryFromLevel(role.level) } : m;
+  });
+}
+
+function withDerivedEventStatus(event) {
+  return event.status !== 'Completed' && isEventPassed(event.startDate, event.endDate)
+    ? { ...event, status: 'Completed' }
+    : event;
+}
+
+function getSubmissionFileUrls(files) {
+  if (!files || typeof files !== 'object') return [];
+  return Object.values(files)
+    .map(f => (typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl || '')))
+    .filter(Boolean);
+}
+
+// Returns the other forms currently connected to an event, disconnected from it.
+function detachFormsFromEvent(forms, eventId, exceptFormId, updatedAt) {
+  return forms
+    .filter(f => {
+      if (f.id === exceptFormId) return false;
+      const isSameEvent = String(f.eventId || f.fields?.[0]?._eventId) === String(eventId);
+      const isConnected = f.isEventConnected || f.fields?.[0]?._isEventConnected;
+      return isSameEvent && isConnected;
+    })
+    .map(f => ({
+      ...f,
+      isEventConnected: false,
+      eventId: '',
+      isLuckyDraw: false,
+      fields: Array.isArray(f.fields)
+        ? f.fields.map((fld, idx) => (idx === 0 ? { ...fld, _isEventConnected: false, _eventId: '', _isLuckyDraw: false } : fld))
+        : f.fields,
+      updatedAt
+    }));
+}
 
 const PUBLIC_PAGE_IDS = ['home', 'organisasi', 'event', 'renungan', 'alkitab', 'lagu', 'easyworship', 'galeri', 'assets', 'form'];
 const VALID_TABS = [...PUBLIC_PAGE_IDS, 'program', 'oprec', 'admin', 'event-stats', 'projector'];
@@ -242,7 +303,7 @@ export default function App() {
     if (Array.isArray(cached)) return cached;
     return [];
   });
-  const [members, setMembers] = useState(() => loadLocalCache('members', []));
+  const [members, setMembers] = useState(() => withMemberCategories(loadLocalCache('members', []), loadLocalCache('tenureRoles', [])));
   const [events, setEvents] = useState(() => loadLocalCache('events', []));
   const [galleries, setGalleries] = useState(() => loadLocalCache('galleries', []));
   const [subDivisions, setSubDivisions] = useState(() => loadLocalCache('subDivisions', []));
@@ -277,114 +338,110 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Pull & Reconcile Cloud State across devices
+  const [persistError, setPersistError] = useState(null);
+
+  // Latest values read by the stable sync callback (avoids stale closures).
+  const latestStateRef = useRef({ members, divisions, tenureRoles });
+  latestStateRef.current = { members, divisions, tenureRoles };
+  const syncSeqRef = useRef(0);
+
+  // Pull & Reconcile Cloud State across devices. Never writes back to the database.
   const syncFromCloud = useCallback(async () => {
+    const seq = ++syncSeqRef.current;
     setSyncStatus('syncing');
     const cloud = await fetchAllCloudState();
-    if (cloud) {
-      if (Array.isArray(cloud.tenures) && cloud.tenures.length > 0) {
-        const sortedTenures = sortTenuresDesc(cloud.tenures);
-        const targetId = cloud.activeTenureId || loadLocalCache('activeTenureId', null);
-        const defaultActive = sortedTenures.find(t => t.id === targetId) || sortedTenures.find(t => t.isActive) || sortedTenures[0];
-        // Enforce strict single active tenure exclusivity
-        const normalizedTenures = sortedTenures.map(t => ({
-          ...t,
-          isActive: t.id === defaultActive.id
-        }));
-        setTenures(normalizedTenures);
-        // Preserve user's current session browsing selection if still valid, otherwise fallback to official active tenure
-        setActiveTenure(curr => {
-          if (!curr) return { ...defaultActive, isActive: true };
-          const stillExists = normalizedTenures.find(t => t.id === curr.id);
-          return stillExists || { ...defaultActive, isActive: true };
-        });
-      }
-      const currentMembers = (Array.isArray(cloud.members) && cloud.members.length > 0) ? cloud.members : members;
-      if (Array.isArray(cloud.members) && cloud.members.length > 0) setMembers(cloud.members);
-      if (Array.isArray(cloud.divisions) && cloud.divisions.length > 0) {
-        const cloudRoles = Array.isArray(cloud.tenureRoles) ? cloud.tenureRoles : tenureRoles;
-        const resolvedDivs = cloud.divisions.map(d => {
-          const lead = getDivisionLead(d, currentMembers, cloudRoles);
-          return {
-            ...d,
-            memberId: lead.member ? lead.member.id : (d.memberId || null),
-            leadName: lead.name || (d.leadName || '')
-          };
-        });
-        setDivisions(resolvedDivs);
-      }
-      if (Array.isArray(cloud.events)) {
-        const currentDivs = (Array.isArray(cloud.divisions) && cloud.divisions.length > 0) ? cloud.divisions : divisions;
-        let hasStatusChange = false;
-        const reconciledEvts = cloud.events.map(e => {
-          const divObj = currentDivs.find(d => d.id === e.divisionId) || currentDivs.find(d => d.name === e.divisionName);
-          let status = e.status || 'Upcoming';
-          if (status !== 'Completed' && isEventPassed(e.startDate, e.endDate)) {
-            status = 'Completed';
-            hasStatusChange = true;
-          }
-          return {
-            ...e,
-            divisionId: e.divisionId || divObj?.id,
-            divisionName: divObj?.name || e.divisionName || 'Bapekkris Bank Mandiri',
-            status
-          };
-        });
-        setEvents(reconciledEvts);
-        if (hasStatusChange) {
-          pushCloudState('events', reconciledEvts);
-        }
-      }
-      if (Array.isArray(cloud.galleries)) {
-        const currentDivs = (Array.isArray(cloud.divisions) && cloud.divisions.length > 0) ? cloud.divisions : divisions;
-        const reconciledGals = cloud.galleries.map(g => {
-          const matchedDiv = currentDivs.find(d => d.id === g.divisionId) || currentDivs.find(d => d.name === g.division);
-          const resolvedName = matchedDiv?.name || g.divisionName || g.division || 'Bapekkris Bank Mandiri';
-          return {
-            ...g,
-            divisionId: g.divisionId || matchedDiv?.id,
-            division: resolvedName,
-            divisionName: resolvedName
-          };
-        });
-        setGalleries(reconciledGals);
-      }
-      if (Array.isArray(cloud.subDivisions)) setSubDivisions(cloud.subDivisions);
-      if (Array.isArray(cloud.devotions)) setDevotions(cloud.devotions);
-      if (Array.isArray(cloud.worshipSongs)) setWorshipSongs(cloud.worshipSongs);
-      if (Array.isArray(cloud.easyWorshipSchedules)) setEasyWorshipSchedules(cloud.easyWorshipSchedules);
-      if (Array.isArray(cloud.forms)) setForms(cloud.forms);
-      if (Array.isArray(cloud.submissions)) setSubmissions(cloud.submissions);
-      if (Array.isArray(cloud.brandAssets)) setBrandAssets(cloud.brandAssets);
-      if (Array.isArray(cloud.eventRsvps)) setEventRsvps(cloud.eventRsvps);
-      if (Array.isArray(cloud.tenureRoles)) {
-        setTenureRoles(cloud.tenureRoles);
-        saveLocalCache('tenureRoles', cloud.tenureRoles);
-      }
-      if (Array.isArray(cloud.faqs)) setFaqs(cloud.faqs);
-      if (Array.isArray(cloud.luckyDraws)) {
-        setLuckyDraws(cloud.luckyDraws);
-        saveLocalCache('luckyDraws', cloud.luckyDraws);
-      }
-      if (cloud.announcementBar && typeof cloud.announcementBar === 'object') {
-        setAnnouncementBar({ ...DEFAULT_ANNOUNCEMENT_BAR, ...cloud.announcementBar });
-      }
-      if (cloud.pageVisibility && typeof cloud.pageVisibility === 'object') {
-        const mergedVis = { ...DEFAULT_PAGE_VISIBILITY, ...cloud.pageVisibility };
-        setPageVisibilityState(mergedVis);
-        try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
-      }
-      if (cloud.roleQuotas && typeof cloud.roleQuotas === 'object') {
-        setRoleQuotas(cloud.roleQuotas);
-      }
+    // A newer sync started meanwhile; its response supersedes this one.
+    if (seq !== syncSeqRef.current) return;
+
+    const latest = latestStateRef.current;
+    const currentRoles = cloud.tenureRoles || latest.tenureRoles;
+    const currentMembers = cloud.members ? withMemberCategories(cloud.members, currentRoles) : latest.members;
+    const currentDivs = cloud.divisions || latest.divisions;
+
+    if (cloud.tenures) {
+      const sortedTenures = sortTenuresDesc(cloud.tenures);
+      const targetId = cloud.activeTenureId || loadLocalCache('activeTenureId', null);
+      const defaultActive = sortedTenures.find(t => t.id === targetId) || sortedTenures.find(t => t.isActive) || sortedTenures[0] || null;
+      // Enforce strict single active tenure exclusivity
+      const normalizedTenures = sortedTenures.map(t => ({ ...t, isActive: Boolean(defaultActive) && t.id === defaultActive.id }));
+      setTenures(normalizedTenures);
+      // Preserve user's current browsing selection if still valid, otherwise fall back to the official active tenure
+      setActiveTenure(curr => {
+        if (!defaultActive) return null;
+        const stillExists = curr && normalizedTenures.find(t => t.id === curr.id);
+        return stillExists || { ...defaultActive, isActive: true };
+      });
     }
-    setSyncStatus('synced');
+    if (cloud.members) setMembers(currentMembers);
+    if (cloud.divisions) {
+      setDivisions(cloud.divisions.map(d => {
+        const lead = getDivisionLead(d, currentMembers, currentRoles);
+        return {
+          ...d,
+          memberId: lead.member ? lead.member.id : (d.memberId || null),
+          leadName: lead.name || (d.leadName || '')
+        };
+      }));
+    }
+    if (cloud.events) {
+      setEvents(cloud.events.map(e => {
+        const divObj = currentDivs.find(d => d.id === e.divisionId) || currentDivs.find(d => d.name === e.divisionName);
+        return {
+          ...withDerivedEventStatus(e),
+          divisionId: e.divisionId || divObj?.id,
+          divisionName: divObj?.name || e.divisionName || 'Bapekkris Bank Mandiri'
+        };
+      }));
+    }
+    if (cloud.galleries) {
+      setGalleries(cloud.galleries.map(g => {
+        const matchedDiv = currentDivs.find(d => d.id === g.divisionId) || currentDivs.find(d => d.name === g.division);
+        const resolvedName = matchedDiv?.name || g.divisionName || g.division || 'Bapekkris Bank Mandiri';
+        return { ...g, divisionId: g.divisionId || matchedDiv?.id, division: resolvedName, divisionName: resolvedName };
+      }));
+    }
+    if (cloud.subDivisions) setSubDivisions(cloud.subDivisions);
+    if (cloud.devotions) setDevotions(cloud.devotions);
+    if (cloud.worshipSongs) setWorshipSongs(cloud.worshipSongs);
+    if (cloud.easyWorshipSchedules) setEasyWorshipSchedules(cloud.easyWorshipSchedules);
+    if (cloud.forms) setForms(cloud.forms);
+    if (cloud.submissions) setSubmissions(cloud.submissions);
+    if (cloud.brandAssets) setBrandAssets(cloud.brandAssets);
+    if (cloud.eventRsvps) setEventRsvps(cloud.eventRsvps);
+    if (cloud.tenureRoles) setTenureRoles(cloud.tenureRoles);
+    if (cloud.faqs) setFaqs(cloud.faqs);
+    if (cloud.luckyDraws) setLuckyDraws(cloud.luckyDraws);
+    if (cloud.announcementBar && typeof cloud.announcementBar === 'object') {
+      setAnnouncementBar({ ...DEFAULT_ANNOUNCEMENT_BAR, ...cloud.announcementBar });
+    }
+    if (cloud.pageVisibility && typeof cloud.pageVisibility === 'object') {
+      const mergedVis = { ...DEFAULT_PAGE_VISIBILITY, ...cloud.pageVisibility };
+      setPageVisibilityState(mergedVis);
+      try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(mergedVis)); } catch (e) { /* storage unavailable */ }
+    }
+    if (cloud.roleQuotas && typeof cloud.roleQuotas === 'object') {
+      setRoleQuotas(cloud.roleQuotas);
+    }
+    setSyncStatus(cloud.failed.length > 0 ? 'error' : 'synced');
   }, []);
+
+  // Runs a database write for an optimistic UI change. On failure the user is informed
+  // and local state is reloaded from the server so the screen never shows unsaved data.
+  const persist = useCallback(async (label, task) => {
+    try {
+      await task();
+      return true;
+    } catch (err) {
+      console.error(err);
+      setPersistError(`${label} gagal disimpan ke server (${err.message}). Data dimuat ulang dari server.`);
+      syncFromCloud();
+      return false;
+    }
+  }, [syncFromCloud]);
 
   const handleUpdateRoleQuotas = async (updatedQuotas) => {
     setRoleQuotas(updatedQuotas);
-    saveLocalCache('roleQuotas', updatedQuotas);
-    await pushRoleQuotas(updatedQuotas);
+    await persist('Kuota jabatan', () => saveSetting('roleQuotas', updatedQuotas));
   };
 
   useEffect(() => {
@@ -393,26 +450,31 @@ export default function App() {
     const onFocus = () => syncFromCloud();
     window.addEventListener('focus', onFocus);
 
+    // Safety-net polling; realtime events below are the primary update signal.
     const intervalId = setInterval(() => {
-      syncFromCloud();
-    }, 12000);
+      if (document.visibilityState === 'visible') syncFromCloud();
+    }, CLOUD_POLL_INTERVAL_MS);
 
+    // Debounced so a burst of row changes triggers a single reload.
+    let realtimeTimer;
     let channel;
     try {
       channel = supabase
         .channel('bapekkris-cloud-sync-live')
         .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-          syncFromCloud();
+          clearTimeout(realtimeTimer);
+          realtimeTimer = setTimeout(syncFromCloud, REALTIME_DEBOUNCE_MS);
         })
         .subscribe();
-    } catch (e) {}
+    } catch (e) {
+      console.error('Realtime subscription failed:', e);
+    }
 
     return () => {
       window.removeEventListener('focus', onFocus);
       clearInterval(intervalId);
-      if (channel) {
-        try { supabase.removeChannel(channel); } catch (e) {}
-      }
+      clearTimeout(realtimeTimer);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [syncFromCloud]);
 
@@ -454,8 +516,8 @@ export default function App() {
     };
 
     setPageVisibilityState(merged);
-    try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(merged)); } catch (e) {}
-    pushCloudState('pageVisibility', merged);
+    try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(merged)); } catch (e) { /* storage unavailable */ }
+    persist('Pengaturan tampilan halaman', () => saveSetting('pageVisibility', merged));
   };
 
   // Visitor / Admin local view mode (filters the page display without mutating the official active tenure in database)
@@ -463,119 +525,72 @@ export default function App() {
     setActiveTenure(tenureObj);
   };
 
-  // Auto-complete past events if current time has passed event end date
+  // Mark events whose schedule has passed as Completed for display only.
+  // The stored status is left untouched, so visitors never write to the database.
   useEffect(() => {
-    if (!events || events.length === 0) return;
-    const pastPending = events.filter(e => e.status !== 'Completed' && isEventPassed(e.startDate, e.endDate));
-    if (pastPending.length > 0) {
-      setEvents((prev) => {
-        const next = prev.map(e => {
-          if (e.status !== 'Completed' && isEventPassed(e.startDate, e.endDate)) {
-            return { ...e, status: 'Completed' };
-          }
-          return e;
-        });
-        pushCloudState('events', next);
-        return next;
-      });
+    if (events.some(e => e.status !== 'Completed' && isEventPassed(e.startDate, e.endDate))) {
+      setEvents(prev => prev.map(withDerivedEventStatus));
     }
   }, [events]);
 
-  // Dynamic Add, Edit & Delete Handlers (Persisted to LocalStorage + Supabase Cloud)
+  // Divisions
   const handleAddDivision = (newDiv) => {
-    let leadName = newDiv.leadName;
-    if (newDiv.memberId) {
-      const pimpro = members.find(m => m.id === newDiv.memberId);
-      if (pimpro) leadName = pimpro.name;
-    }
+    const pimpro = newDiv.memberId ? members.find(m => m.id === newDiv.memberId) : null;
     const now = new Date().toISOString();
-    const finalDiv = { ...newDiv, leadName, createdAt: newDiv.createdAt || now, updatedAt: newDiv.updatedAt || now };
+    const finalDiv = {
+      ...newDiv,
+      leadName: pimpro ? pimpro.name : newDiv.leadName,
+      createdAt: newDiv.createdAt || now,
+      updatedAt: newDiv.updatedAt || now
+    };
+    const relinkedMember = pimpro && pimpro.divisionId !== finalDiv.id ? { ...pimpro, divisionId: finalDiv.id } : null;
 
-    setDivisions((prev) => {
-      const next = [...prev, finalDiv];
-      pushCloudState('divisions', next);
-      return next;
+    setDivisions(prev => [...prev, finalDiv]);
+    if (relinkedMember) setMembers(prev => replaceById(prev, [relinkedMember]));
+    persist('Divisi', async () => {
+      await saveRow('divisions', finalDiv);
+      if (relinkedMember) await saveRow('members', relinkedMember);
     });
-
-    if (finalDiv.memberId) {
-      setMembers((prev) => {
-        const targetMem = prev.find(m => m.id === finalDiv.memberId);
-        if (!targetMem || targetMem.divisionId === finalDiv.id) return prev;
-        const next = prev.map(m => m.id === finalDiv.memberId ? { ...m, divisionId: finalDiv.id } : m);
-        pushCloudState('members', next);
-        return next;
-      });
-    }
   };
   const handleUpdateDivision = (updatedDiv) => {
-    let leadName = updatedDiv.leadName;
-    if (updatedDiv.memberId) {
-      const pimpro = members.find(m => m.id === updatedDiv.memberId);
-      if (pimpro) leadName = pimpro.name;
-    }
-    const finalDiv = { ...updatedDiv, leadName, updatedAt: new Date().toISOString() };
+    const pimpro = updatedDiv.memberId ? members.find(m => m.id === updatedDiv.memberId) : null;
+    const finalDiv = {
+      ...updatedDiv,
+      leadName: pimpro ? pimpro.name : updatedDiv.leadName,
+      updatedAt: new Date().toISOString()
+    };
 
-    setDivisions((prev) => {
-      const next = prev.map(d => d.id === finalDiv.id ? finalDiv : d);
-      pushCloudState('divisions', next);
-      return next;
-    });
-
-    // If division's memberId is set, ensure that member's divisionId points to this division
+    // Keep the linked Pimpro pointing at this division, or sync the Pimpro name from the division lead name.
+    let memberUpdates = [];
     if (finalDiv.memberId) {
-      setMembers((prev) => {
-        const targetMem = prev.find(m => m.id === finalDiv.memberId);
-        if (!targetMem || targetMem.divisionId === finalDiv.id) return prev;
-        const next = prev.map(m => m.id === finalDiv.memberId ? { ...m, divisionId: finalDiv.id } : m);
-        pushCloudState('members', next);
-        return next;
-      });
+      if (pimpro && pimpro.divisionId !== finalDiv.id) memberUpdates = [{ ...pimpro, divisionId: finalDiv.id }];
+    } else if (finalDiv.leadName) {
+      memberUpdates = members
+        .filter(m => m.category === 'pimpro' && m.divisionId === finalDiv.id && m.name !== finalDiv.leadName)
+        .map(m => ({ ...m, name: finalDiv.leadName }));
     }
-    // Auto-sync Pimpro name if leadName changed on Division
-    else if (finalDiv.leadName) {
-      setMembers((prev) => {
-        const hasPimpro = prev.some(m => m.category === 'pimpro' && m.divisionId === finalDiv.id);
-        if (!hasPimpro) return prev;
-        const next = prev.map(m =>
-          (m.category === 'pimpro' && m.divisionId === finalDiv.id)
-            ? { ...m, name: finalDiv.leadName }
-            : m
-        );
-        pushCloudState('members', next);
-        return next;
-      });
-    }
-    // Auto-sync divisionName onto Events belonging to this division
-    if (updatedDiv.name) {
-      setEvents((prev) => {
-        const hasMatch = prev.some(e => e.divisionId === updatedDiv.id && e.divisionName !== updatedDiv.name);
-        if (!hasMatch) return prev;
-        const next = prev.map(e =>
-          e.divisionId === updatedDiv.id
-            ? { ...e, divisionName: updatedDiv.name }
-            : e
-        );
-        pushCloudState('events', next);
-        return next;
-      });
 
-      // Auto-sync division / divisionName onto Galleries belonging to this division
-      const targetDiv = divisions.find(d => d.id === updatedDiv.id);
-      setGalleries((prev) => {
-        const hasMatch = prev.some(g =>
-          (g.divisionId === updatedDiv.id || (targetDiv && g.division === targetDiv.name)) &&
-          (g.division !== updatedDiv.name || g.divisionId !== updatedDiv.id)
-        );
-        if (!hasMatch) return prev;
-        const next = prev.map(g =>
-          (g.divisionId === updatedDiv.id || (targetDiv && g.division === targetDiv.name))
-            ? { ...g, divisionId: updatedDiv.id, division: updatedDiv.name, divisionName: updatedDiv.name }
-            : g
-        );
-        pushCloudState('galleries', next);
-        return next;
-      });
+    // Galleries matched only by the old division name get linked by id.
+    let galleryUpdates = [];
+    if (updatedDiv.name) {
+      const previousDiv = divisions.find(d => d.id === updatedDiv.id);
+      galleryUpdates = galleries
+        .filter(g => g.divisionId === updatedDiv.id || (previousDiv && g.division === previousDiv.name))
+        .map(g => ({ ...g, divisionId: updatedDiv.id, division: updatedDiv.name, divisionName: updatedDiv.name }));
     }
+    const galleriesToSave = galleryUpdates.filter(g => galleries.find(old => old.id === g.id)?.divisionId !== updatedDiv.id);
+
+    setDivisions(prev => replaceById(prev, [finalDiv]));
+    if (memberUpdates.length > 0) setMembers(prev => replaceById(prev, memberUpdates));
+    if (galleryUpdates.length > 0) setGalleries(prev => replaceById(prev, galleryUpdates));
+    if (updatedDiv.name) {
+      setEvents(prev => prev.map(e => (e.divisionId === updatedDiv.id ? { ...e, divisionName: updatedDiv.name } : e)));
+    }
+    persist('Divisi', async () => {
+      await saveRow('divisions', finalDiv);
+      await saveRows('members', memberUpdates);
+      await saveRows('galleries', galleriesToSave);
+    });
   };
   const handleDeleteDivision = (divId) => {
     const targetDiv = divisions.find(d => d.id === divId);
@@ -585,49 +600,39 @@ export default function App() {
     const hasGal = galleries.some(g => g.divisionId === divId || (targetDiv && g.division === targetDiv.name));
     if (hasMem || hasEvt || hasGal) return;
 
-    setDivisions((prev) => {
-      const next = prev.filter(d => d.id !== divId);
-      pushCloudState('divisions', next);
-      return next;
-    });
+    setDivisions(prev => prev.filter(d => d.id !== divId));
+    persist('Penghapusan divisi', () => deleteRow('divisions', divId));
   };
 
+  // Tenures
   const handleAddTenure = (newTenure) => {
     const now = new Date().toISOString();
     const stampedTenure = { ...newTenure, createdAt: newTenure.createdAt || now, updatedAt: newTenure.updatedAt || now };
-    setTenures((prev) => {
-      const isActivating = Boolean(stampedTenure.isActive);
-      const sanitizedPrev = isActivating ? prev.map(t => ({ ...t, isActive: false })) : prev;
-      const next = sortTenuresDesc([...sanitizedPrev, stampedTenure]);
-      pushCloudState('tenures', next);
-      if (isActivating) {
-        setActiveTenure(stampedTenure);
-        pushCloudState('activeTenureId', stampedTenure.id);
-      }
-      return next;
+    const isActivating = Boolean(stampedTenure.isActive);
+    const deactivated = isActivating ? tenures.filter(t => t.isActive).map(t => ({ ...t, isActive: false, updatedAt: now })) : [];
+
+    setTenures(prev => sortTenuresDesc([...replaceById(prev, deactivated), stampedTenure]));
+    if (isActivating) setActiveTenure(stampedTenure);
+    persist('Periode kepengurusan', async () => {
+      await saveRows('tenures', [stampedTenure, ...deactivated]);
+      if (isActivating) await saveSetting('activeTenureId', stampedTenure.id);
     });
   };
   const handleUpdateTenure = (updatedTenure) => {
-    const stampedTenure = { ...updatedTenure, updatedAt: new Date().toISOString() };
-    setTenures((prev) => {
-      const isActivating = Boolean(stampedTenure.isActive);
-      const next = sortTenuresDesc(prev.map(t => {
-        if (t.id === stampedTenure.id) {
-          return stampedTenure;
-        }
-        // Strict exclusivity: when a tenure becomes active, all other tenures must become inactive
-        if (isActivating) {
-          return { ...t, isActive: false };
-        }
-        return t;
-      }));
-      pushCloudState('tenures', next);
-      return next;
+    const now = new Date().toISOString();
+    const stampedTenure = { ...updatedTenure, updatedAt: now };
+    const isActivating = Boolean(stampedTenure.isActive);
+    // Strict exclusivity: when a tenure becomes active, all other tenures must become inactive
+    const deactivated = isActivating
+      ? tenures.filter(t => t.id !== stampedTenure.id && t.isActive).map(t => ({ ...t, isActive: false, updatedAt: now }))
+      : [];
+
+    setTenures(prev => sortTenuresDesc(replaceById(prev, [stampedTenure, ...deactivated])));
+    if (isActivating || activeTenure?.id === stampedTenure.id) setActiveTenure(stampedTenure);
+    persist('Periode kepengurusan', async () => {
+      await saveRows('tenures', [stampedTenure, ...deactivated]);
+      if (isActivating) await saveSetting('activeTenureId', stampedTenure.id);
     });
-    if (stampedTenure.isActive || activeTenure?.id === stampedTenure.id) {
-      setActiveTenure(stampedTenure);
-      pushCloudState('activeTenureId', stampedTenure.id);
-    }
   };
   const handleDeleteTenure = (tenureId) => {
     // Defense-in-depth safety checks: do not delete if only 1 tenure, active, or has dependencies
@@ -639,86 +644,60 @@ export default function App() {
     const hasGal = galleries.some(g => g.tenureId === tenureId);
     if (hasDiv || hasMem || hasEvt || hasGal) return;
 
-    setTenures((prev) => {
-      const next = prev.filter(t => t.id !== tenureId);
-      pushCloudState('tenures', next);
-      return next;
-    });
+    setTenures(prev => prev.filter(t => t.id !== tenureId));
+    persist('Penghapusan periode kepengurusan', () => deleteRow('tenures', tenureId));
   };
 
+  // Galleries
   const handleAddGallery = (newGal) => {
     const now = new Date().toISOString();
     const stampedGal = { ...newGal, createdAt: newGal.createdAt || now, updatedAt: newGal.updatedAt || now };
-    setGalleries((prev) => {
-      const next = [stampedGal, ...prev];
-      pushCloudState('galleries', next);
-      return next;
-    });
+    setGalleries(prev => [stampedGal, ...prev]);
+    persist('Galeri', () => saveRow('galleries', stampedGal));
   };
-  const handleUpdateGallery = (updatedGal) => {
+  const handleUpdateGallery = async (updatedGal) => {
     const oldGal = galleries.find(g => g.id === updatedGal.id);
-    if (oldGal && Array.isArray(oldGal.photos)) {
-      const currentPhotos = Array.isArray(updatedGal.photos) ? updatedGal.photos : [];
-      const removedPhotos = oldGal.photos.filter(p => !currentPhotos.includes(p));
-      removedPhotos.forEach(p => deleteMediaFromCloud(p));
-    }
+    const currentPhotos = Array.isArray(updatedGal.photos) ? updatedGal.photos : [];
+    const removedPhotos = (oldGal?.photos || []).filter(p => !currentPhotos.includes(p));
     const stampedGal = { ...updatedGal, updatedAt: new Date().toISOString() };
-    setGalleries((prev) => {
-      const next = prev.map(g => g.id === stampedGal.id ? stampedGal : g);
-      pushCloudState('galleries', next);
-      return next;
-    });
-  };
-  const handleDeleteGallery = (galId) => {
-    const target = galleries.find(g => g.id === galId);
-    if (target && Array.isArray(target.photos)) {
-      target.photos.forEach(url => deleteMediaFromCloud(url));
+
+    setGalleries(prev => replaceById(prev, [stampedGal]));
+    if (await persist('Galeri', () => saveRow('galleries', stampedGal))) {
+      removedPhotos.forEach(deleteMediaFromCloud);
     }
-    setGalleries((prev) => {
-      const next = prev.filter(g => g.id !== galId);
-      pushCloudState('galleries', next);
-      return next;
-    });
+  };
+  const handleDeleteGallery = async (galId) => {
+    const target = galleries.find(g => g.id === galId);
+    setGalleries(prev => prev.filter(g => g.id !== galId));
+    if (await persist('Penghapusan galeri', () => deleteRow('galleries', galId))) {
+      (target?.photos || []).forEach(deleteMediaFromCloud);
+    }
   };
 
+  // Members. Division lead links (memberId / leadName) are derived locally and not stored on divisions.
+  const linkPimproToDivision = (member) => {
+    if (member.category !== 'pimpro' || !member.divisionId) return;
+    setDivisions(prev => prev.map(d => (
+      d.id === member.divisionId ? { ...d, memberId: member.id, leadName: member.name || d.leadName } : d
+    )));
+  };
   const handleAddMember = (newMem) => {
     const now = new Date().toISOString();
     const stampedMem = { ...newMem, createdAt: newMem.createdAt || now, updatedAt: newMem.updatedAt || now };
-    setMembers((prev) => {
-      const next = [...prev, stampedMem];
-      pushCloudState('members', next);
-      return next;
-    });
-    // Auto-sync Division memberId when adding a Pimpro
-    if (stampedMem.category === 'pimpro' && stampedMem.divisionId) {
-      setDivisions((prev) => {
-        const next = prev.map(d => d.id === stampedMem.divisionId ? { ...d, memberId: stampedMem.id, leadName: stampedMem.name || d.leadName } : d);
-        pushCloudState('divisions', next);
-        return next;
-      });
-    }
+    setMembers(prev => [...prev, stampedMem]);
+    linkPimproToDivision(stampedMem);
+    persist('Pengurus', () => saveRow('members', stampedMem));
   };
-  const handleUpdateMember = (updatedMem) => {
-    const oldMem = members.find(m => m.id === updatedMem.id);
-    if (oldMem?.image && oldMem.image !== updatedMem.image) {
-      deleteMediaFromCloud(oldMem.image);
-    }
+  const handleUpdateMember = async (updatedMem) => {
+    const oldImage = members.find(m => m.id === updatedMem.id)?.image;
     const stampedMem = { ...updatedMem, updatedAt: new Date().toISOString() };
-    setMembers((prev) => {
-      const next = prev.map(m => m.id === stampedMem.id ? stampedMem : m);
-      pushCloudState('members', next);
-      return next;
-    });
-    // Auto-sync Division memberId when updating a Pimpro
-    if (stampedMem.category === 'pimpro' && stampedMem.divisionId) {
-      setDivisions((prev) => {
-        const next = prev.map(d => d.id === stampedMem.divisionId ? { ...d, memberId: stampedMem.id, leadName: stampedMem.name || d.leadName } : d);
-        pushCloudState('divisions', next);
-        return next;
-      });
+    setMembers(prev => replaceById(prev, [stampedMem]));
+    linkPimproToDivision(stampedMem);
+    if (await persist('Pengurus', () => saveRow('members', stampedMem))) {
+      if (oldImage && oldImage !== stampedMem.image) deleteMediaFromCloud(oldImage);
     }
   };
-  const handleDeleteMember = (memId) => {
+  const handleDeleteMember = async (memId) => {
     const target = members.find(m => m.id === memId);
     if (!target) return;
     // Defense-in-depth safety check: do not delete a Pimpro if their division still has active squad members
@@ -726,275 +705,123 @@ export default function App() {
       const hasSquad = members.some(m => m.category === 'anggota' && m.divisionId === target.divisionId);
       if (hasSquad) return;
     }
-    if (target.image) deleteMediaFromCloud(target.image);
-    setMembers((prev) => {
-      const next = prev.filter(m => m.id !== memId);
-      pushCloudState('members', next);
-      return next;
-    });
-    // Unlink memberId on Division if deleted member was a Pimpro
-    setDivisions((prev) => {
-      const hasLink = prev.some(d => d.memberId === memId);
-      if (!hasLink) return prev;
-      const next = prev.map(d => d.memberId === memId ? { ...d, memberId: null, leadName: '' } : d);
-      pushCloudState('divisions', next);
-      return next;
-    });
+    setMembers(prev => prev.filter(m => m.id !== memId));
+    setDivisions(prev => prev.map(d => (d.memberId === memId ? { ...d, memberId: null, leadName: '' } : d)));
+    if (await persist('Penghapusan pengurus', () => deleteRow('members', memId))) {
+      if (target.image) deleteMediaFromCloud(target.image);
+    }
   };
 
+  // Events
   const handleAddEvent = (newEvt) => {
     const now = new Date().toISOString();
     const stampedEvt = { ...newEvt, createdAt: newEvt.createdAt || now, updatedAt: newEvt.updatedAt || now };
-    setEvents((prev) => {
-      const next = [...prev, stampedEvt];
-      pushCloudState('events', next);
-      return next;
-    });
+    setEvents(prev => [...prev, stampedEvt]);
+    persist('Acara', () => saveRow('events', stampedEvt));
   };
   const handleUpdateEvent = (updatedEvt) => {
     const stampedEvt = { ...updatedEvt, updatedAt: new Date().toISOString() };
-    setEvents((prev) => {
-      const next = prev.map(e => e.id === stampedEvt.id ? stampedEvt : e);
-      pushCloudState('events', next);
-      return next;
-    });
+    setEvents(prev => replaceById(prev, [stampedEvt]));
+    persist('Acara', () => saveRow('events', stampedEvt));
   };
   const handleDeleteEvent = (evtId) => {
     // Defense-in-depth safety check: do not delete event if RSVP records still exist
-    const hasRsvps = eventRsvps.some(r => r.eventId === evtId);
-    if (hasRsvps) return;
-
-    setEvents((prev) => {
-      const next = prev.filter(e => e.id !== evtId);
-      pushCloudState('events', next);
-      return next;
-    });
+    if (eventRsvps.some(r => r.eventId === evtId)) return;
+    setEvents(prev => prev.filter(e => e.id !== evtId));
+    persist('Penghapusan acara', () => deleteRow('events', evtId));
   };
 
-  // Dynamic Forms Lifecycle Handlers
+  // Dynamic Forms. A form connected to an event takes over that event from any previously connected form (one-to-one).
+  const saveFormWithEventTakeover = (stampedForm, isNew) => {
+    const detached = stampedForm.isEventConnected && stampedForm.eventId
+      ? detachFormsFromEvent(forms, stampedForm.eventId, stampedForm.id, stampedForm.updatedAt)
+      : [];
+    setForms(prev => {
+      const updated = replaceById(prev, isNew ? detached : [stampedForm, ...detached]);
+      return isNew ? [stampedForm, ...updated] : updated;
+    });
+    persist('Formulir', () => saveRows('forms', [stampedForm, ...detached]));
+  };
   const handleAddForm = (newForm) => {
     const now = new Date().toISOString();
-    const stampedForm = { ...newForm, createdAt: newForm.createdAt || now, updatedAt: newForm.updatedAt || now };
-    setForms((prev) => {
-      let next = [...prev];
-      // Jika form baru terhubung ke event, lepaskan koneksi dari form lama yang sebelumnya terhubung ke event tersebut (One-to-One Smart Takeover)
-      if (stampedForm.isEventConnected && stampedForm.eventId) {
-        next = next.map(f => {
-          const isSameEvent = String(f.eventId || f.fields?.[0]?._eventId) === String(stampedForm.eventId);
-          const isConn = f.isEventConnected || f.fields?.[0]?._isEventConnected;
-          if (isSameEvent && isConn) {
-            const updatedFields = f.fields ? f.fields.map((fld, idx) => {
-              if (idx === 0) {
-                const c = { ...fld };
-                c._isEventConnected = false;
-                c._eventId = '';
-                c._isLuckyDraw = false;
-                return c;
-              }
-              return fld;
-            }) : f.fields;
-            return {
-              ...f,
-              isEventConnected: false,
-              eventId: '',
-              isLuckyDraw: false,
-              fields: updatedFields,
-              updatedAt: now
-            };
-          }
-          return f;
-        });
-      }
-      next = [stampedForm, ...next];
-      pushCloudState('forms', next);
-      return next;
-    });
+    saveFormWithEventTakeover({ ...newForm, createdAt: newForm.createdAt || now, updatedAt: newForm.updatedAt || now }, true);
   };
   const handleUpdateForm = (updatedForm) => {
-    const now = new Date().toISOString();
-    const stampedForm = { ...updatedForm, updatedAt: now };
-    setForms((prev) => {
-      let next = prev.map(f => f.id === stampedForm.id ? stampedForm : f);
-      // Jika form yang diupdate terhubung ke event, lepaskan koneksi dari form lain yang terhubung ke event tersebut (One-to-One Smart Takeover)
-      if (stampedForm.isEventConnected && stampedForm.eventId) {
-        next = next.map(f => {
-          if (f.id !== stampedForm.id) {
-            const isSameEvent = String(f.eventId || f.fields?.[0]?._eventId) === String(stampedForm.eventId);
-            const isConn = f.isEventConnected || f.fields?.[0]?._isEventConnected;
-            if (isSameEvent && isConn) {
-              const updatedFields = f.fields ? f.fields.map((fld, idx) => {
-                if (idx === 0) {
-                  const c = { ...fld };
-                  c._isEventConnected = false;
-                  c._eventId = '';
-                  c._isLuckyDraw = false;
-                  return c;
-                }
-                return fld;
-              }) : f.fields;
-              return {
-                ...f,
-                isEventConnected: false,
-                eventId: '',
-                isLuckyDraw: false,
-                fields: updatedFields,
-                updatedAt: now
-              };
-            }
-          }
-          return f;
-        });
-      }
-      pushCloudState('forms', next);
-      return next;
-    });
+    saveFormWithEventTakeover({ ...updatedForm, updatedAt: new Date().toISOString() }, false);
   };
-  const handleDeleteForm = (formId, deleteSubmissions = false) => {
-    setForms((prev) => {
-      const next = prev.filter(f => f.id !== formId);
-      pushCloudState('forms', next);
-      return next;
-    });
-    if (deleteSubmissions) {
-      setSubmissions((prev) => {
-        const removed = prev.filter(s => s.formId === formId);
-        removed.forEach(sub => {
-          if (sub.files && typeof sub.files === 'object') {
-            Object.values(sub.files).forEach(f => {
-              const fileUrl = typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl || '');
-              if (fileUrl) deleteMediaFromCloud(fileUrl);
-            });
-          }
-        });
-        const next = prev.filter(s => s.formId !== formId);
-        pushCloudState('submissions', next);
-        return next;
-      });
+  // Deleting a form removes its submissions as well (database cascade), including their uploaded files.
+  const handleDeleteForm = async (formId) => {
+    const removedSubs = submissions.filter(s => s.formId === formId);
+    setForms(prev => prev.filter(f => f.id !== formId));
+    setSubmissions(prev => prev.filter(s => s.formId !== formId));
+    if (await persist('Penghapusan formulir', () => deleteRow('forms', formId))) {
+      removedSubs.flatMap(s => getSubmissionFileUrls(s.files)).forEach(deleteMediaFromCloud);
     }
   };
 
-  // Submissions Lifecycle Handlers (Atomic merge across devices)
+  // Submissions. Public submissions are inserted as single rows and only shown as successful once stored.
   const handleSubmitSubmission = async (newSub) => {
     const withStatus = { status: 'Submitted', adminNotes: '', ...newSub };
-    setSubmissions((prev) => {
-      const next = [withStatus, ...prev];
-      saveLocalCache('submissions', next);
-      return next;
-    });
-    const merged = await mergeAndPushCloudList('submissions', withStatus, submissions);
-    if (Array.isArray(merged)) setSubmissions(merged);
+    await insertRow('submissions', withStatus);
+    setSubmissions(prev => [withStatus, ...prev.filter(s => s.id !== withStatus.id)]);
   };
-  const handleUpdateSubmission = (updatedSub) => {
-    const oldSub = submissions.find(s => s.id === updatedSub.id);
-    if (oldSub?.files && typeof oldSub.files === 'object') {
-      const newUrls = updatedSub.files && typeof updatedSub.files === 'object'
-        ? Object.values(updatedSub.files).map(f => typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl)).filter(Boolean)
-        : [];
-      Object.values(oldSub.files).forEach(f => {
-        const oldUrl = typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl);
-        if (oldUrl && !newUrls.includes(oldUrl)) {
-          deleteMediaFromCloud(oldUrl);
-        }
-      });
-    }
+  const handleUpdateSubmission = async (updatedSub) => {
+    const oldUrls = getSubmissionFileUrls(submissions.find(s => s.id === updatedSub.id)?.files);
+    const newUrls = getSubmissionFileUrls(updatedSub.files);
     const stampedSub = { ...updatedSub, updatedAt: new Date().toISOString() };
-    setSubmissions((prev) => {
-      const next = prev.map(s => s.id === stampedSub.id ? stampedSub : s);
-      pushCloudState('submissions', next);
-      return next;
-    });
-  };
-  const handleDeleteSubmission = (subId) => {
-    const target = submissions.find(s => s.id === subId);
-    if (target?.files && typeof target.files === 'object') {
-      Object.values(target.files).forEach(f => {
-        const fileUrl = typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl || '');
-        if (fileUrl) deleteMediaFromCloud(fileUrl);
-      });
+    setSubmissions(prev => replaceById(prev, [stampedSub]));
+    if (await persist('Data pendaftaran', () => saveRow('submissions', stampedSub))) {
+      oldUrls.filter(url => !newUrls.includes(url)).forEach(deleteMediaFromCloud);
     }
-    setSubmissions((prev) => {
-      const next = prev.filter(s => s.id !== subId);
-      pushCloudState('submissions', next);
-      return next;
-    });
+  };
+  const handleDeleteSubmission = async (subId) => {
+    const fileUrls = getSubmissionFileUrls(submissions.find(s => s.id === subId)?.files);
+    setSubmissions(prev => prev.filter(s => s.id !== subId));
+    if (await persist('Penghapusan data pendaftaran', () => deleteRow('submissions', subId))) {
+      fileUrls.forEach(deleteMediaFromCloud);
+    }
   };
 
-  // Lucky Draw State & Handlers
+  // Lucky Draw
   const handleAddLuckyDraw = useCallback((newDraws) => {
-    setLuckyDraws((prev) => {
-      const arr = Array.isArray(newDraws) ? newDraws : [newDraws];
-      const updated = [...arr, ...prev];
-      saveLocalCache('luckyDraws', updated);
-      pushCloudState('luckyDraws', updated);
-      return updated;
-    });
-  }, []);
-
+    const draws = Array.isArray(newDraws) ? newDraws : [newDraws];
+    setLuckyDraws(prev => [...draws, ...prev]);
+    persist('Hasil undian', () => insertRows('luckyDraws', draws));
+  }, [persist]);
   const handleDeleteLuckyDraw = useCallback((id) => {
-    setLuckyDraws((prev) => {
-      const updated = prev.filter(ld => ld.id !== id);
-      saveLocalCache('luckyDraws', updated);
-      pushCloudState('luckyDraws', updated);
-      return updated;
-    });
-  }, []);
-
+    setLuckyDraws(prev => prev.filter(ld => ld.id !== id));
+    persist('Penghapusan pemenang undian', () => deleteRow('luckyDraws', id));
+  }, [persist]);
   const handleResetLuckyDraw = useCallback((eventId) => {
-    setLuckyDraws((prev) => {
-      const updated = prev.filter(ld => ld.eventId !== eventId);
-      saveLocalCache('luckyDraws', updated);
-      pushCloudState('luckyDraws', updated);
-      return updated;
-    });
-  }, []);
+    setLuckyDraws(prev => prev.filter(ld => ld.eventId !== eventId));
+    persist('Reset undian', () => deleteRowsWhere('luckyDraws', 'event_id', eventId));
+  }, [persist]);
 
-  // Brand Assets Lifecycle Handlers
+  // Brand Assets
   const handleAddBrandAsset = (newAsset) => {
     const now = new Date().toISOString();
     const stampedAsset = { ...newAsset, createdAt: newAsset.createdAt || now, updatedAt: newAsset.updatedAt || now };
-    setBrandAssets((prev) => {
-      const next = [...prev, stampedAsset];
-      pushCloudState('brandAssets', next);
-      return next;
-    });
+    setBrandAssets(prev => [...prev, stampedAsset]);
+    persist('Aset brand', () => saveRow('brandAssets', stampedAsset));
   };
-  const handleUpdateBrandAsset = (updatedAsset) => {
+  const handleUpdateBrandAsset = async (updatedAsset) => {
     const oldAsset = brandAssets.find(a => a.id === updatedAsset.id);
-    if (oldAsset) {
-      // Hapus file asset lama hanya jika berubah DAN berkas lama tersebut tidak masih dipakai sebagai preview
-      if (oldAsset.fileUrl && oldAsset.fileUrl !== updatedAsset.fileUrl && oldAsset.fileUrl !== updatedAsset.previewUrl) {
-        deleteMediaFromCloud(oldAsset.fileUrl);
-      }
-      // Hapus preview lama hanya jika previewnya memang diganti DAN tidak dipakai sebagai file asset
-      if (
-        oldAsset.previewUrl &&
-        oldAsset.previewUrl !== updatedAsset.previewUrl &&
-        oldAsset.previewUrl !== updatedAsset.fileUrl &&
-        oldAsset.previewUrl !== oldAsset.fileUrl
-      ) {
-        deleteMediaFromCloud(oldAsset.previewUrl);
-      }
-    }
     const stampedAsset = { ...updatedAsset, updatedAt: new Date().toISOString() };
-    setBrandAssets((prev) => {
-      const next = prev.map(a => a.id === stampedAsset.id ? stampedAsset : a);
-      pushCloudState('brandAssets', next);
-      return next;
-    });
-  };
-  const handleDeleteBrandAsset = (assetId) => {
-    const targetAsset = brandAssets.find(a => a.id === assetId);
-    if (targetAsset) {
-      if (targetAsset.fileUrl) deleteMediaFromCloud(targetAsset.fileUrl);
-      if (targetAsset.previewUrl && targetAsset.previewUrl !== targetAsset.fileUrl) {
-        deleteMediaFromCloud(targetAsset.previewUrl);
-      }
+    setBrandAssets(prev => replaceById(prev, [stampedAsset]));
+    if (!(await persist('Aset brand', () => saveRow('brandAssets', stampedAsset))) || !oldAsset) return;
+    // Remove replaced files only when they are no longer referenced by either field
+    const stillUsed = [updatedAsset.fileUrl, updatedAsset.previewUrl];
+    if (oldAsset.fileUrl && !stillUsed.includes(oldAsset.fileUrl)) deleteMediaFromCloud(oldAsset.fileUrl);
+    if (oldAsset.previewUrl && oldAsset.previewUrl !== oldAsset.fileUrl && !stillUsed.includes(oldAsset.previewUrl)) {
+      deleteMediaFromCloud(oldAsset.previewUrl);
     }
-    setBrandAssets((prev) => {
-      const next = prev.filter(a => a.id !== assetId);
-      pushCloudState('brandAssets', next);
-      return next;
-    });
+  };
+  const handleDeleteBrandAsset = async (assetId) => {
+    const targetAsset = brandAssets.find(a => a.id === assetId);
+    setBrandAssets(prev => prev.filter(a => a.id !== assetId));
+    if (!(await persist('Penghapusan aset brand', () => deleteRow('brandAssets', assetId))) || !targetAsset) return;
+    if (targetAsset.fileUrl) deleteMediaFromCloud(targetAsset.fileUrl);
+    if (targetAsset.previewUrl && targetAsset.previewUrl !== targetAsset.fileUrl) deleteMediaFromCloud(targetAsset.previewUrl);
   };
 
   const handleSendToEasyWorship = (item) => {
@@ -1002,279 +829,148 @@ export default function App() {
     setCurrentTab('easyworship');
   };
 
+  // Sub-divisions
   const handleAddSubDivision = async (newSub) => {
-    setSubDivisions(prev => {
-      const next = [...prev, newSub];
-      saveLocalCache('subDivisions', next);
-      return next;
-    });
-    await pushCloudState('subDivisions', newSub);
+    setSubDivisions(prev => [...prev, newSub]);
+    await persist('Sub-divisi', () => saveRow('subDivisions', newSub));
   };
   const handleUpdateSubDivision = async (updatedSub) => {
-    setSubDivisions(prev => {
-      const next = prev.map(s => s.id === updatedSub.id ? updatedSub : s);
-      saveLocalCache('subDivisions', next);
-      return next;
-    });
-    await pushCloudState('subDivisions', updatedSub);
+    setSubDivisions(prev => replaceById(prev, [updatedSub]));
+    await persist('Sub-divisi', () => saveRow('subDivisions', updatedSub));
   };
   const handleDeleteSubDivision = async (subId) => {
-    setSubDivisions(prev => {
-      const next = prev.filter(s => s.id !== subId);
-      saveLocalCache('subDivisions', next);
-      return next;
-    });
-    await supabase.from('sub_divisions').delete().eq('id', subId);
+    setSubDivisions(prev => prev.filter(s => s.id !== subId));
+    await persist('Penghapusan sub-divisi', () => deleteRow('subDivisions', subId));
   };
 
+  // Daily devotions
   const handleAddDevotion = async (newDev) => {
-    setDevotions(prev => {
-      const next = [newDev, ...prev];
-      saveLocalCache('devotions', next);
-      return next;
-    });
-    await pushCloudState('devotions', newDev);
+    setDevotions(prev => [newDev, ...prev]);
+    await persist('Renungan', () => saveRow('devotions', newDev));
   };
   const handleUpdateDevotion = async (updatedDev) => {
-    setDevotions(prev => {
-      const next = prev.map(d => d.id === updatedDev.id ? updatedDev : d);
-      saveLocalCache('devotions', next);
-      return next;
-    });
-    await pushCloudState('devotions', updatedDev);
+    setDevotions(prev => replaceById(prev, [updatedDev]));
+    await persist('Renungan', () => saveRow('devotions', updatedDev));
   };
   const handleDeleteDevotion = async (devId) => {
-    setDevotions(prev => {
-      const next = prev.filter(d => d.id !== devId);
-      saveLocalCache('devotions', next);
-      return next;
-    });
-    await supabase.from('daily_devotions').delete().eq('id', devId);
+    setDevotions(prev => prev.filter(d => d.id !== devId));
+    await persist('Penghapusan renungan', () => deleteRow('devotions', devId));
   };
 
+  // Worship songs
   const handleAddWorshipSong = async (newSong) => {
-    setWorshipSongs(prev => {
-      const next = [...prev, newSong];
-      saveLocalCache('worshipSongs', next);
-      return next;
-    });
-    await pushCloudState('worshipSongs', newSong);
+    setWorshipSongs(prev => [...prev, newSong]);
+    await persist('Lagu', () => saveRow('worshipSongs', newSong));
   };
   const handleUpdateWorshipSong = async (updatedSong) => {
-    setWorshipSongs(prev => {
-      const next = prev.map(s => s.id === updatedSong.id ? updatedSong : s);
-      saveLocalCache('worshipSongs', next);
-      return next;
-    });
-    await pushCloudState('worshipSongs', updatedSong);
+    setWorshipSongs(prev => replaceById(prev, [updatedSong]));
+    await persist('Lagu', () => saveRow('worshipSongs', updatedSong));
   };
   const handleDeleteWorshipSong = async (songId) => {
-    setWorshipSongs(prev => {
-      const next = prev.filter(s => s.id !== songId);
-      saveLocalCache('worshipSongs', next);
-      return next;
-    });
-    await supabase.from('worship_songs').delete().eq('id', songId);
+    setWorshipSongs(prev => prev.filter(s => s.id !== songId));
+    await persist('Penghapusan lagu', () => deleteRow('worshipSongs', songId));
   };
 
+  // EasyWorship schedules
   const handleAddEasyWorshipSchedule = async (newSch) => {
-    setEasyWorshipSchedules(prev => {
-      const next = [newSch, ...prev];
-      saveLocalCache('easyWorshipSchedules', next);
-      return next;
-    });
-    await pushCloudState('easyWorshipSchedules', newSch);
+    setEasyWorshipSchedules(prev => [newSch, ...prev]);
+    await persist('Jadwal EasyWorship', () => saveRow('easyWorshipSchedules', newSch));
   };
   const handleUpdateEasyWorshipSchedule = async (updatedSch) => {
-    setEasyWorshipSchedules(prev => {
-      const next = prev.map(s => s.id === updatedSch.id ? updatedSch : s);
-      saveLocalCache('easyWorshipSchedules', next);
-      return next;
-    });
-    await pushCloudState('easyWorshipSchedules', updatedSch);
+    setEasyWorshipSchedules(prev => replaceById(prev, [updatedSch]));
+    await persist('Jadwal EasyWorship', () => saveRow('easyWorshipSchedules', updatedSch));
   };
   const handleDeleteEasyWorshipSchedule = async (schId) => {
-    setEasyWorshipSchedules(prev => {
-      const next = prev.filter(s => s.id !== schId);
-      saveLocalCache('easyWorshipSchedules', next);
-      return next;
-    });
-    await supabase.from('easy_worship_schedules').delete().eq('id', schId);
+    setEasyWorshipSchedules(prev => prev.filter(s => s.id !== schId));
+    await persist('Penghapusan jadwal EasyWorship', () => deleteRow('easyWorshipSchedules', schId));
   };
 
-  // Event RSVP Lifecycle Handlers (Atomic merge across devices)
+  // Event RSVP. Public RSVPs are inserted as single rows and only shown once stored.
   const handleAddEventRsvp = async (newRsvp) => {
-    setEventRsvps((prev) => {
-      const next = [newRsvp, ...prev];
-      saveLocalCache('eventRsvps', next);
-      return next;
-    });
-    const merged = await mergeAndPushCloudList('eventRsvps', newRsvp, eventRsvps);
-    if (Array.isArray(merged)) setEventRsvps(merged);
+    await insertRow('eventRsvps', newRsvp);
+    setEventRsvps(prev => [newRsvp, ...prev.filter(r => r.id !== newRsvp.id)]);
   };
   const handleDeleteEventRsvp = (rsvpId) => {
-    setEventRsvps((prev) => {
-      const next = prev.filter(r => r.id !== rsvpId);
-      pushCloudState('eventRsvps', next);
-      return next;
-    });
+    setEventRsvps(prev => prev.filter(r => r.id !== rsvpId));
+    persist('Penghapusan RSVP', () => deleteRow('eventRsvps', rsvpId));
   };
 
-  // Announcement Bar Handler
+  // Announcement Bar
   const handleUpdateAnnouncementBar = (nextBar) => {
     const resolved = typeof nextBar === 'function' ? nextBar(announcementBar) : nextBar;
-    const now = new Date().toISOString();
-    const merged = { ...DEFAULT_ANNOUNCEMENT_BAR, ...resolved, _updatedAt: now };
+    const merged = { ...DEFAULT_ANNOUNCEMENT_BAR, ...resolved, _updatedAt: new Date().toISOString() };
     setAnnouncementBar(merged);
     setIsBannerDismissed(false);
-    pushCloudState('announcementBar', merged);
+    persist('Pengumuman', () => saveSetting('announcementBar', merged));
   };
 
-  // FAQs Lifecycle Handlers
+  // FAQs
   const handleAddFaq = (newFaq) => {
     const now = new Date().toISOString();
     const stampedFaq = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
-    setFaqs((prev) => {
-      const next = [...prev, stampedFaq];
-      pushCloudState('faqs', next);
-      return next;
-    });
+    setFaqs(prev => [...prev, stampedFaq]);
+    persist('FAQ', () => saveRow('faqs', stampedFaq));
   };
   const handleSubmitPublicFaq = async (newFaq) => {
     const now = new Date().toISOString();
     const stampedFaq = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
-    setFaqs((prev) => {
-      const next = [stampedFaq, ...prev];
-      saveLocalCache('faqs', next);
-      return next;
-    });
-    const merged = await mergeAndPushCloudList('faqs', stampedFaq, faqs);
-    if (Array.isArray(merged)) setFaqs(merged);
+    await insertRow('faqs', stampedFaq);
+    setFaqs(prev => [stampedFaq, ...prev.filter(f => f.id !== stampedFaq.id)]);
   };
   const handleUpdateFaq = (updatedFaq) => {
     const stampedFaq = { ...updatedFaq, updatedAt: new Date().toISOString() };
-    setFaqs((prev) => {
-      const next = prev.map(f => f.id === stampedFaq.id ? stampedFaq : f);
-      pushCloudState('faqs', next);
-      return next;
-    });
+    setFaqs(prev => replaceById(prev, [stampedFaq]));
+    persist('FAQ', () => saveRow('faqs', stampedFaq));
   };
   const handleDeleteFaq = (faqId) => {
-    setFaqs((prev) => {
-      const next = prev.filter(f => f.id !== faqId);
-      pushCloudState('faqs', next);
-      return next;
-    });
+    setFaqs(prev => prev.filter(f => f.id !== faqId));
+    persist('Penghapusan FAQ', () => deleteRow('faqs', faqId));
   };
 
-  // Tenure Roles Handlers
+  // Tenure Roles
   const handleAddTenureRole = (newRole) => {
     const now = new Date().toISOString();
     const stampedRole = { ...newRole, createdAt: newRole.createdAt || now, updatedAt: newRole.updatedAt || now };
-    setTenureRoles((prev) => {
-      const next = [...prev, stampedRole];
-      pushCloudState('tenureRoles', next);
-      saveLocalCache('tenureRoles', next);
-      return next;
-    });
+    setTenureRoles(prev => [...prev, stampedRole]);
+    persist('Jabatan', () => saveRow('tenureRoles', stampedRole));
   };
-
   const handleUpdateTenureRole = (updatedRole) => {
-    setTenureRoles((prev) => {
-      const next = prev.map(r => r.id === updatedRole.id ? { ...r, ...updatedRole, updatedAt: new Date().toISOString() } : r);
-      pushCloudState('tenureRoles', next);
-      saveLocalCache('tenureRoles', next);
-      return next;
-    });
+    const existing = tenureRoles.find(r => r.id === updatedRole.id);
+    if (!existing) return;
+    const stampedRole = { ...existing, ...updatedRole, updatedAt: new Date().toISOString() };
+    setTenureRoles(prev => replaceById(prev, [stampedRole]));
+    persist('Jabatan', () => saveRow('tenureRoles', stampedRole));
   };
-
   const handleDeleteTenureRole = (roleId) => {
-    setTenureRoles((prev) => {
-      const next = prev.filter(r => r.id !== roleId);
-      pushCloudState('tenureRoles', next);
-      saveLocalCache('tenureRoles', next);
-      return next;
-    });
+    setTenureRoles(prev => prev.filter(r => r.id !== roleId));
+    persist('Penghapusan jabatan', () => deleteRow('tenureRoles', roleId));
   };
 
-  // Restore full backup snapshot (.json) across all 13 tables
+  // Restore a backup snapshot (.json). Rows are upserted table by table in foreign-key order;
+  // rows created after the backup are kept. Throws on the first failure so the caller can report it.
   const handleRestoreBackup = async (backupData) => {
     if (!backupData || typeof backupData !== 'object') return;
-    const tasks = [];
-
-    if (Array.isArray(backupData.tenures) && backupData.tenures.length > 0) {
-      setTenures(backupData.tenures);
-      tasks.push(pushCloudState('tenures', backupData.tenures));
-      const targetTenureId = backupData.meta?.activeTenureId || backupData.tenures[0].id;
-      const foundTenure = backupData.tenures.find(t => t.id === targetTenureId) || backupData.tenures[0];
-      setActiveTenure(foundTenure);
-      tasks.push(pushCloudState('activeTenureId', foundTenure.id));
+    try {
+      for (const key of RESTORE_ORDER) {
+        if (Array.isArray(backupData[key])) await saveRows(key, backupData[key]);
+      }
+      if (Array.isArray(backupData.tenures) && backupData.tenures.length > 0) {
+        const targetId = backupData.meta?.activeTenureId || backupData.tenures[0].id;
+        const restoredActive = backupData.tenures.find(t => t.id === targetId) || backupData.tenures[0];
+        await saveSetting('activeTenureId', restoredActive.id);
+      }
+      if (backupData.announcementBar && typeof backupData.announcementBar === 'object') {
+        await saveSetting('announcementBar', { ...DEFAULT_ANNOUNCEMENT_BAR, ...backupData.announcementBar });
+      }
+      if (backupData.pageVisibility && typeof backupData.pageVisibility === 'object') {
+        await saveSetting('pageVisibility', { ...DEFAULT_PAGE_VISIBILITY, ...backupData.pageVisibility });
+      }
+      if (backupData.roleQuotas && typeof backupData.roleQuotas === 'object') {
+        await saveSetting('roleQuotas', backupData.roleQuotas);
+      }
+    } finally {
+      await syncFromCloud();
     }
-    if (Array.isArray(backupData.divisions)) {
-      setDivisions(backupData.divisions);
-      tasks.push(pushCloudState('divisions', backupData.divisions));
-    }
-    if (Array.isArray(backupData.members)) {
-      setMembers(backupData.members);
-      tasks.push(pushCloudState('members', backupData.members));
-    }
-    if (Array.isArray(backupData.events)) {
-      setEvents(backupData.events);
-      tasks.push(pushCloudState('events', backupData.events));
-    }
-    if (Array.isArray(backupData.galleries)) {
-      setGalleries(backupData.galleries);
-      tasks.push(pushCloudState('galleries', backupData.galleries));
-    }
-    if (Array.isArray(backupData.devotions)) {
-      setDevotions(backupData.devotions);
-      tasks.push(pushCloudState('devotions', backupData.devotions));
-    }
-    if (Array.isArray(backupData.worshipSongs)) {
-      setWorshipSongs(backupData.worshipSongs);
-      tasks.push(pushCloudState('worshipSongs', backupData.worshipSongs));
-    }
-    if (Array.isArray(backupData.subDivisions)) {
-      setSubDivisions(backupData.subDivisions);
-      tasks.push(pushCloudState('subDivisions', backupData.subDivisions));
-    }
-    if (Array.isArray(backupData.easyWorshipSchedules)) {
-      setEasyWorshipSchedules(backupData.easyWorshipSchedules);
-      tasks.push(pushCloudState('easyWorshipSchedules', backupData.easyWorshipSchedules));
-    }
-    if (Array.isArray(backupData.forms)) {
-      setForms(backupData.forms);
-      tasks.push(pushCloudState('forms', backupData.forms));
-    }
-    if (Array.isArray(backupData.submissions)) {
-      setSubmissions(backupData.submissions);
-      tasks.push(pushCloudState('submissions', backupData.submissions));
-    }
-    if (Array.isArray(backupData.brandAssets)) {
-      setBrandAssets(backupData.brandAssets);
-      tasks.push(pushCloudState('brandAssets', backupData.brandAssets));
-    }
-    if (Array.isArray(backupData.eventRsvps)) {
-      setEventRsvps(backupData.eventRsvps);
-      tasks.push(pushCloudState('eventRsvps', backupData.eventRsvps));
-    }
-    if (Array.isArray(backupData.faqs)) {
-      setFaqs(backupData.faqs);
-      tasks.push(pushCloudState('faqs', backupData.faqs));
-    }
-    if (backupData.announcementBar && typeof backupData.announcementBar === 'object') {
-      const mergedBar = { ...DEFAULT_ANNOUNCEMENT_BAR, ...backupData.announcementBar };
-      setAnnouncementBar(mergedBar);
-      tasks.push(pushCloudState('announcementBar', mergedBar));
-    }
-    if (backupData.pageVisibility && typeof backupData.pageVisibility === 'object') {
-      const mergedVis = { ...DEFAULT_PAGE_VISIBILITY, ...backupData.pageVisibility };
-      setPageVisibilityState(mergedVis);
-      try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(mergedVis)); } catch (e) {}
-      tasks.push(pushCloudState('pageVisibility', mergedVis));
-    }
-
-    await Promise.all(tasks);
   };
 
   // Clear cache and reload all collections directly from database
@@ -1311,6 +1007,29 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
       {/* Background Canvas */}
       <StarfieldBackground theme={theme} />
+
+      {persistError && (
+        <div
+          role="alert"
+          style={{
+            position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 10000,
+            width: 'min(560px, calc(100vw - 32px))', display: 'flex', alignItems: 'flex-start', gap: '12px',
+            padding: '14px 16px', borderRadius: 'var(--radius-md)', background: '#fef2f2',
+            border: '1px solid #fca5a5', color: '#991b1b', fontSize: '0.88rem', lineHeight: 1.5,
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          <span style={{ flex: 1 }}>{persistError}</span>
+          <button
+            type="button"
+            onClick={() => setPersistError(null)}
+            aria-label="Tutup pesan kesalahan"
+            style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
 
       {/* Responsive Navbar (Can be toggled View / Hide) */}
       {isNavbarVisible && (

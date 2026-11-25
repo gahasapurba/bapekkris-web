@@ -96,6 +96,12 @@ function formatWaPhone(raw = '') {
   return digits;
 }
 
+const SYNC_BADGE = {
+  syncing: { label: 'Menyinkronkan Cloud...', color: 'var(--mandiri-gold)', background: 'rgba(255, 184, 0, 0.15)' },
+  synced: { label: 'Cloud Sync Aktif (Multi-Device)', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)' },
+  error: { label: 'Sebagian data gagal dimuat dari Cloud', color: '#dc2626', background: 'rgba(220, 38, 38, 0.12)' }
+};
+
 // Client-side SHA-256 hash helper using Web Crypto API
 async function sha256(message) {
   const msgBuffer = new TextEncoder().encode(message);
@@ -1915,14 +1921,14 @@ export default function AdminPortal({
               borderRadius: 'var(--radius-full)',
               fontSize: '0.73rem',
               fontWeight: 800,
-              background: syncStatus === 'syncing' ? 'rgba(255, 184, 0, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-              border: `1px solid ${syncStatus === 'syncing' ? 'var(--mandiri-gold)' : '#10b981'}`,
-              color: syncStatus === 'syncing' ? 'var(--mandiri-gold)' : '#10b981'
+              background: SYNC_BADGE[syncStatus].background,
+              border: `1px solid ${SYNC_BADGE[syncStatus].color}`,
+              color: SYNC_BADGE[syncStatus].color
             }}
-            title="Seluruh perubahan otomatis disimpan di Cloud Database & LocalStorage agar tersinkronisasi di semua perangkat"
+            title="Seluruh perubahan otomatis disimpan di Cloud Database agar tersinkronisasi di semua perangkat"
           >
             <Globe size={13} />
-            <span>{syncStatus === 'syncing' ? 'Menyinkronkan Cloud...' : 'Cloud Sync Aktif (Multi-Device)'}</span>
+            <span>{SYNC_BADGE[syncStatus].label}</span>
           </span>
         </div>
 

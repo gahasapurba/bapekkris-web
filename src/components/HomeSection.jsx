@@ -74,7 +74,7 @@ export default function HomeSection({
     setConfirmFaqOpen(true);
   };
 
-  const handleFinalSubmitFaq = () => {
+  const handleFinalSubmitFaq = async () => {
     if (isSubmittingAsk) return;
     setConfirmFaqOpen(false);
     setIsSubmittingAsk(true);
@@ -83,15 +83,22 @@ export default function HomeSection({
     const ts = `${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
 
     if (onSubmitFaqQuestion) {
-      onSubmitFaqQuestion({
-        id: 'faq-user-' + Date.now(),
-        category: askCat || 'Umum',
-        question: askQuestionText.trim(),
-        answer: 'Menunggu jawaban & penjelasan resmi dari Pengurus Bapekkris Bank Mandiri.',
-        askedBy: askName.trim() || 'Insan Mandiri',
-        createdAt: new Date().toISOString(),
-        isPublished: false
-      });
+      try {
+        await onSubmitFaqQuestion({
+          id: 'faq-user-' + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
+          category: askCat || 'Umum',
+          question: askQuestionText.trim(),
+          answer: 'Menunggu jawaban & penjelasan resmi dari Pengurus Bapekkris Bank Mandiri.',
+          askedBy: askName.trim() || 'Insan Mandiri',
+          createdAt: new Date().toISOString(),
+          isPublished: false
+        });
+      } catch (err) {
+        console.error(err);
+        setIsSubmittingAsk(false);
+        setAskErrors({ question: 'Pertanyaan gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
+        return;
+      }
     }
 
     setAskSuccess(true);

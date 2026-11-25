@@ -266,7 +266,7 @@ export default function ProgramSection({
     setConfirmRsvpOpen(true);
   };
 
-  const handleFinalSubmitRsvp = () => {
+  const handleFinalSubmitRsvp = async () => {
     if (!rsvpModalEvent || isSubmittingRsvp) return;
     setConfirmRsvpOpen(false);
     setIsSubmittingRsvp(true);
@@ -276,15 +276,22 @@ export default function ProgramSection({
     const ts = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
 
     if (onAddEventRsvp) {
-      onAddEventRsvp({
-        id: 'rsvp-' + Date.now(),
-        eventId: rsvpModalEvent.id,
-        eventTitle: rsvpModalEvent.title,
-        attendeeName: rsvpName.trim(),
-        attendanceMode: rsvpMode,
-        notes: rsvpNotes.trim(),
-        submittedAt: ts
-      });
+      try {
+        await onAddEventRsvp({
+          id: 'rsvp-' + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
+          eventId: rsvpModalEvent.id,
+          eventTitle: rsvpModalEvent.title,
+          attendeeName: rsvpName.trim(),
+          attendanceMode: rsvpMode,
+          notes: rsvpNotes.trim(),
+          submittedAt: ts
+        });
+      } catch (err) {
+        console.error(err);
+        setIsSubmittingRsvp(false);
+        setRsvpErrors({ rsvpName: 'Konfirmasi kehadiran gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
+        return;
+      }
     }
 
     setRsvpSuccess(true);
