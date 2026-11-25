@@ -44,7 +44,7 @@
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 12. lucky_draws (Pengundian Doorprize)
--- INSERT INTO public.lucky_draws (id, event_id, submission_id, form_id, prize_name, drawn_at, sort_order)
+-- INSERT INTO public.lucky_draws (id, event_id, submission_id, form_id, prize_name, drawn_at, sort_order, details)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 12. event_rsvps (Daftar Hadir & RSVP)
@@ -78,3 +78,7 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- INSERT INTO public.easy_worship_schedules (id, event_id, title, service_date, items, theme_settings, sort_order)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
+-- 20. admin_profiles (Akun Admin & Peran). Buat user di Authentication → Users terlebih dahulu.
+-- INSERT INTO public.admin_profiles (user_id, email, role, division_id)
+-- SELECT id, lower(email), 'super_admin', NULL FROM auth.users WHERE lower(email) = lower('EMAIL_ADMIN')
+-- ON CONFLICT (user_id) DO NOTHING;
