@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { EyeOff, Sun, Moon, Search, X, Users, Calendar, ClipboardList, Download, ChevronRight } from 'lucide-react';
 import SiteHeader from './components/layout/SiteHeader';
-import HomeSection from './components/HomeSection';
+import HomePage from './components/home/HomePage';
 import SiteFooter from './components/layout/SiteFooter';
 import ErrorBoundary from './components/ErrorBoundary';
 import AdminOnlyNotice from './components/AdminOnlyNotice';
@@ -65,6 +65,9 @@ import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils'
 import { deriveRegistrationCounts } from './utils/quotaUtils';
 
 const EMPTY_ROLE_QUOTAS = {};
+
+// Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
+const FULL_BLEED_TABS = new Set(['home']);
 
 // Parents are restored before children so foreign keys always resolve.
 const RESTORE_ORDER = [
@@ -1146,7 +1149,7 @@ function MainApp() {
       )}
 
       {/* Main Content Area */}
-      <main className="container" style={{ flex: 1, position: 'relative' }}>
+      <main className={FULL_BLEED_TABS.has(effectiveTab) ? undefined : 'container'} style={{ flex: 1, position: 'relative' }}>
         {effectiveTab === 'all-hidden' && (
           <div style={{ maxWidth: '620px', margin: '60px auto 80px auto', textAlign: 'center', padding: '0 16px' }}>
             <div className="glass-panel" style={{
@@ -1197,7 +1200,7 @@ function MainApp() {
 
         <ErrorBoundary onResetTab={() => setCurrentTab('home')}>
           {effectiveTab === 'home' && (
-            <HomeSection
+            <HomePage
               activeTenure={activeTenure}
               divisions={divisions}
               events={events}
@@ -1208,7 +1211,6 @@ function MainApp() {
               devotions={devotions}
               faqs={faqs}
               onSubmitFaqQuestion={handleSubmitPublicFaq}
-              theme={theme}
               pageVisibility={pageVisibility}
               tenureRoles={tenureRoles}
             />
