@@ -128,8 +128,9 @@ Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, la
 - ✅ Renungan (`devotions/`), Alkitab (`bible/`), Kidung (`songs/`), EasyWorship (`easyworship/`). Pola: logika lama dipindah apa adanya ke hook `useX.jsx`, markup ditulis ulang di `X.tsx`.
 - ✅ Organisasi (`organization/`; bagan tetap memakai `#org-tree-export-container` + kelas `crew-member-card`/`org-anggota-box` untuk ekspor PDF) Galeri (`gallery/`; lightbox `role=dialog`), dan Aset (`assets/`; pratinjau selalu berlatar terang agar logo navy terbaca di mode gelap).
 - ✅ Statistik pendaftaran & undian acara (`registration-stats/`, khusus admin; modal memakai `Dialog`).
-- ✅ Admin — kerangka konsep B: sidebar berkelompok (`AdminTabNavigation.tsx`, Sheet di seluler), top bar aksi, ringkasan bento (`AdminSummaryBar.tsx`), login baru; notifikasi admin kini lewat `useFeedback`. Isi tiap tab masih gaya lama.
-- ⏭️ Berikutnya: isi tab Admin satu per satu (mulai Ibadah & acara, Formulir, Data pendaftaran) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
+- ✅ Admin — kerangka konsep B: sidebar berkelompok (`AdminTabNavigation.tsx`, Sheet di seluler), top bar aksi, ringkasan bento (`AdminSummaryBar.tsx`), login baru; notifikasi admin kini lewat `useFeedback`. Blok bersama tab admin di `src/admin/AdminUi.tsx` (AdminPanel, AdminSubsection, AdminList/Row, AdminEmpty, IconButton, Switch).
+- ✅ Tab admin baru: Renungan, Kidung, EasyWorship, FAQ, Visibilitas.
+- ⏭️ Berikutnya: tab admin sisanya (Aset, Periode, Role, Divisi, Pengurus, Galeri, Data pendaftaran, Formulir, Ibadah & acara) + modal (DeleteConfirm, EditItem, OrgRoles, RoleForm, Laporan), Kelola admin, form login → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
 
 **Aturan teknis redesign:**
 - Halaman yang sudah di-redesign didaftarkan di `FULL_BLEED_TABS` (`App.jsx`) agar lepas dari `.container` lama dan mengatur lebarnya sendiri (`Container`/`Section` di `home/shared.tsx`).
