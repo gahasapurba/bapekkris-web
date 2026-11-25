@@ -1,5 +1,42 @@
 // Date utilities for Indonesian locale & form deadlines
 
+/** Date strings as stored in the database or typed by admins (ISO, Indonesian text, empty). */
+export type DateInput = string | null | undefined;
+
+/** Anything `new Date()` accepts, as used for created_at / updated_at timestamps. */
+export type TimestampInput = string | number | Date | null | undefined;
+
+export interface DeadlineStatus {
+  isValidDate: boolean;
+  isExpired: boolean;
+  isToday: boolean;
+  daysLeft: number | null;
+  hoursLeft: number | null;
+  isoDate: string;
+  formatted: string;
+  statusText: string;
+  statusBadge: 'expired' | 'today' | 'urgent' | null;
+}
+
+export interface WibTimestamp {
+  relative: string;
+  exact: string;
+  shortDate?: string;
+  full: string;
+}
+
+export type FlexibleDateMode = 'date' | 'dates' | 'range' | 'month' | 'year';
+
+export interface FlexibleDate {
+  mode: FlexibleDateMode;
+  date: string;
+  startDate: string;
+  endDate: string;
+  month: string;
+  year: string;
+  dates?: string[];
+}
+
 export const INDONESIAN_MONTHS = [
   'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -9,7 +46,7 @@ const WIB_OFFSET_HOURS = 7;
 const WIB_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/;
 
 /** Builds the instant of a wall-clock time in WIB (Asia/Jakarta, UTC+7, no daylight saving). */
-function wibInstant(year, month, day, hour = 0, minute = 0, second = 0, ms = 0) {
+function wibInstant(year: number, month: number, day: number, hour = 0, minute = 0, second = 0, ms = 0): Date {
   return new Date(Date.UTC(year, month - 1, day, hour - WIB_OFFSET_HOURS, minute, second, ms));
 }
 
@@ -18,7 +55,7 @@ function wibInstant(year, month, day, hour = 0, minute = 0, second = 0, ms = 0) 
  * explicit offset/Z. A missing time becomes 23:59:59.999 when endOfDay is set, otherwise 00:00.
  * Missing seconds become :59 when endOfDay is set. Returns null when the string is not such a date.
  */
-export function parseWibDateTime(str, { endOfDay = false } = {}) {
+export function parseWibDateTime(str: DateInput, { endOfDay = false }: { endOfDay?: boolean } = {}): Date | null {
   const match = String(str || '').trim().match(WIB_DATE_TIME_PATTERN);
   if (!match) return null;
   const [, y, mo, d, h, mi, s, offset] = match;
@@ -36,8 +73,8 @@ export function parseWibDateTime(str, { endOfDay = false } = {}) {
 }
 
 /** Calendar date ("YYYY-MM-DD") of the given instant in WIB. Defaults to now. */
-export function toWibIsoDate(date = new Date()) {
-  const parts = {};
+export function toWibIsoDate(date: Date = new Date()): string {
+  const parts: Record<string, string> = {};
   new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' })
     .formatToParts(date)
     .forEach((p) => { parts[p.type] = p.value; });
@@ -48,7 +85,7 @@ export function toWibIsoDate(date = new Date()) {
  * Parses an Indonesian date string (e.g. "31 Maret 2026") or ISO string ("2026-03-31")
  * into a valid ISO string "YYYY-MM-DD". Returns empty string if invalid.
  */
-export function parseDateToIso(str) {
+export function parseDateToIso(str: unknown): string {
   if (!str || typeof str !== 'string') return '';
   const trimmed = str.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
@@ -77,7 +114,7 @@ export function parseDateToIso(str) {
 /**
  * Formats an ISO string (YYYY-MM-DD) into Indonesian date string ("31 Maret 2026").
  */
-export function formatToIndonesianDate(isoOrDateStr) {
+export function formatToIndonesianDate(isoOrDateStr: DateInput): string {
   if (!isoOrDateStr) return '';
   const str = String(isoOrDateStr).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
@@ -95,7 +132,7 @@ export function formatToIndonesianDate(isoOrDateStr) {
  * Format deadline string into human-readable Indonesian text with Day Name and WIB Time.
  * Example: "Kamis, 05 November 2026 - 17.00 WIB"
  */
-export function formatDeadlineWib(deadlineStr) {
+export function formatDeadlineWib(deadlineStr: DateInput): string {
   if (!deadlineStr) return 'Tanpa batas waktu';
   const trimmed = String(deadlineStr).trim();
   if (!trimmed || trimmed.toLowerCase() === 'menyesuaikan' || trimmed.toLowerCase() === 'tanpa batas' || trimmed.toLowerCase() === 'tanpa batas waktu') {
@@ -146,7 +183,7 @@ export function formatDeadlineWib(deadlineStr) {
   });
 
   const parts = formatter.formatToParts(d);
-  const m = {};
+  const m: Record<string, string> = {};
   parts.forEach(p => { m[p.type] = p.value; });
 
   const weekday = m.weekday || '';
@@ -168,7 +205,7 @@ export function formatDeadlineWib(deadlineStr) {
  * Converts date or timestamptz string into HTML5 <input type="datetime-local" step="1"> value
  * strictly in Asia/Jakarta (WIB) timezone: YYYY-MM-DDTHH:mm:ss.
  */
-export function toDatetimeLocalSecondsValue(str) {
+export function toDatetimeLocalSecondsValue(str: DateInput): string {
   if (!str) return '';
   const trimmed = String(str).trim();
   // Directly extracts calendar date and clock time from the ISO prefix.
@@ -194,7 +231,7 @@ export function toDatetimeLocalSecondsValue(str) {
       hour12: false
     });
     const parts = formatter.formatToParts(d);
-    const m = {};
+    const m: Record<string, string> = {};
     parts.forEach(p => { m[p.type] = p.value; });
     if (m.year && m.month && m.day) {
       return `${m.year}-${m.month}-${m.day}T${m.hour || '00'}:${m.minute || '00'}:${m.second || '00'}`;
@@ -206,7 +243,7 @@ export function toDatetimeLocalSecondsValue(str) {
 /**
  * Returns deadline status: isExpired, isToday, daysLeft, hoursLeft, and Indonesian formatted string.
  */
-export function getDeadlineStatus(deadlineStr) {
+export function getDeadlineStatus(deadlineStr: unknown): DeadlineStatus {
   if (!deadlineStr || typeof deadlineStr !== 'string') {
     return {
       isValidDate: false,
@@ -268,7 +305,7 @@ export function getDeadlineStatus(deadlineStr) {
     month: '2-digit',
     day: '2-digit'
   }).formatToParts(now);
-  const mNow = {};
+  const mNow: Record<string, string> = {};
   nowParts.forEach(p => { mNow[p.type] = p.value; });
 
   const dlParts = new Intl.DateTimeFormat('id-ID', {
@@ -277,7 +314,7 @@ export function getDeadlineStatus(deadlineStr) {
     month: '2-digit',
     day: '2-digit'
   }).formatToParts(deadlineDate);
-  const mDl = {};
+  const mDl: Record<string, string> = {};
   dlParts.forEach(p => { mDl[p.type] = p.value; });
 
   const isToday = mNow.year === mDl.year && mNow.month === mDl.month && mNow.day === mDl.day;
@@ -286,7 +323,7 @@ export function getDeadlineStatus(deadlineStr) {
   const daysLeft = Math.ceil(msDiff / (1000 * 60 * 60 * 24));
 
   let statusText = formatted;
-  let statusBadge = null;
+  let statusBadge: DeadlineStatus['statusBadge'] = null;
 
   if (isExpired) {
     statusText = `Ditutup (${formatted})`;
@@ -320,7 +357,7 @@ export function getDeadlineStatus(deadlineStr) {
  * Dynamically formats an ISO timestamp into Indonesian relative time and exact WIB time.
  * Example: "1 Hari yang lalu (Rabu, 04 November 2026 - 18:32 WIB)"
  */
-export function formatWibTimestamp(isoStr) {
+export function formatWibTimestamp(isoStr: TimestampInput): WibTimestamp {
   if (!isoStr) return { relative: 'Baru saja', exact: '', full: 'Baru saja' };
   const d = new Date(isoStr);
   if (isNaN(d.getTime())) return { relative: String(isoStr), exact: String(isoStr), full: String(isoStr) };
@@ -338,7 +375,7 @@ export function formatWibTimestamp(isoStr) {
   });
 
   const parts = formatter.formatToParts(d);
-  const partMap = {};
+  const partMap: Record<string, string> = {};
   parts.forEach(p => { partMap[p.type] = p.value; });
 
   const weekday = partMap.weekday || '';
@@ -387,7 +424,7 @@ export function formatWibTimestamp(isoStr) {
  * Convert any date / datetime / ISO string into standard HTML <input type="datetime-local"> value (YYYY-MM-DDTHH:mm)
  * strictly evaluated in WIB (Asia/Jakarta) timezone.
  */
-export function toDatetimeLocalValue(str) {
+export function toDatetimeLocalValue(str: DateInput): string {
   if (!str) return '';
   const trimmed = String(str).trim();
   // Directly extracts calendar date and clock time (HH:mm) from the ISO prefix.
@@ -413,7 +450,7 @@ export function toDatetimeLocalValue(str) {
       hour12: false
     });
     const parts = formatter.formatToParts(d);
-    const m = {};
+    const m: Record<string, string> = {};
     parts.forEach(p => { m[p.type] = p.value; });
     if (m.year && m.month && m.day) {
       return `${m.year}-${m.month}-${m.day}T${m.hour || '00'}:${m.minute || '00'}`;
@@ -428,7 +465,7 @@ export function toDatetimeLocalValue(str) {
 /**
  * Convert any date / datetime / legacy string into standard HTML <input type="date"> value (YYYY-MM-DD).
  */
-export function toDateInputValue(str) {
+export function toDateInputValue(str: DateInput): string {
   if (!str) return '';
   const dt = toDatetimeLocalValue(str);
   if (dt) return dt.split('T')[0];
@@ -445,7 +482,7 @@ export function toDateInputValue(str) {
  * 5. Pilih Tanggal (Multiple): "2026-11-23, 2026-11-25" -> "23, 25 November 2026"
  * Also supports ISO datetime / timestamptz with hours (e.g. "2026-03-10T14:30" -> "10 Maret 2026 • 14:30 WIB")
  */
-export function formatWibDateTime(str, options = {}) {
+export function formatWibDateTime(str: DateInput, options: { includeWeekday?: boolean } = {}): string {
   if (!str) return '';
   const trimmed = String(str).trim();
 
@@ -526,7 +563,7 @@ export function formatWibDateTime(str, options = {}) {
       hour12: false
     });
     const parts = formatter.formatToParts(d);
-    const m = {};
+    const m: Record<string, string> = {};
     parts.forEach(p => { m[p.type] = p.value; });
 
     let res = `${m.day || ''} ${m.month || ''} ${m.year || ''}`.trim();
@@ -546,7 +583,7 @@ export function formatWibDateTime(str, options = {}) {
  * Parse an existing date string into components and active mode.
  * Modes: 'date' (Tanggal Lengkap), 'range' (Rentang Tanggal), 'month' (Bulan & Tahun), 'year' (Tahun Saja)
  */
-export function parseFlexibleDate(str) {
+export function parseFlexibleDate(str: DateInput): FlexibleDate {
   const today = toWibIsoDate();
   const [curYear, curMonth] = [Number(today.slice(0, 4)), today.slice(5, 7)];
 
@@ -671,7 +708,7 @@ export function parseFlexibleDate(str) {
  * - 25 Okt & 25 Nov 2026 -> "25 Oktober, 25 November 2026"
  * - 21 Mar 2025 & 25 Agu 2027 -> "21 Maret 2025, 25 Agustus 2027"
  */
-export function formatMultipleDates(dates = []) {
+export function formatMultipleDates(dates: DateInput[] = []): string {
   const validDates = dates
     .map(d => String(d || '').trim().split('T')[0])
     .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));
@@ -686,22 +723,22 @@ export function formatMultipleDates(dates = []) {
   const sorted = Array.from(new Set(validDates)).sort();
 
   // Group by Year -> Month -> Days
-  const yearMap = new Map();
+  const yearMap = new Map<number, Map<number, number[]>>();
   for (const dateStr of sorted) {
     const [y, m, d] = dateStr.split('-').map(Number);
     if (!yearMap.has(y)) {
       yearMap.set(y, new Map());
     }
-    const monthMap = yearMap.get(y);
+    const monthMap = yearMap.get(y)!;
     if (!monthMap.has(m)) {
       monthMap.set(m, []);
     }
-    monthMap.get(m).push(d);
+    monthMap.get(m)!.push(d);
   }
 
-  const yearParts = [];
+  const yearParts: string[] = [];
   for (const [year, monthMap] of yearMap.entries()) {
-    const monthParts = [];
+    const monthParts: string[] = [];
     for (const [monthNum, days] of monthMap.entries()) {
       const monthName = INDONESIAN_MONTHS[monthNum - 1];
       const daysText = days.join(', ');
@@ -716,7 +753,7 @@ export function formatMultipleDates(dates = []) {
 /**
  * Builds the compact standard ISO string based on the chosen mode.
  */
-export function buildFlexibleDate(mode, fields = {}) {
+export function buildFlexibleDate(mode: FlexibleDateMode, fields: Partial<FlexibleDate> = {}): string {
   const today = toWibIsoDate();
   const [curYear, curMonth] = [Number(today.slice(0, 4)), today.slice(5, 7)];
 
@@ -750,7 +787,7 @@ export function buildFlexibleDate(mode, fields = {}) {
  * Format event date range (start & end) in Indonesian WIB format.
  * Handles datetime-local (with hours) as well as date-only (YYYY-MM-DD).
  */
-export function formatWibEventRange(startDateStr, endDateStr, fallback = '') {
+export function formatWibEventRange(startDateStr: DateInput, endDateStr: DateInput, fallback = ''): string {
   if (!startDateStr && !endDateStr) return fallback;
   const s = String(startDateStr || '').trim();
   const e = String(endDateStr || s).trim();
@@ -802,7 +839,7 @@ export function formatWibEventRange(startDateStr, endDateStr, fallback = '') {
  * Format updated_at timestamp into human-readable relative + WIB date-time.
  * Pattern: "Terakhir diubah : 2 hari yang lalu (04 November 2026 - 13.30 WIB)"
  */
-export function formatLastUpdatedWib(timestamp) {
+export function formatLastUpdatedWib(timestamp: TimestampInput): string {
   if (!timestamp) return '';
   const d = new Date(timestamp);
   if (isNaN(d.getTime())) return '';
@@ -845,7 +882,7 @@ export function formatLastUpdatedWib(timestamp) {
   });
 
   const parts = formatter.formatToParts(d);
-  const m = {};
+  const m: Record<string, string> = {};
   parts.forEach(p => { m[p.type] = p.value; });
 
   const day = m.day || '01';
@@ -864,7 +901,7 @@ export function formatLastUpdatedWib(timestamp) {
  * If endDate has time (e.g. 2026-11-11T13:00), compares against exact timestamp.
  * If date only (e.g. 2026-11-11), considers passed after 23:59:59 WIB of that date.
  */
-export function isEventPassed(startDateStr, endDateStr) {
+export function isEventPassed(startDateStr: DateInput, endDateStr: DateInput): boolean {
   if (!startDateStr && !endDateStr) return false;
   const targetStr = String(endDateStr || startDateStr || '').trim();
   if (!targetStr) return false;
