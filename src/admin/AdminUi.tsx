@@ -69,3 +69,52 @@ export function Switch({ checked, onChange, label, className }: { checked: boole
     </button>
   );
 }
+
+/** A button-looking label wrapping a hidden file input. */
+export function FileButton({ children, icon, accept, multiple, onChange, disabled }: { children: ReactNode; icon?: ReactNode; accept?: string; multiple?: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; disabled?: boolean }) {
+  return (
+    <label className={cn('inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-4 text-[0.86rem] font-semibold text-ink hover:border-line-strong focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-navy-ink', disabled && 'pointer-events-none opacity-55')}>
+      {icon}{children}
+      <input type="file" accept={accept} multiple={multiple} onChange={onChange} disabled={disabled} className="sr-only" />
+    </label>
+  );
+}
+
+/** Note about a local file that will upload on save, with a cancel action. */
+export function PendingFile({ children, onCancel }: { children: ReactNode; onCancel: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-info-line bg-info-tint px-3 py-2 text-[0.84rem] text-ink">
+      <span className="min-w-0">{children}</span>
+      <button type="button" onClick={onCancel} className="cursor-pointer border-0 bg-transparent p-0 text-[0.84rem] font-semibold text-danger hover:underline">Batalkan</button>
+    </div>
+  );
+}
+
+export function SearchBox({ value, onChange, placeholder, label, className }: { value: string; onChange: (v: string) => void; placeholder: string; label: string; className?: string }) {
+  return (
+    <div className={cn('relative w-full sm:w-60', className)}>
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3.5 top-1/2 size-[15px] -translate-y-1/2 fill-none stroke-current text-dim" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <input type="search" aria-label={label} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)}
+        className="h-10 w-full rounded-full border border-field-line bg-field pl-10 pr-4 text-[0.88rem] text-ink placeholder:text-dim hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink" />
+    </div>
+  );
+}
+
+export function FilterSelect({ value, onChange, label, children, className }: { value: string; onChange: (v: string) => void; label: string; children: ReactNode; className?: string }) {
+  return (
+    <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}
+      className={cn('h-10 max-w-full cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink', className)}>
+      {children}
+    </select>
+  );
+}
+
+/** Title row above a list: heading on the left, search/filters on the right. */
+export function ListToolbar({ title, children }: { title: ReactNode; children?: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <h3 className="text-[0.98rem] font-semibold text-ink">{title}</h3>
+      {children && <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">{children}</div>}
+    </div>
+  );
+}
