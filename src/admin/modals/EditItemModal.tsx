@@ -1,0 +1,707 @@
+import { AlertCircle, Edit2, X } from 'lucide-react';
+import { getCategoryFromLevel, getTenureRoles, validateMemberQuota } from '../../utils/memberQuotaUtils';
+import { formatWibEventRange, toDatetimeLocalSecondsValue, toDatetimeLocalValue } from '../../utils/dateUtils';
+import { uploadMediaToCloud } from '../../lib/supabase';
+import MemberFields from './edit/MemberFields';
+import DivisionFields from './edit/DivisionFields';
+import SubDivisionFields from './edit/SubDivisionFields';
+import GalleryFields from './edit/GalleryFields';
+import TenureFields from './edit/TenureFields';
+import DevotionFields from './edit/DevotionFields';
+import FormFields from './edit/FormFields';
+import EventFields from './edit/EventFields';
+import BrandAssetFields from './edit/BrandAssetFields';
+import FaqFields from './edit/FaqFields';
+import RoleFields from './edit/RoleFields';
+import { useAdminPortal } from '../AdminPortalContext';
+
+export default function EditItemModal() {
+  const {
+    activeTenure,
+    divisions,
+    editModalError,
+    editingItem,
+    isDark,
+    isUploadingMedia,
+    members,
+    onUpdateBrandAsset,
+    onUpdateDevotion,
+    onUpdateDivision,
+    onUpdateEvent,
+    onUpdateFaq,
+    onUpdateForm,
+    onUpdateGallery,
+    onUpdateMember,
+    onUpdateSubDivision,
+    onUpdateTenure,
+    onUpdateTenureRole,
+    roleQuotas,
+    setEditModalError,
+    setEditingItem,
+    setIsUploadingMedia,
+    showToast,
+    subDivisions,
+    submissions,
+    tenureRoles,
+    verifyImageUrl
+  } = useAdminPortal();
+
+  return (
+    <div 
+      onClick={() => setEditingItem(null)}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '16px'
+      }}
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="glass-panel modal-container modal-structured" 
+        style={{
+          maxWidth: editingItem.type === 'form' ? '680px' : '580px',
+          width: '100%',
+          maxHeight: 'min(90vh, 780px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          padding: 0,
+          background: isDark ? '#0b1329' : '#ffffff',
+          border: isDark ? '1.5px solid var(--mandiri-gold)' : '1px solid #e2e8f0',
+          boxShadow: isDark ? '0 25px 65px rgba(0, 0, 0, 0.75)' : '0 20px 50px rgba(0, 61, 121, 0.12)',
+          borderRadius: 'var(--radius-lg)'
+        }}
+      >
+        {/* Pinned Sticky Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 22px',
+          borderBottom: '1px solid var(--border-card)',
+          background: isDark ? 'var(--bg-card)' : '#ffffff',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Edit2 size={18} color="var(--mandiri-gold)" />
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+              Edit {
+                editingItem.type === 'member' ? 'Data Personel' :
+                editingItem.type === 'role' ? 'Data Role & Struktur' :
+                editingItem.type === 'division' ? 'Data Divisi' :
+                editingItem.type === 'sub_division' ? 'Data Sub-Divisi' :
+                editingItem.type === 'gallery' ? 'Dokumentasi Galeri' :
+                editingItem.type === 'devotion' ? 'Renungan Harian' : editingItem.type === 'song' ? 'Lagu Rohani' :
+                editingItem.type === 'form' ? 'Formulir Pendaftaran' :
+                editingItem.type === 'event' ? 'Event' :
+                editingItem.type === 'brand_asset' ? 'Asset & Template' :
+                editingItem.type === 'faq' ? 'Pertanyaan FAQ' :
+                'Periode Kepengurusan'
+              }
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingItem(null);
+              setEditModalError('');
+            }}
+            style={{
+              background: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid var(--border-card)',
+              color: 'var(--text-muted)',
+              cursor: 'pointer',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.15s ease'
+            }}
+            title="Tutup (ESC)"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Inline Error Alert if Required Validation Fails */}
+        {editModalError && (
+          <div style={{
+            margin: '14px 22px 0 22px',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'rgba(244, 63, 94, 0.15)',
+            border: '1px solid #f43f5e',
+            color: '#f43f5e',
+            fontSize: '0.82rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: 600
+          }}>
+            <AlertCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{editModalError}</span>
+          </div>
+        )}
+
+        {/* Scrollable Modal Content */}
+        <div style={{
+          padding: '20px 22px',
+          overflowY: 'auto',
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '14px'
+        }}>
+
+        {/* Edit Member Form (Complete Fields) */}
+        {editingItem.type === 'member' && <MemberFields />}
+
+        {/* Edit Division Form (Complete Fields) */}
+        {editingItem.type === 'division' && <DivisionFields />}
+
+        {/* Edit Sub-Division Form */}
+        {editingItem.type === 'sub_division' && <SubDivisionFields />}
+
+        {/* Edit Gallery Form (Complete with Photos & DocLinks management) */}
+        {editingItem.type === 'gallery' && <GalleryFields />}
+
+        {/* Edit Tenure Form */}
+        {editingItem.type === 'tenure' && <TenureFields />}
+
+        {/* Edit Devotion Form */}
+        {editingItem.type === 'devotion' && <DevotionFields />}
+
+        {/* Edit Form Fields (With Custom Field Builder) */}
+        {editingItem.type === 'form' && <FormFields />}
+
+        {/* Edit Event Form */}
+        {editingItem.type === 'event' && <EventFields />}
+
+        {/* Edit Brand Asset Form */}
+        {editingItem.type === 'brand_asset' && <BrandAssetFields />}
+
+        {/* Edit FAQ Form */}
+        {editingItem.type === 'faq' && <FaqFields />}
+
+        {/* Edit Role Form */}
+        {editingItem.type === 'role' && <RoleFields />}
+
+        </div>
+
+        {/* Pinned Sticky Footer Buttons */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '14px 22px',
+          borderTop: '1px solid var(--border-card)',
+          background: isDark ? 'var(--bg-card)' : '#ffffff',
+          flexShrink: 0
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingItem(null);
+              setEditModalError('');
+            }}
+            style={{
+              padding: '9px 18px',
+              borderRadius: 'var(--radius-full)',
+              background: 'transparent',
+              border: '1px solid var(--border-card)',
+              color: 'var(--text-muted)',
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              cursor: 'pointer'
+            }}
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            disabled={isUploadingMedia}
+            onClick={async () => {
+              setEditModalError('');
+              const it = editingItem.item || {};
+              if ((editingItem.type === 'member' || editingItem.type === 'division' || editingItem.type === 'sub_division' || editingItem.type === 'role') && !(it.name || '').trim()) {
+                setEditModalError('Nama wajib diisi sebelum menyimpan perubahan');
+                showToast('Nama wajib diisi sebelum menyimpan perubahan', 'error');
+                return;
+              }
+              if ((editingItem.type === 'gallery' || editingItem.type === 'tenure' || editingItem.type === 'form' || editingItem.type === 'event' || editingItem.type === 'brand_asset') && !(it.title || '').trim()) {
+                setEditModalError('Judul wajib diisi sebelum menyimpan perubahan');
+                showToast('Judul wajib diisi sebelum menyimpan perubahan', 'error');
+                return;
+              }
+              if (editingItem.type === 'tenure' && !(it.code || '').trim()) {
+                setEditModalError('Kode tahun periode wajib diisi');
+                showToast('Kode tahun periode wajib diisi', 'error');
+                return;
+              }
+              if (editingItem.type === 'faq') {
+                if (!(it.category || '').trim()) {
+                  setEditModalError('Kategori topik FAQ wajib dipilih');
+                  showToast('Kategori topik FAQ wajib dipilih', 'error');
+                  return;
+                }
+                if (!(it.question || '').trim() || !(it.answer || '').trim()) {
+                  setEditModalError('Pertanyaan dan jawaban FAQ wajib diisi');
+                  showToast('Pertanyaan dan jawaban FAQ wajib diisi', 'error');
+                  return;
+                }
+              }
+              if (editingItem.type === 'form') {
+                if (!(it.category || '').trim()) {
+                  setEditModalError('Kategori formulir wajib dipilih');
+                  showToast('Kategori formulir wajib dipilih', 'error');
+                  return;
+                }
+                if (!(it.deadline || '').trim()) {
+                  setEditModalError('Batas Akhir / Deadline Pendaftaran wajib ditentukan');
+                  showToast('Batas Akhir / Deadline Pendaftaran wajib ditentukan', 'error');
+                  return;
+                }
+                if (it.isLimited && (!it.maxQuota || parseInt(it.maxQuota, 10) <= 0)) {
+                  setEditModalError('Maksimal kuota responden harus lebih dari 0 jika kuota dibatasi');
+                  showToast('Maksimal kuota responden harus lebih dari 0 jika kuota dibatasi', 'error');
+                  return;
+                }
+                if (it.isEventConnected && !it.eventId) {
+                  setEditModalError('Silakan pilih Acara / Event yang terhubung');
+                  showToast('Silakan pilih Acara / Event yang terhubung', 'error');
+                  return;
+                }
+
+                // Validasi Integritas Unik: Periksa apakah ada field isUnique yang memiliki data duplikat di riwayat pengisian responden
+                const formFields = it.fields || [];
+                const uniqueFields = formFields.filter((f: any) => f.isUnique);
+                if (uniqueFields.length > 0) {
+                  const formSubs = submissions.filter(s => s.formId === it.id);
+                  for (const uf of uniqueFields) {
+                    const valCounts: Record<string, number> = {};
+                    formSubs.forEach(s => {
+                      const rawVal = s.data?.[uf.id] ?? s[uf.id] ?? s.answers?.[uf.id];
+                      if (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== '') {
+                        const normVal = String(rawVal).trim().toLowerCase();
+                        valCounts[normVal] = (valCounts[normVal] || 0) + 1;
+                      }
+                    });
+                    const duplicates = Object.entries(valCounts).filter(([_, count]) => count > 1);
+                    if (duplicates.length > 0) {
+                      const dupDetails = duplicates.map(([val, count]) => `"${val}" (${count}x)`).join(', ');
+                      const errMsg = `Field "${uf.label}" tidak dapat dijadikan Unik karena memiliki ${duplicates.length} data duplikat pada respon responden: ${dupDetails}. Hapus data duplikat di tab Responden terlebih dahulu.`;
+                      setEditModalError(errMsg);
+                      showToast(errMsg, 'error');
+                      return;
+                    }
+                  }
+                }
+              }
+
+
+              if (editingItem.type === 'member' && onUpdateMember) {
+                const targetTenureId = editingItem.item.tenureId || activeTenure?.id || '';
+                const availableRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
+                if (availableRoles.length === 0) {
+                  setEditModalError('Role kepengurusan masih kosong pada periode ini. Silakan buat role baru terlebih dahulu di menu Kelola Role & Jabatan.');
+                  showToast('Role kepengurusan masih kosong pada periode ini.', 'error');
+                  return;
+                }
+                const selectedRole = availableRoles.find(r => r.id === editingItem.item.roleId) ||
+                  availableRoles.find(r => String(r?.name || '').toLowerCase() === String(editingItem.item.role || '').toLowerCase()) ||
+                  null;
+
+                if (!selectedRole) {
+                  setEditModalError('Jabatan / Role wajib dipilih');
+                  showToast('Jabatan / Role wajib dipilih', 'error');
+                  return;
+                }
+
+                if (selectedRole?.requiresDivision && !editingItem.item.divisionId) {
+                  setEditModalError(`Divisi wajib dipilih untuk jabatan "${selectedRole.name}"`);
+                  showToast(`Divisi wajib dipilih untuk jabatan "${selectedRole.name}"`, 'error');
+                  return;
+                }
+
+                if (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) {
+                  const divSubs = subDivisions.filter(sd => sd.divisionId === editingItem.item.divisionId);
+                  if (divSubs.length === 0) {
+                    setEditModalError('Divisi yang dipilih belum memiliki sub-divisi. Silakan tambahkan sub-divisi di Kelola Divisi terlebih dahulu.');
+                    showToast('Divisi belum memiliki sub-divisi.', 'error');
+                    return;
+                  }
+                  if (!editingItem.item.subDivisionId || !divSubs.some(sd => sd.id === editingItem.item.subDivisionId)) {
+                    setEditModalError(`Sub-divisi wajib dipilih untuk jabatan "${selectedRole.name}"`);
+                    showToast(`Sub-divisi wajib dipilih untuk jabatan "${selectedRole.name}"`, 'error');
+                    return;
+                  }
+                }
+
+                // Validasi Ketat Kuota Kepengurusan saat edit
+                const quotaCheck = validateMemberQuota(
+                  {
+                    tenureId: targetTenureId,
+                    roleId: selectedRole?.id,
+                    role: selectedRole?.name || editingItem.item.role,
+                    divisionId: selectedRole?.requiresDivision ? editingItem.item.divisionId : undefined,
+                    subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? editingItem.item.subDivisionId : undefined,
+                    excludeMemberId: editingItem.item.id
+                  },
+                  members,
+                  divisions,
+                  roleQuotas,
+                  tenureRoles,
+                  subDivisions
+                );
+
+                if (!quotaCheck.isValid) {
+                  setEditModalError(quotaCheck.error);
+                  showToast(quotaCheck.error, 'error');
+                  return;
+                }
+                let finalImage = (editingItem.item.image || '').trim();
+
+                // Validasi URL foto jika diinput dalam bentuk tautan web
+                if (finalImage && !editingItem.pendingPhoto && !finalImage.startsWith('blob:')) {
+                  setIsUploadingMedia(true);
+                  showToast('Memverifikasi tautan foto profil...');
+                  const check = await verifyImageUrl(finalImage, { requireHttps: true, allowRelative: false });
+                  if (!check.valid) {
+                    setIsUploadingMedia(false);
+                    setEditModalError(`Tautan foto tidak valid: ${check.error}`);
+                    showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
+                    return;
+                  }
+                  setIsUploadingMedia(false);
+                }
+
+                if (editingItem.pendingPhoto) {
+                  setIsUploadingMedia(true);
+                  showToast(`Mengunggah foto "${editingItem.pendingPhoto.name}" ke Cloud Storage...`);
+                  try {
+                    const cloudUrl = await uploadMediaToCloud(editingItem.pendingPhoto, 'members');
+                    if (cloudUrl) finalImage = cloudUrl;
+                  } catch (err) {
+                    setIsUploadingMedia(false);
+                    showToast('Gagal mengunggah foto: ' + ((err as Error).message || 'Error jaringan'), 'error');
+                    return;
+                  }
+                  setIsUploadingMedia(false);
+                }
+                const finalResp = editingItem.item.rawResponsibilities !== undefined
+                  ? editingItem.item.rawResponsibilities.split('\n').map((s: any) => s.trim()).filter(Boolean)
+                  : (Array.isArray(editingItem.item.responsibilities) ? editingItem.item.responsibilities : []);
+                const { rawResponsibilities, ...cleanItem } = editingItem.item;
+                const finalCat = getCategoryFromLevel(selectedRole?.level ?? 5);
+                const divObj = selectedRole?.requiresDivision ? divisions.find(d => d.id === cleanItem.divisionId) : null;
+                const finalRoleName = selectedRole?.requiresDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj
+                  ? `Pimpro ${divObj.name}`
+                  : (selectedRole?.name || cleanItem.role || '');
+
+                onUpdateMember({
+                  ...cleanItem,
+                  roleId: selectedRole?.id,
+                  role: finalRoleName,
+                  title: divObj?.name || '',
+                  category: finalCat,
+                  divisionId: selectedRole?.requiresDivision ? cleanItem.divisionId : undefined,
+                  subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? cleanItem.subDivisionId : undefined,
+                  image: finalImage,
+                  responsibilities: finalResp
+                });
+              }
+              if (editingItem.type === 'sub_division') {
+                const cleanName = (editingItem.item.name || '').trim();
+                const targetDivId = editingItem.item.divisionId;
+                const isDup = subDivisions.some(s => s.divisionId === targetDivId && s.id !== editingItem.item.id && s.name.toLowerCase().trim() === cleanName.toLowerCase());
+                if (isDup) {
+                  setEditModalError('Nama sub-divisi "' + cleanName + '" sudah terdaftar pada divisi ini.');
+                  showToast('Nama sub-divisi "' + cleanName + '" sudah terdaftar pada divisi ini.', 'error');
+                  return;
+                }
+                if (onUpdateSubDivision) {
+                  onUpdateSubDivision({
+                    ...editingItem.item,
+                    name: cleanName,
+                    code: (editingItem.item.code || '').trim().toUpperCase() || undefined,
+                    description: (editingItem.item.description || '').trim()
+                  });
+                }
+              }
+              if (editingItem.type === 'division' && onUpdateDivision) {
+                const finalFocus = editingItem.item.rawFocusAreas !== undefined
+                  ? editingItem.item.rawFocusAreas.split(',').map((s: any) => s.trim()).filter(Boolean)
+                  : (Array.isArray(editingItem.item.focusAreas) ? editingItem.item.focusAreas : []);
+                const { rawFocusAreas, ...cleanItem } = editingItem.item;
+                const selMem = members.find(m => m.id === cleanItem.memberId);
+                const finalLeadName = selMem ? selMem.name : (cleanItem.leadName || '');
+                onUpdateDivision({ ...cleanItem, leadName: finalLeadName, focusAreas: finalFocus });
+              }
+              if (editingItem.type === 'gallery' && onUpdateGallery) {
+                if (!editingItem.item.divisionId && !editingItem.item.division) {
+                  setEditModalError('Divisi penyelenggara wajib dipilih untuk galeri');
+                  showToast('Divisi penyelenggara wajib dipilih untuk galeri', 'error');
+                  return;
+                }
+                if (!(editingItem.item.description || '').trim()) {
+                  setEditModalError('Deskripsi kegiatan wajib diisi untuk galeri');
+                  showToast('Deskripsi kegiatan wajib diisi untuk galeri', 'error');
+                  return;
+                }
+                let finalPhotos = Array.isArray(editingItem.item.photos) ? [...editingItem.item.photos] : [];
+                if (editingItem.pendingPhotos && editingItem.pendingPhotos.length > 0) {
+                  setIsUploadingMedia(true);
+                  showToast(`Mengunggah ${editingItem.pendingPhotos.length} foto ke Cloud Storage...`);
+                  try {
+                    for (const pFile of editingItem.pendingPhotos) {
+                      const cloudUrl = await uploadMediaToCloud(pFile, 'gallery');
+                      if (cloudUrl) {
+                        const blobIdx = finalPhotos.findIndex(u => typeof u === 'string' && u.startsWith('blob:'));
+                        if (blobIdx !== -1) {
+                          finalPhotos[blobIdx] = cloudUrl;
+                        } else {
+                          finalPhotos.push(cloudUrl);
+                        }
+                      }
+                    }
+                  } catch (err) {
+                    setIsUploadingMedia(false);
+                    showToast('Gagal mengunggah foto galeri: ' + ((err as Error).message || 'Error'), 'error');
+                    return;
+                  }
+                  setIsUploadingMedia(false);
+                }
+                finalPhotos = finalPhotos.filter(u => typeof u === 'string' && !u.startsWith('blob:'));
+
+                // Auto-include any pending photo links entered in the textarea
+                const pendingRawUrls = (editingItem.photoUrlInput || '').trim();
+                if (pendingRawUrls) {
+                  const urls = pendingRawUrls.split(/[\n,]+/).map((s: any) => s.trim()).filter(Boolean);
+                  for (const u of urls) {
+                    const check = await verifyImageUrl(u);
+                    if (!check.valid) {
+                      setEditModalError(`Tautan foto "${u}" tidak valid: ${check.error}`);
+                      showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
+                      return;
+                    }
+                    if (!finalPhotos.includes(u)) {
+                      finalPhotos.push(u);
+                    }
+                  }
+                }
+
+                if (finalPhotos.length === 0) {
+                  setEditModalError('Dokumentasi kegiatan wajib memiliki minimal 1 foto!');
+                  showToast('Dokumentasi kegiatan wajib memiliki minimal 1 foto!', 'error');
+                  return;
+                }
+                const {
+                  _dateMode,
+                  _dateVal,
+                  _startDate,
+                  _endDate,
+                  _month,
+                  _year,
+                  ...cleanGalItem
+                } = editingItem.item;
+                onUpdateGallery({ ...cleanGalItem, photos: finalPhotos });
+              }
+              if (editingItem.type === 'tenure' && onUpdateTenure) {
+                const finalMisi = editingItem.item.rawMisi !== undefined
+                  ? editingItem.item.rawMisi.split('\n').map((s: any) => s.trim()).filter(Boolean)
+                  : (Array.isArray(editingItem.item.misi) ? editingItem.item.misi : []);
+                const { rawMisi, ...cleanItem } = editingItem.item;
+                onUpdateTenure({ ...cleanItem, misi: finalMisi });
+              }
+              if (editingItem.type === 'devotion' && onUpdateDevotion) onUpdateDevotion(editingItem.item);
+              if (editingItem.type === 'form') {
+                const fields = editingItem.item.fields || [];
+                if (onUpdateForm) {
+                  const cleanFields = fields.map(({ rawOptions, ...rest }: any) => rest);
+                  const cleanDeadline = editingItem.item.deadline ? toDatetimeLocalSecondsValue(editingItem.item.deadline) : '';
+                  const isLimitedVal = editingItem.item.isLimited === true;
+                  const maxQuotaVal = isLimitedVal ? (parseInt(editingItem.item.maxQuota, 10) || 0) : 0;
+                  const isEventConnectedVal = editingItem.item.isEventConnected === true;
+                  const eventIdVal = isEventConnectedVal ? (editingItem.item.eventId || '') : '';
+                  const isLuckyDrawVal = isEventConnectedVal && editingItem.item.isLuckyDraw === true;
+                  onUpdateForm({
+                    ...editingItem.item,
+                    deadline: cleanDeadline,
+                    fields: cleanFields,
+                    isLimited: isLimitedVal,
+                    maxQuota: maxQuotaVal,
+                    isEventConnected: isEventConnectedVal,
+                    eventId: eventIdVal,
+                    isLuckyDraw: isLuckyDrawVal
+                  });
+                }
+              }
+              if (editingItem.type === 'event' && onUpdateEvent) {
+                const catVal = (editingItem.item.kategori || editingItem.item.category || editingItem.item.badge || '').trim();
+                if (!catVal) {
+                  setEditModalError('Kategori program/kegiatan wajib dipilih');
+                  showToast('Kategori program/kegiatan wajib dipilih', 'error');
+                  return;
+                }
+                if (!editingItem.item.divisionId) {
+                  setEditModalError('Divisi penyelenggara wajib dipilih untuk Event');
+                  showToast('Divisi penyelenggara wajib dipilih untuk Event', 'error');
+                  return;
+                }
+                if (!editingItem.item.startDate) {
+                  setEditModalError('Tanggal & Jam Mulai event wajib diisi');
+                  showToast('Tanggal & Jam Mulai event wajib diisi', 'error');
+                  return;
+                }
+                if (!editingItem.item.endDate) {
+                  setEditModalError('Tanggal & Jam Berakhir event wajib diisi');
+                  showToast('Tanggal & Jam Berakhir event wajib diisi', 'error');
+                  return;
+                }
+                if (toDatetimeLocalValue(editingItem.item.startDate) > toDatetimeLocalValue(editingItem.item.endDate)) {
+                  setEditModalError('Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir');
+                  showToast('Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir', 'error');
+                  return;
+                }
+                if (!(editingItem.item.description || '').trim()) {
+                  setEditModalError('Deskripsi kegiatan event wajib diisi');
+                  showToast('Deskripsi kegiatan event wajib diisi', 'error');
+                  return;
+                }
+                if (editingItem.item.isLimited) {
+                  const mq = Number(editingItem.item.maxQuota || 0);
+                  if (!mq || mq <= 0) {
+                    setEditModalError('Batas maksimal kuota wajib diisi angka lebih dari 0');
+                    showToast('Batas maksimal kuota wajib diisi angka lebih dari 0', 'error');
+                    return;
+                  }
+                }
+                if (editingItem.item.totalRab === '' || editingItem.item.totalRab === undefined || editingItem.item.totalRab === null || isNaN(Number(editingItem.item.totalRab)) || Number(editingItem.item.totalRab) < 0) {
+                  setEditModalError('Estimasi Total RAB wajib diisi dengan nominal angka yang valid (>= 0)');
+                  showToast('Estimasi Total RAB wajib diisi dengan nominal angka yang valid (>= 0)', 'error');
+                  return;
+                }
+                const pesertaVal = (editingItem.item.peserta || editingItem.item.kpi || '').trim();
+                const calculatedDate = formatWibEventRange(editingItem.item.startDate, editingItem.item.endDate);
+                onUpdateEvent({
+                  ...editingItem.item,
+                  kategori: catVal,
+                  category: catVal,
+                  badge: catVal,
+                  peserta: pesertaVal,
+                  kpi: pesertaVal,
+                  totalRab: Number(editingItem.item.totalRab),
+                  isPublic: Boolean(editingItem.item.isPublic),
+                  isLimited: Boolean(editingItem.item.isLimited),
+                  maxQuota: editingItem.item.isLimited ? Number(editingItem.item.maxQuota || 0) : 0,
+                  date: calculatedDate || (editingItem.item.date || '').trim() || ''
+                });
+              }
+              if (editingItem.type === 'brand_asset' && onUpdateBrandAsset) {
+                const assetCat = (editingItem.item.category || '').trim();
+                if (!assetCat) {
+                  setEditModalError('Kategori katalog asset wajib dipilih');
+                  showToast('Kategori katalog asset wajib dipilih', 'error');
+                  return;
+                }
+                const assetFType = (editingItem.item.fileType || '').trim();
+                if (!assetFType) {
+                  setEditModalError('Format file asset wajib diisi');
+                  showToast('Format file asset wajib diisi', 'error');
+                  return;
+                }
+                let finalFileUrl = editingItem.item.fileUrl || '';
+                let finalPreviewUrl = editingItem.item.previewUrl || '';
+                if (editingItem.pendingFile) {
+                  setIsUploadingMedia(true);
+                  showToast(`Mengunggah file "${editingItem.pendingFile.name}" ke Cloud Storage...`);
+                  try {
+                    const cloudUrl = await uploadMediaToCloud(editingItem.pendingFile, 'assets');
+                    if (cloudUrl) finalFileUrl = cloudUrl;
+                  } catch (err) {
+                    setIsUploadingMedia(false);
+                    showToast('Gagal mengunggah file asset: ' + ((err as Error).message || 'Error'), 'error');
+                    return;
+                  }
+                  setIsUploadingMedia(false);
+                }
+                if (editingItem.pendingPreviewFile) {
+                  setIsUploadingMedia(true);
+                  showToast(`Mengunggah preview "${editingItem.pendingPreviewFile.name}"...`);
+                  try {
+                    if (editingItem.pendingPreviewFile === editingItem.pendingFile) {
+                      finalPreviewUrl = finalFileUrl;
+                    } else {
+                      const previewCloudUrl = await uploadMediaToCloud(editingItem.pendingPreviewFile, 'assets');
+                      if (previewCloudUrl) finalPreviewUrl = previewCloudUrl;
+                    }
+                  } catch (err) {
+                    setIsUploadingMedia(false);
+                    showToast('Gagal mengunggah gambar preview: ' + ((err as Error).message || 'Error'), 'error');
+                    return;
+                  }
+                  setIsUploadingMedia(false);
+                }
+                const isValidUrl = (url: any) => /^https?:\/\/.+/i.test(url.trim()) || url.trim().startsWith('/');
+                if (finalFileUrl && !editingItem.pendingFile && !isValidUrl(finalFileUrl)) {
+                  setEditModalError('URL file harus berupa tautan web yang valid (diawali http:// atau https://)');
+                  showToast('URL file harus berupa tautan web yang valid', 'error');
+                  return;
+                }
+                if (finalPreviewUrl && !editingItem.pendingPreviewFile && !isValidUrl(finalPreviewUrl)) {
+                  setEditModalError('URL preview harus berupa tautan web yang valid (diawali http:// atau https://)');
+                  showToast('URL preview harus berupa tautan web yang valid', 'error');
+                  return;
+                }
+                const isImageFile = (url: any) => /\.(png|jpe?g|svg|webp|gif|avif)($|\?)/i.test(url) || (url || '').startsWith('data:image/');
+                const effectiveFileUrl = finalFileUrl || (isImageFile(finalPreviewUrl) ? finalPreviewUrl : '');
+                const effectivePreviewUrl = finalPreviewUrl || (isImageFile(finalFileUrl) ? finalFileUrl : '');
+                if (!effectiveFileUrl) {
+                  setEditModalError('File asset wajib diunggah atau memiliki tautan file aktif');
+                  showToast('File asset wajib diunggah', 'error');
+                  return;
+                }
+                onUpdateBrandAsset({
+                  ...editingItem.item,
+                  fileUrl: effectiveFileUrl,
+                  previewUrl: effectivePreviewUrl
+                });
+              }
+              if (editingItem.type === 'role' && onUpdateTenureRole) onUpdateTenureRole(editingItem.item);
+              if (editingItem.type === 'faq' && onUpdateFaq) onUpdateFaq(editingItem.item);
+              setEditingItem(null);
+              setEditModalError('');
+              showToast('Perubahan data berhasil disimpan & disinkronkan ke Cloud!');
+            }}
+            style={{
+              padding: '9px 24px',
+              borderRadius: 'var(--radius-full)',
+              background: isUploadingMedia ? 'var(--input-bg)' : 'var(--mandiri-gold)',
+              border: 'none',
+              color: isUploadingMedia ? 'var(--text-muted)' : '#040914',
+              fontWeight: 800,
+              fontSize: '0.86rem',
+              cursor: isUploadingMedia ? 'not-allowed' : 'pointer',
+              boxShadow: isUploadingMedia ? 'none' : '0 4px 14px rgba(255, 184, 0, 0.35)'
+            }}
+          >
+            {isUploadingMedia ? 'Mengunggah & Menyimpan...' : 'Simpan Perubahan'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

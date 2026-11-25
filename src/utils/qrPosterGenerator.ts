@@ -6,7 +6,7 @@ import { getPublicBaseUrl } from './urlUtils';
  * Generate a high-resolution, professionally styled Printable Poster Card (PNG)
  * for a Form with QR Code, Mandiri & Bapekkris branding, title, subtitle, and URL.
  */
-import type { AppItem } from '../lib/supabase';
+import type { AppItem, AppRecord } from '../lib/supabase';
 
 export interface QrPoster {
   dataUrl: string;
@@ -17,7 +17,7 @@ export interface QrPoster {
 }
 
 /** Accepts either `{ form, event, baseUrl }` or the form fields directly (`title`, `formUrl`, ...). */
-export async function generateFormQrPoster(options: AppItem = {}): Promise<QrPoster> {
+export async function generateFormQrPoster(options: AppRecord = {}): Promise<QrPoster> {
   // Gracefully handle both { form, event, baseUrl } and direct { title, description, formUrl, ... }
   const form: AppItem = options.form || {
     id: options.id || options.formId || '',

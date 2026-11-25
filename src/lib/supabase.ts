@@ -17,7 +17,13 @@ const dynamicDb = supabase as unknown as SupabaseClient;
  * Item shape held in web state (camelCase). Components are still JavaScript, so this stays
  * loose until the state itself is typed (TanStack Query step).
  */
-export type AppItem = Record<string, any>;
+export interface AppItem {
+  id: string;
+  [key: string]: any;
+}
+
+/** Loose object that is not a table row (settings values, option bags). */
+export type AppRecord = Record<string, any>;
 
 type DbFunctions = Database['public']['Functions'];
 

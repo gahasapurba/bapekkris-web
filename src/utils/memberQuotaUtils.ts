@@ -9,7 +9,7 @@
  * 4. requiresDivision: Boolean (apakah memerlukan pilihan divisi penugasan)
  */
 
-import type { AppItem } from '../lib/supabase';
+import type { AppItem, AppRecord } from '../lib/supabase';
 
 export type MemberCategory = 'penasehat' | 'pembina' | 'inti' | 'pimpro' | 'anggota';
 
@@ -99,7 +99,7 @@ export function formatLevelOptionLabel(
  */
 export function getTenureRoles(
   tenureId: string | null | undefined,
-  roleQuotas: AppItem | AppItem[] | null = {},
+  roleQuotas: AppRecord | AppItem[] | null = {},
   tenureRoles: AppItem[] | null = []
 ): TenureRole[] {
   // 1. Jika argumen roleQuotas berupa array langsung (daftar tenureRoles)
@@ -138,8 +138,8 @@ export function getTenureRoles(
     }));
   }
 
-  const config = (roleQuotas && typeof roleQuotas === 'object' && (roleQuotas as AppItem)[String(tenureId)])
-    ? (roleQuotas as AppItem)[String(tenureId)]
+  const config = (roleQuotas && typeof roleQuotas === 'object' && (roleQuotas as AppRecord)[String(tenureId)])
+    ? (roleQuotas as AppRecord)[String(tenureId)]
     : null;
 
   // 3. Jika format array roles di roleQuotas
@@ -267,7 +267,7 @@ export function validateMemberQuota(
   { tenureId, roleId, role = '', divisionId, subDivisionId = null, excludeMemberId = null }: MemberAssignment,
   members: AppItem[] = [],
   divisions: AppItem[] = [],
-  roleQuotas: AppItem | AppItem[] | null = {},
+  roleQuotas: AppRecord | AppItem[] | null = {},
   tenureRoles: AppItem[] | null = [],
   subDivisions: AppItem[] = []
 ): QuotaValidation {
@@ -372,7 +372,7 @@ export function getTenureQuotaSummary(
   tenureId: string | null | undefined,
   members: AppItem[] = [],
   divisions: AppItem[] = [],
-  roleQuotas: AppItem | AppItem[] | null = {},
+  roleQuotas: AppRecord | AppItem[] | null = {},
   tenureRoles: AppItem[] | null = []
 ) {
   const roles = getTenureRoles(tenureId, roleQuotas, tenureRoles);
