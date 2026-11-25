@@ -123,7 +123,10 @@ Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, la
 - ✅ Komponen dasar `src/ui/` (Button, Card, Badge, Field/Input/Select/Textarea, Dialog, Sheet, Tabs, Skeleton, EmptyState, PageHeader, toast + confirm via `useFeedback`). Pratinjau: `npm run dev` lalu buka `/#ui-kit` (tidak ikut build produksi). Semua `alert()`/`confirm()` sudah diganti.
 - ✅ Layout: `src/components/layout/` (SiteHeader, menu seluler Sheet, SiteFooter, `navItems.ts`).
 - ✅ Beranda: `src/components/home/`.
-- ⏭️ Berikutnya (urutan): Acara (`ProgramSection`, `EventCalendarView`) → Formulir (`dynamic-form/sections`) → Renungan/Alkitab/Kidung/EasyWorship → Organisasi → Galeri/Aset → Admin (konsep B) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
+- ✅ Ibadah & Acara: `src/components/events/` (daftar, modal detail + RSVP, kalender — kalender juga dipakai Admin).
+- ✅ Formulir: `src/components/dynamic-form/sections/`.
+- ✅ Renungan (`devotions/`), Alkitab (`bible/`), Kidung (`songs/`), EasyWorship (`easyworship/`). Pola: logika lama dipindah apa adanya ke hook `useX.jsx`, markup ditulis ulang di `X.tsx`.
+- ⏭️ Berikutnya: Organisasi (perhatikan ekspor PDF html2canvas) → Galeri/Aset → statistik pendaftaran acara (`registration-stats`) → Admin (konsep B) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
 
 **Aturan teknis redesign:**
 - Halaman yang sudah di-redesign didaftarkan di `FULL_BLEED_TABS` (`App.jsx`) agar lepas dari `.container` lama dan mengatur lebarnya sendiri (`Container`/`Section` di `home/shared.tsx`).
