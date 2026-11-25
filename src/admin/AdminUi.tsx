@@ -118,3 +118,24 @@ export function ListToolbar({ title, children }: { title: ReactNode; children?: 
     </div>
   );
 }
+
+/** Checkbox with a bold label and an optional explanation line. */
+export function CheckField({ checked, onChange, label, description, className }: { checked: boolean; onChange: (v: boolean) => void; label: ReactNode; description?: ReactNode; className?: string }) {
+  return (
+    <label className={cn('flex cursor-pointer items-start gap-3 rounded-md border border-line bg-surface p-3', className)}>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 size-[18px] shrink-0 cursor-pointer accent-[var(--mandiri-blue)]" />
+      <span className="text-[0.88rem] leading-snug text-ink"><strong className="font-semibold">{label}</strong>{description && <span className="mt-0.5 block text-[0.82rem] text-muted">{description}</span>}</span>
+    </label>
+  );
+}
+
+/** Scrollable bordered table shell; use with thClass / tdClass. */
+export function AdminTable({ children, label }: { children: ReactNode; label?: string }) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line">
+      <table aria-label={label} className="w-full border-collapse text-left text-[0.86rem]">{children}</table>
+    </div>
+  );
+}
+export const thClass = 'whitespace-nowrap border-b border-line bg-subtle px-3.5 py-2.5 text-[0.76rem] font-semibold uppercase tracking-wide text-dim';
+export const tdClass = 'border-b border-line px-3.5 py-3 align-top text-ink';
