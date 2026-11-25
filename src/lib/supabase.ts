@@ -1,14 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
-import { toWibIsoDate } from '../utils/dateUtils.js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { toWibIsoDate } from '../utils/dateUtils';
+import type { Database, Json, Tables } from '../types/database';
 
-const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl: string = import.meta.env?.VITE_SUPABASE_URL || '';
+const supabaseAnonKey: string = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+
+/**
+ * Untyped view of the same client, used only where the table name is chosen at runtime
+ * (generic row writes). Typed access should go through `supabase`.
+ */
+const dynamicDb = supabase as unknown as SupabaseClient;
+
+/**
+ * Item shape held in web state (camelCase). Components are still JavaScript, so this stays
+ * loose until the state itself is typed (TanStack Query step).
+ */
+export type AppItem = Record<string, any>;
+
+type DbFunctions = Database['public']['Functions'];
 
 const LOCAL_PREFIX = 'bapekkris_mandiri_v1_';
 
-export function loadLocalCache(key, fallbackValue) {
+export function loadLocalCache<T>(key: string, fallbackValue: T): T {
   try {
     const raw = localStorage.getItem(LOCAL_PREFIX + key);
     if (raw !== null && raw !== undefined) {
@@ -20,7 +35,7 @@ export function loadLocalCache(key, fallbackValue) {
   return fallbackValue;
 }
 
-export function saveLocalCache(key, value) {
+export function saveLocalCache(key: string, value: unknown): void {
   try {
     localStorage.setItem(LOCAL_PREFIX + key, JSON.stringify(value));
   } catch (e) {
@@ -49,11 +64,29 @@ const TABLE_MAP = {
   devotions: 'daily_devotions',
   worshipSongs: 'worship_songs',
   easyWorshipSchedules: 'easy_worship_schedules'
-};
+} as const satisfies Record<string, keyof Database['public']['Tables']>;
 
-export const rowMappers = {
+export type TableKey = keyof typeof TABLE_MAP;
+
+interface LuckyDrawDetails {
+  winnerName?: string;
+  winnerIdentifier?: string;
+  winnerDepartment?: string;
+  drawNumber?: number;
+  source?: string;
+  drawnFieldLabel?: string;
+  drawnFieldValue?: string;
+  submissionData?: Record<string, unknown>;
+}
+
+interface RowMapper<K extends TableKey> {
+  toDb: (item: AppItem) => Record<string, unknown>;
+  fromDb: (row: Tables<(typeof TABLE_MAP)[K]>) => AppItem;
+}
+
+export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
   tenures: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       code: String(item.code || item.id),
       title: String(item.title || ''),
@@ -66,7 +99,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"tenures">) => ({
       id: row.id,
       code: row.code,
       title: row.title,
@@ -83,7 +116,7 @@ export const rowMappers = {
   },
 
   tenureRoles: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       name: String(item.name || '').trim(),
@@ -94,7 +127,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"tenure_roles">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       name: row.name,
@@ -110,7 +143,7 @@ export const rowMappers = {
   },
 
   divisions: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       name: String(item.name || '').trim(),
@@ -122,7 +155,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"divisions">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       name: row.name,
@@ -138,7 +171,7 @@ export const rowMappers = {
   },
 
   subDivisions: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       division_id: String(item.divisionId || item.division_id),
       name: String(item.name || '').trim(),
@@ -147,7 +180,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"sub_divisions">) => ({
       id: row.id,
       divisionId: row.division_id,
       name: row.name,
@@ -160,7 +193,7 @@ export const rowMappers = {
   },
 
   members: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       division_id: item.divisionId || null,
@@ -175,7 +208,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"members">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       divisionId: row.division_id,
@@ -194,7 +227,7 @@ export const rowMappers = {
   },
 
   events: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       division_id: item.divisionId || null,
@@ -213,7 +246,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"events">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       divisionId: row.division_id,
@@ -236,7 +269,7 @@ export const rowMappers = {
   },
 
   galleries: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       division_id: item.divisionId || null,
@@ -249,7 +282,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"galleries">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       divisionId: row.division_id,
@@ -266,7 +299,7 @@ export const rowMappers = {
   },
 
   forms: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       tenure_id: item.tenureId || null,
       event_id: item.eventId || null,
@@ -287,7 +320,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"forms">) => ({
       id: row.id,
       tenureId: row.tenure_id,
       eventId: row.event_id,
@@ -312,7 +345,7 @@ export const rowMappers = {
   },
 
   submissions: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       form_id: item.formId,
       data: item.data || {},
@@ -322,7 +355,7 @@ export const rowMappers = {
       created_at: item.createdAt || new Date().toISOString(),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"submissions">) => ({
       id: row.id,
       formId: row.form_id,
       data: row.data || {},
@@ -335,7 +368,7 @@ export const rowMappers = {
   },
 
   brandAssets: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       title: String(item.title || '').trim(),
       category: item.category || 'Logo & Brand',
@@ -348,7 +381,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"brand_assets">) => ({
       id: row.id,
       title: row.title,
       category: row.category || 'Logo & Brand',
@@ -365,7 +398,7 @@ export const rowMappers = {
   },
 
   eventRsvps: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       event_id: item.eventId,
       attendee_name: item.attendeeName || '',
@@ -374,7 +407,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"event_rsvps">) => ({
       id: row.id,
       eventId: row.event_id,
       attendeeName: row.attendee_name,
@@ -387,7 +420,7 @@ export const rowMappers = {
   },
 
   faqs: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       question: item.question,
       answer: item.answer,
@@ -397,7 +430,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"faqs">) => ({
       id: row.id,
       question: row.question,
       answer: row.answer,
@@ -411,7 +444,7 @@ export const rowMappers = {
   },
 
   luckyDraws: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       event_id: item.eventId,
       submission_id: item.submissionId,
@@ -431,8 +464,8 @@ export const rowMappers = {
       },
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => {
-      const details = row.details || {};
+    fromDb: (row: Tables<"lucky_draws">) => {
+      const details = (row.details || {}) as LuckyDrawDetails;
       return {
         id: row.id,
         eventId: row.event_id,
@@ -459,7 +492,7 @@ export const rowMappers = {
   },
 
   devotions: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       title: String(item.title || '').trim(),
       devotion_date: item.devotionDate || toWibIsoDate(),
@@ -472,7 +505,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"daily_devotions">) => ({
       id: row.id,
       title: row.title,
       devotionDate: row.devotion_date,
@@ -489,7 +522,7 @@ export const rowMappers = {
   },
 
   worshipSongs: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       title: String(item.title || '').trim(),
       song_number: item.songNumber || '',
@@ -501,7 +534,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"worship_songs">) => ({
       id: row.id,
       title: row.title,
       songNumber: row.song_number || '',
@@ -517,7 +550,7 @@ export const rowMappers = {
   },
 
   easyWorshipSchedules: {
-    toDb: (item) => ({
+    toDb: (item: AppItem) => ({
       id: String(item.id),
       event_id: item.eventId || null,
       title: String(item.title || '').trim(),
@@ -527,7 +560,7 @@ export const rowMappers = {
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
-    fromDb: (row) => ({
+    fromDb: (row: Tables<"easy_worship_schedules">) => ({
       id: row.id,
       eventId: row.event_id,
       title: row.title,
@@ -547,12 +580,12 @@ export const rowMappers = {
 
 // Tables holding personal data of registrants: readable by authorized admins only and
 // never persisted in the browser cache.
-const PRIVATE_KEYS = ['submissions', 'eventRsvps', 'luckyDraws'];
+const PRIVATE_KEYS: readonly TableKey[] = ['submissions', 'eventRsvps', 'luckyDraws'];
 PRIVATE_KEYS.forEach((key) => {
   try { localStorage.removeItem(LOCAL_PREFIX + key); } catch (e) { /* storage unavailable */ }
 });
 
-const FETCH_ORDER = {
+const FETCH_ORDER: Record<TableKey, string> = {
   tenures: 'sort_order',
   divisions: 'sort_order',
   subDivisions: 'sort_order',
@@ -577,6 +610,22 @@ const SETTING_KEYS = {
   activeTenureId: 'active_tenure_id',
   announcementBar: 'announcement_bar',
   roleQuotas: 'role_quotas'
+} as const;
+
+export type SettingKey = keyof typeof SETTING_KEYS;
+
+export interface RegistrationCounts {
+  forms: Record<string, number>;
+  events: Record<string, number>;
+}
+
+export type CloudState = Partial<Record<TableKey, AppItem[]>> & {
+  registrationCounts?: RegistrationCounts;
+  pageVisibility?: AppItem;
+  activeTenureId?: string;
+  announcementBar?: AppItem;
+  roleQuotas?: Json;
+  failed: string[];
 };
 
 /**
@@ -584,19 +633,19 @@ const SETTING_KEYS = {
  * aggregated registration counts instead. Only data that was fetched successfully is present
  * in the result, so callers never mistake a failed request for an empty table.
  */
-export async function fetchAllCloudState({ includePrivate = false } = {}) {
-  const keys = Object.keys(FETCH_ORDER).filter((key) => includePrivate || !PRIVATE_KEYS.includes(key));
+export async function fetchAllCloudState({ includePrivate = false } = {}): Promise<CloudState> {
+  const keys = (Object.keys(FETCH_ORDER) as TableKey[]).filter((key) => includePrivate || !PRIVATE_KEYS.includes(key));
   const [settingsRes, countsRes, ...tableResults] = await Promise.all([
     supabase.from('page_settings').select('*'),
     includePrivate ? Promise.resolve(null) : supabase.rpc('get_registration_counts'),
     ...keys.map((key) => {
       const column = FETCH_ORDER[key];
-      return supabase.from(TABLE_MAP[key]).select('*').order(column, { ascending: !DESCENDING_ORDER.has(column) });
+      return dynamicDb.from(TABLE_MAP[key]).select('*').order(column, { ascending: !DESCENDING_ORDER.has(column) });
     })
   ]);
 
-  const result = {};
-  const failed = [];
+  const result: CloudState = { failed: [] };
+  const failed: string[] = [];
 
   tableResults.forEach((res, idx) => {
     const key = keys[idx];
@@ -604,7 +653,9 @@ export async function fetchAllCloudState({ includePrivate = false } = {}) {
       failed.push(key);
       return;
     }
-    result[key] = res.data.map(rowMappers[key].fromDb);
+    // Rows come from the table that `key` maps to, so they match that mapper's row type.
+    const fromDb = rowMappers[key].fromDb as (row: unknown) => AppItem;
+    result[key] = res.data.map(fromDb);
     if (!PRIVATE_KEYS.includes(key)) saveLocalCache(key, result[key]);
   });
 
@@ -612,7 +663,7 @@ export async function fetchAllCloudState({ includePrivate = false } = {}) {
     if (countsRes.error || !Array.isArray(countsRes.data)) {
       failed.push('registrationCounts');
     } else {
-      const counts = { forms: {}, events: {} };
+      const counts: RegistrationCounts = { forms: {}, events: {} };
       countsRes.data.forEach(({ kind, ref_id: refId, total }) => {
         if (kind === 'form') counts.forms[refId] = total;
         if (kind === 'event') counts.events[refId] = total;
@@ -626,17 +677,18 @@ export async function fetchAllCloudState({ includePrivate = false } = {}) {
   } else {
     for (const row of settingsRes.data) {
       if (!row.value) continue;
+      const value = row.value as AppItem;
       if (row.key === SETTING_KEYS.pageVisibility) {
-        result.pageVisibility = { ...row.value, _updatedAt: row.updated_at };
-      } else if (row.key === SETTING_KEYS.activeTenureId && row.value.id) {
-        result.activeTenureId = row.value.id;
+        result.pageVisibility = { ...value, _updatedAt: row.updated_at };
+      } else if (row.key === SETTING_KEYS.activeTenureId && value.id) {
+        result.activeTenureId = value.id;
       } else if (row.key === SETTING_KEYS.announcementBar) {
-        result.announcementBar = { ...row.value, _updatedAt: row.updated_at };
+        result.announcementBar = { ...value, _updatedAt: row.updated_at };
       } else if (row.key === SETTING_KEYS.roleQuotas) {
         result.roleQuotas = row.value;
       }
     }
-    ['pageVisibility', 'activeTenureId', 'announcementBar', 'roleQuotas'].forEach((key) => {
+    (['pageVisibility', 'activeTenureId', 'announcementBar', 'roleQuotas'] as const).forEach((key) => {
       if (result[key] !== undefined) saveLocalCache(key, result[key]);
     });
   }
@@ -657,81 +709,83 @@ export async function fetchAllCloudState({ includePrivate = false } = {}) {
 const WRITE_CHUNK_SIZE = 200;
 const DELETE_CHUNK_SIZE = 100;
 
-function tableFor(key) {
+function tableFor(key: TableKey): string {
   const table = TABLE_MAP[key];
   if (!table) throw new Error(`Tabel untuk "${key}" tidak dikenal`);
   return table;
 }
 
-function assertOk(response, action) {
+function assertOk(response: { error: { message: string } | null }, action: string): void {
   if (response.error) {
     throw new Error(`${action}: ${response.error.message}`);
   }
 }
 
-function chunk(list, size) {
-  const chunks = [];
+function chunk<T>(list: T[], size: number): T[][] {
+  const chunks: T[][] = [];
   for (let i = 0; i < list.length; i += size) chunks.push(list.slice(i, i + size));
   return chunks;
 }
 
+type RowId = string | number;
+
 /** Inserts a new row without overwriting an existing one (used for public submissions). */
-export async function insertRow(key, item) {
+export async function insertRow(key: TableKey, item: AppItem): Promise<void> {
   const table = tableFor(key);
-  assertOk(await supabase.from(table).insert(rowMappers[key].toDb(item)), `Gagal menambah data ${table}`);
+  assertOk(await dynamicDb.from(table).insert(rowMappers[key].toDb(item)), `Gagal menambah data ${table}`);
 }
 
-export async function insertRows(key, items) {
+export async function insertRows(key: TableKey, items: AppItem[]): Promise<void> {
   if (!Array.isArray(items) || items.length === 0) return;
   const table = tableFor(key);
   for (const part of chunk(items, WRITE_CHUNK_SIZE)) {
-    assertOk(await supabase.from(table).insert(part.map(rowMappers[key].toDb)), `Gagal menambah data ${table}`);
+    assertOk(await dynamicDb.from(table).insert(part.map(rowMappers[key].toDb)), `Gagal menambah data ${table}`);
   }
 }
 
 /** Creates or updates a single row identified by its id. */
-export async function saveRow(key, item) {
+export async function saveRow(key: TableKey, item: AppItem): Promise<void> {
   const table = tableFor(key);
   assertOk(
-    await supabase.from(table).upsert(rowMappers[key].toDb(item), { onConflict: 'id' }),
+    await dynamicDb.from(table).upsert(rowMappers[key].toDb(item), { onConflict: 'id' }),
     `Gagal menyimpan data ${table}`
   );
 }
 
 /** Creates or updates several rows. Never deletes rows that are absent from the list. */
-export async function saveRows(key, items) {
+export async function saveRows(key: TableKey, items: AppItem[]): Promise<void> {
   if (!Array.isArray(items) || items.length === 0) return;
   const table = tableFor(key);
   for (const part of chunk(items, WRITE_CHUNK_SIZE)) {
     assertOk(
-      await supabase.from(table).upsert(part.map(rowMappers[key].toDb), { onConflict: 'id' }),
+      await dynamicDb.from(table).upsert(part.map(rowMappers[key].toDb), { onConflict: 'id' }),
       `Gagal menyimpan data ${table}`
     );
   }
 }
 
-export async function deleteRow(key, id) {
+export async function deleteRow(key: TableKey, id: RowId): Promise<void> {
   const table = tableFor(key);
-  assertOk(await supabase.from(table).delete().eq('id', String(id)), `Gagal menghapus data ${table}`);
+  assertOk(await dynamicDb.from(table).delete().eq('id', String(id)), `Gagal menghapus data ${table}`);
 }
 
-export async function deleteRows(key, ids) {
+export async function deleteRows(key: TableKey, ids: RowId[]): Promise<void> {
   if (!Array.isArray(ids) || ids.length === 0) return;
   const table = tableFor(key);
   for (const part of chunk(ids.map(String), DELETE_CHUNK_SIZE)) {
-    assertOk(await supabase.from(table).delete().in('id', part), `Gagal menghapus data ${table}`);
+    assertOk(await dynamicDb.from(table).delete().in('id', part), `Gagal menghapus data ${table}`);
   }
 }
 
-export async function deleteRowsWhere(key, column, value) {
+export async function deleteRowsWhere(key: TableKey, column: string, value: unknown): Promise<void> {
   const table = tableFor(key);
-  assertOk(await supabase.from(table).delete().eq(column, value), `Gagal menghapus data ${table}`);
+  assertOk(await dynamicDb.from(table).delete().eq(column, value), `Gagal menghapus data ${table}`);
 }
 
-export async function saveSetting(key, value) {
+export async function saveSetting(key: SettingKey, value: unknown): Promise<void> {
   const settingKey = SETTING_KEYS[key];
   if (!settingKey) throw new Error(`Pengaturan "${key}" tidak dikenal`);
-  const storedValue = key === 'activeTenureId' ? { id: value } : value;
+  const storedValue = (key === 'activeTenureId' ? { id: value } : value) as Json;
   assertOk(
     await supabase.from('page_settings').upsert({ key: settingKey, value: storedValue, updated_at: new Date().toISOString() }),
     `Gagal menyimpan pengaturan ${settingKey}`
@@ -744,7 +798,7 @@ export async function saveSetting(key, value) {
 // deadline, quota and uniqueness atomically and expose only what is needed)
 // ============================================================================
 
-const RPC_ERROR_MESSAGES = {
+const RPC_ERROR_MESSAGES: Record<string, string> = {
   FORM_NOT_FOUND: 'Formulir tidak ditemukan atau sudah dihapus.',
   FORM_CLOSED: 'Formulir ini sedang ditutup.',
   FORM_DEADLINE_PASSED: 'Batas waktu pendaftaran formulir ini telah berakhir.',
@@ -762,7 +816,10 @@ const RPC_ERROR_MESSAGES = {
 
 /** Error raised by an RPC, carrying the machine-readable code and a user-facing message. */
 export class RpcError extends Error {
-  constructor(code, detail, rawMessage) {
+  code: string | null;
+  detail: string | undefined;
+
+  constructor(code: string, detail: string | undefined, rawMessage?: string) {
     const isKnown = Object.prototype.hasOwnProperty.call(RPC_ERROR_MESSAGES, code);
     super(isKnown ? RPC_ERROR_MESSAGES[code] : (rawMessage || 'Terjadi kesalahan pada server.'));
     // Only business-rule rejections carry a code; network or permission failures do not.
@@ -771,22 +828,26 @@ export class RpcError extends Error {
   }
 }
 
-async function callRpc(name, params) {
-  const { data, error } = await supabase.rpc(name, params);
+async function callRpc<F extends keyof DbFunctions>(
+  name: F,
+  params: DbFunctions[F]['Args']
+): Promise<DbFunctions[F]['Returns']> {
+  // The generic overloads of `rpc` do not narrow on a union name, so call through the untyped view.
+  const { data, error } = await dynamicDb.rpc(name as string, params as Record<string, unknown>);
   if (error) {
     const [code, detail] = String(error.message || '').split(':');
     throw new RpcError(code, detail, error.message);
   }
-  return data;
+  return data as DbFunctions[F]['Returns'];
 }
 
 /** Submits a public form. Returns the registration id generated by the database. */
-export function submitFormRegistration(formId, data, files = {}) {
+export function submitFormRegistration(formId: string, data: Json, files: Json = {}) {
   return callRpc('submit_form', { p_form_id: formId, p_data: data, p_files: files });
 }
 
 /** Submits a public RSVP. Returns the RSVP id generated by the database. */
-export function submitEventRsvp(eventId, attendeeName, attendanceMode, notes = '') {
+export function submitEventRsvp(eventId: string, attendeeName: string, attendanceMode: string, notes = '') {
   return callRpc('submit_rsvp', {
     p_event_id: eventId,
     p_attendee_name: attendeeName,
@@ -795,7 +856,7 @@ export function submitEventRsvp(eventId, attendeeName, attendanceMode, notes = '
   });
 }
 
-export async function fetchEventAttendees(eventId) {
+export async function fetchEventAttendees(eventId: string) {
   const rows = await callRpc('get_event_attendees', { p_event_id: eventId });
   return (rows || []).map((row) => ({
     id: row.id,
@@ -806,11 +867,11 @@ export async function fetchEventAttendees(eventId) {
   }));
 }
 
-export function isSubmissionValueTaken(formId, fieldId, value) {
+export function isSubmissionValueTaken(formId: string, fieldId: string, value: string) {
   return callRpc('is_submission_value_taken', { p_form_id: formId, p_field_id: fieldId, p_value: value });
 }
 
-export async function trackSubmissions(query) {
+export async function trackSubmissions(query: string) {
   const rows = await callRpc('track_submissions', { p_query: query });
   return (rows || []).map((row) => ({
     id: row.id,
@@ -822,7 +883,7 @@ export async function trackSubmissions(query) {
   }));
 }
 
-export async function fetchAcceptedSubmissions(formId) {
+export async function fetchAcceptedSubmissions(formId: string) {
   const rows = await callRpc('get_accepted_submissions', { p_form_id: formId });
   return (rows || []).map((row) => ({
     id: row.id,
@@ -838,7 +899,15 @@ export async function fetchAcceptedSubmissions(formId) {
 // ADMIN AUTHENTICATION (Supabase Auth + admin_profiles roles)
 // ============================================================================
 
-function mapAdminProfile(row) {
+export interface AdminProfile {
+  userId: string;
+  email: string;
+  displayName: string;
+  role: string;
+  divisionId: string | null;
+}
+
+function mapAdminProfile(row: Tables<'admin_profiles'>): AdminProfile {
   return {
     userId: row.user_id,
     email: row.email,
@@ -849,13 +918,13 @@ function mapAdminProfile(row) {
 }
 
 /** Returns the admin profile of the signed-in user, or null when the user is not an admin. */
-export async function fetchAdminProfile(userId) {
+export async function fetchAdminProfile(userId: string): Promise<AdminProfile | null> {
   const { data, error } = await supabase.from('admin_profiles').select('*').eq('user_id', userId).maybeSingle();
   if (error) throw new Error(`Gagal memuat profil admin: ${error.message}`);
   return data ? mapAdminProfile(data) : null;
 }
 
-export async function signInAdmin(email, password) {
+export async function signInAdmin(email: string, password: string): Promise<AdminProfile> {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) {
     throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah' : error.message);
@@ -868,27 +937,28 @@ export async function signInAdmin(email, password) {
   return profile;
 }
 
-export async function signOutAdmin() {
+export async function signOutAdmin(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
 }
 
-export async function listAdminProfiles() {
+export async function listAdminProfiles(): Promise<AdminProfile[]> {
   const { data, error } = await supabase.from('admin_profiles').select('*').order('created_at', { ascending: true });
   if (error) throw new Error(`Gagal memuat daftar admin: ${error.message}`);
   return data.map(mapAdminProfile);
 }
 
-export function assignAdminRole(email, role, divisionId, displayName = '') {
+export function assignAdminRole(email: string, role: string, divisionId?: string | null, displayName = '') {
   return callRpc('assign_admin_role', {
     p_email: email,
     p_role: role,
-    p_division_id: divisionId || null,
+    // The database accepts NULL for super admins; the generated type only models "omitted".
+    p_division_id: (divisionId || null) as string | undefined,
     p_display_name: displayName
   });
 }
 
-export function revokeAdminRole(userId) {
+export function revokeAdminRole(userId: string) {
   return callRpc('revoke_admin_role', { p_user_id: userId });
 }
 
@@ -898,12 +968,12 @@ export function revokeAdminRole(userId) {
 
 const MEDIA_BUCKET = 'bapekkris-media';
 
-function uniqueSuffix() {
+function uniqueSuffix(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
   return `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export async function uploadMediaToCloud(file, path) {
+export async function uploadMediaToCloud(file: File, path: string): Promise<string> {
   const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
   const filePath = `${path}/${uniqueSuffix()}_${safeName}`;
   const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(filePath, file, {
@@ -916,7 +986,7 @@ export async function uploadMediaToCloud(file, path) {
 }
 
 /** Best-effort removal of a stored file. Returns false when the file could not be removed. */
-export async function deleteMediaFromCloud(fullUrl) {
+export async function deleteMediaFromCloud(fullUrl: string | null | undefined): Promise<boolean> {
   if (!fullUrl) return false;
   const urlParts = fullUrl.split('/storage/v1/object/public/');
   if (urlParts.length < 2) return false;

@@ -77,6 +77,15 @@ Terakhir diperbarui: 25 November 2026 (commit `0169824`).
 
 ### Fase 2 — Arsitektur (berikutnya)
 1. **TypeScript bertahap**: `tsconfig` dengan `allowJs`, `supabase gen types typescript` untuk tipe tabel, migrasi mulai dari `src/lib` dan `src/utils`.
+   - ✅ `tsconfig.json` (strict, `allowJs`, `noEmit`), `npm run typecheck`; `npm run build` kini menjalankan `tsc` dulu.
+   - ✅ Tipe tabel & RPC di `src/types/database.ts`. Regenerate setiap ada perubahan skema:
+     ```bash
+     TOKEN=$(grep '^SUPABASE_MGMT_TOKEN=' .env | cut -d= -f2)
+     curl -s "https://api.supabase.com/v1/projects/zkvjudumhhnwxchhakjl/types/typescript" \
+       -H "Authorization: Bearer $TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).types))' > src/types/database.ts
+     ```
+   - ✅ `src/lib/supabase.ts` bertipe (client `Database`, mapper `fromDb` per tabel, RPC bertipe). `AppItem` sengaja masih longgar sampai state ditipekan di langkah TanStack Query.
+   - ⏭️ Berikutnya: `src/utils/*` (mulai `dateUtils`, `urlUtils`, `quotaUtils`).
 2. **React Router**: ganti routing hash manual di `App.jsx` (`parseLocationRoute`, `setCurrentTab` yang selalu `replaceState`) agar tombol Back berfungsi; pertahankan format link share `/?event=…`, `/?form=…`, `/?gallery=…`, `/?stats=…`, `/admin`.
 3. **TanStack Query** sebagai lapisan data (menggantikan `fetchAllCloudState` + polling 60 dtk + state besar di `App.jsx`), invalidasi per tabel dari realtime.
 4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
