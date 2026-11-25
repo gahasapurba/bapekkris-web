@@ -1,417 +1,87 @@
-import { ChevronLeft, ChevronRight, Edit2, Plus, Search, Trash2 } from 'lucide-react';
+import { Edit2, Eye, EyeOff, Plus, Search, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib, formatWibTimestamp } from '../../utils/dateUtils';
+import { Badge, Button, Field, Input, Pagination, Textarea } from '../../ui';
+import { AdminEmpty, AdminPanel, AdminSubsection, IconButton } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
+
+const PER_PAGE = 10;
+const CATEGORIES = ['Tentang Bapekkris', 'Kegiatan & Event', 'Pelayanan & Operasional', 'Doa & Pelayanan Kasih', 'Pendaftaran & Oprec', 'Umum'];
+const selectClass = 'h-11 cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink';
 
 export default function FaqsTab() {
   const {
-    activeTab,
-    adminFaqPage,
-    clearFieldError,
-    faqAnswer,
-    faqCatFilter,
-    faqQuestion,
-    faqSearchQuery,
-    faqs,
-    formErrors,
-    handleCreateFaq,
-    onUpdateFaq,
-    renderFieldError,
-    setAdminFaqPage,
-    setDeleteConfirm,
-    setEditingItem,
-    setFaqAnswer,
-    setFaqCatFilter,
-    setFaqQuestion,
-    setFaqSearchQuery
+    adminFaqPage, clearFieldError, faqAnswer, faqCatFilter, faqQuestion, faqSearchQuery, faqs, formErrors, handleCreateFaq, onUpdateFaq,
+    setAdminFaqPage, setDeleteConfirm, setEditingItem, setFaqAnswer, setFaqCatFilter, setFaqQuestion, setFaqSearchQuery
   } = useAdminPortal();
 
+  const q = faqSearchQuery.trim().toLowerCase();
+  const filtered = faqs.filter((f: any) =>
+    (!q || (f.question || '').toLowerCase().includes(q) || (f.answer || '').toLowerCase().includes(q)) &&
+    (faqCatFilter === 'all' || f.category === faqCatFilter));
+  const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
+  const page = Math.min(Math.max(1, adminFaqPage), pageCount);
+  const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
-    <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div>
-        <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '4px' }}>
-          Kelola Pusat Panduan & Tanya Jawab (FAQ) Bapekkris
-        </h3>
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Tambahkan atau perbarui daftar pertanyaan umum seputar kegiatan persekutuan, ibadah rutin, pelayanan kasih, permohonan doa, hingga alur pendaftaran kegiatan Bapekkris Bank Mandiri. Tersinkronisasi langsung dengan tabel <code>public.faqs</code> di Supabase.
-        </p>
-      </div>
+    <AdminPanel title={`Panduan & FAQ (${faqs.length})`} description="Pertanyaan umum seputar persekutuan, ibadah, pelayanan kasih, dan pendaftaran kegiatan. Pertanyaan dari pengunjung masuk sebagai draf sampai dijawab.">
+      <AdminSubsection title="Tambah pertanyaan">
+        <form onSubmit={handleCreateFaq} noValidate className="flex flex-col gap-4">
+          <Field label="Pertanyaan" required error={formErrors.faqQuestion}>
+            <Input placeholder="Contoh: Bagaimana cara mengikuti persekutuan doa?" value={faqQuestion} onChange={(e) => { setFaqQuestion(e.target.value); clearFieldError('faqQuestion'); }} />
+          </Field>
+          <Field label="Jawaban" required error={formErrors.faqAnswer}>
+            <Textarea rows={4} placeholder="Penjelasan yang jelas dan membantu" value={faqAnswer} onChange={(e) => { setFaqAnswer(e.target.value); clearFieldError('faqAnswer'); }} />
+          </Field>
+          <div className="flex justify-end"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Tambah pertanyaan</Button></div>
+        </form>
+      </AdminSubsection>
 
-      <form onSubmit={handleCreateFaq} noValidate style={{
-        background: 'rgba(255,255,255,0.03)',
-        padding: '20px',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-card)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px'
-      }}>
-        <div className="mobile-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px' }}>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-              Pertanyaan (Question) <span style={{ color: '#f43f5e' }}>*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Contoh: Bagaimana cara mengusulkan turnamen atau komunitas olahraga baru?"
-              value={faqQuestion}
-              onChange={(e) => {
-                setFaqQuestion(e.target.value);
-                clearFieldError('faqQuestion');
-              }}
-              style={{
-                width: '100%',
-                padding: '9px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--input-bg)',
-                border: `1.5px solid ${formErrors.faqQuestion ? '#f43f5e' : 'var(--border-card)'}`,
-                color: 'var(--text-main)',
-                fontSize: '0.85rem'
-              }}
-            />
-            {renderFieldError('faqQuestion')}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-[0.98rem] font-semibold text-ink">Daftar pertanyaan <span className="font-normal text-muted">({filtered.length} dari {faqs.length})</span></h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative w-full sm:w-60">
+              <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-dim" />
+              <Input type="search" aria-label="Cari FAQ" placeholder="Cari pertanyaan atau jawaban" value={faqSearchQuery} onChange={(e) => { setFaqSearchQuery(e.target.value); setAdminFaqPage(1); }} className="w-full rounded-full pl-10" />
+            </div>
+            <select aria-label="Saring kategori" value={faqCatFilter} onChange={(e) => { setFaqCatFilter(e.target.value); setAdminFaqPage(1); }} className={selectClass}>
+              <option value="all">Semua kategori</option>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
         </div>
 
-        <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-            Jawaban & Penjelasan Lengkap (Answer) <span style={{ color: '#f43f5e' }}>*</span>
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Tuliskan penjelasan lengkap yang jelas dan membantu jemaat..."
-            value={faqAnswer}
-            onChange={(e) => {
-              setFaqAnswer(e.target.value);
-              clearFieldError('faqAnswer');
-            }}
-            style={{
-              width: '100%',
-              padding: '9px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              border: `1.5px solid ${formErrors.faqAnswer ? '#f43f5e' : 'var(--border-card)'}`,
-              color: 'var(--text-main)',
-              fontSize: '0.85rem',
-              resize: 'vertical'
-            }}
-          />
-          {renderFieldError('faqAnswer')}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="submit"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '10px 22px',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--mandiri-gold)',
-              color: '#040914',
-              border: 'none',
-              fontWeight: 800,
-              fontSize: '0.85rem',
-              cursor: 'pointer'
-            }}
-          >
-            <Plus size={16} />
-            <span>Tambah Pertanyaan FAQ</span>
-          </button>
-        </div>
-      </form>
-
-      {/* List of FAQs with Search, Filter & Pagination */}
-      {(() => {
-        const ADMIN_FAQS_PER_PAGE = 10;
-        const filteredAdminFaqs = faqs.filter(f => {
-          const q = faqSearchQuery.trim().toLowerCase();
-          const matchesSearch = !q ||
-            (f.question || '').toLowerCase().includes(q) ||
-            (f.answer || '').toLowerCase().includes(q);
-          const matchesCat = faqCatFilter === 'all' || f.category === faqCatFilter;
-          return matchesSearch && matchesCat;
-        });
-
-        const totalAdminFaqPages = Math.ceil(filteredAdminFaqs.length / ADMIN_FAQS_PER_PAGE) || 1;
-        const safeAdminFaqPage = Math.min(Math.max(1, adminFaqPage), totalAdminFaqPages);
-        const paginatedAdminFaqs = filteredAdminFaqs.slice(
-          (safeAdminFaqPage - 1) * ADMIN_FAQS_PER_PAGE,
-          safeAdminFaqPage * ADMIN_FAQS_PER_PAGE
-        );
-
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                Daftar Pertanyaan FAQ ({filteredAdminFaqs.length} dari {faqs.length}):
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flex: '1 1 340px', justifyContent: 'flex-end' }}>
-                <div style={{ position: 'relative', flex: '1 1 180px', maxWidth: '240px' }}>
-                  <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                  <input
-                    type="text"
-                    placeholder="Cari pertanyaan/jawaban..."
-                    value={faqSearchQuery}
-                    onChange={(e) => {
-                      setFaqSearchQuery(e.target.value);
-                      setAdminFaqPage(1);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '7px 10px 7px 30px',
-                      borderRadius: 'var(--radius-full)',
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--border-card)',
-                      color: 'var(--text-main)',
-                      fontSize: '0.78rem'
-                    }}
-                  />
-                </div>
-
-                <select
-                  value={faqCatFilter}
-                  onChange={(e) => {
-                    setFaqCatFilter(e.target.value);
-                    setAdminFaqPage(1);
-                  }}
-                  style={{
-                    padding: '7px 10px',
-                    borderRadius: 'var(--radius-full)',
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
-                    color: 'var(--text-main)',
-                    fontSize: '0.76rem',
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="all">Semua Kategori</option>
-                  <option value="Tentang Bapekkris">Tentang Bapekkris</option>
-                  <option value="Kegiatan & Event">Kegiatan & Event</option>
-                  <option value="Pelayanan & Operasional">Pelayanan & Operasional</option>
-                  <option value="Doa & Pelayanan Kasih">Doa & Pelayanan Kasih</option>
-                  <option value="Pendaftaran & Oprec">Pendaftaran & Oprec</option>
-                  <option value="Umum">Umum</option>
-                </select>
-              </div>
-            </div>
-
-            {filteredAdminFaqs.length === 0 ? (
-              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-dim)', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', fontSize: '0.84rem' }}>
-                Tidak ada pertanyaan FAQ yang cocok dengan pencarian / filter.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {paginatedAdminFaqs.map((f) => (
-              <div
-                key={f.id}
-                style={{
-                  padding: '16px 20px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid var(--border-card)',
-                  borderLeft: `4px solid ${f.isPublished !== false ? 'var(--mandiri-gold)' : '#64748b'}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                  <div style={{ flex: '1 1 300px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                      <span className="badge-cyan" style={{ fontSize: '0.66rem', padding: '2px 8px' }}>
-                        {f.category || 'Umum'}
-                      </span>
-                      <span style={{
-                        fontSize: '0.68rem',
-                        fontWeight: 800,
-                        color: f.isPublished !== false ? '#10b981' : '#f59e0b'
-                      }}>
-                        {f.isPublished !== false ? '● Ditampilkan di Publik' : '⏳ Menunggu Jawaban / Draft'}
-                      </span>
-                      {f.askedBy && f.askedBy !== 'Admin Bapekkris' && (
-                        <span style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: 'var(--radius-full)',
-                          background: 'rgba(255, 184, 0, 0.14)',
-                          border: '1px solid rgba(255, 184, 0, 0.4)',
-                          color: 'var(--mandiri-gold)'
-                        }}>
-                          💬 Ditanyakan oleh: {f.askedBy} {(f.createdAt || f.submittedAt) ? `• ${formatWibTimestamp(f.createdAt || f.submittedAt).exact || f.createdAt || f.submittedAt}` : ''}
-                        </span>
-                      )}
+        {filtered.length === 0 ? <AdminEmpty>Tidak ada pertanyaan yang cocok.</AdminEmpty> : (
+          <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
+            {visible.map((f: any) => {
+              const published = f.isPublished !== false;
+              const askedAt = f.createdAt || f.submittedAt;
+              return (
+                <li key={f.id} className="flex flex-col gap-3 bg-surface p-4 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1.5 flex flex-wrap items-center gap-2 text-[0.78rem] text-muted">
+                      <Badge tone="info">{f.category || 'Umum'}</Badge>
+                      <Badge tone={published ? 'success' : 'gold'}>{published ? 'Tampil di publik' : 'Draf / menunggu jawaban'}</Badge>
+                      {f.askedBy && f.askedBy !== 'Admin Bapekkris' && <span>Ditanyakan oleh {f.askedBy}{askedAt ? ` · ${formatWibTimestamp(askedAt).exact || askedAt}` : ''}</span>}
                     </div>
-                    <h4 style={{ fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 6px 0' }}>
-                      {f.question}
-                    </h4>
-                    <p style={{ fontSize: '0.83rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.55 }}>
-                      {f.answer}
-                    </p>
-                    {f.updatedAt && (
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '6px' }}>
-                        {formatLastUpdatedWib(f.updatedAt)}
-                      </div>
-                    )}
+                    <p className="font-semibold leading-snug text-ink">{f.question}</p>
+                    <p className="mt-1 whitespace-pre-line text-[0.88rem] leading-relaxed text-muted">{f.answer || <em>Belum dijawab</em>}</p>
+                    {f.updatedAt && <p className="mt-1.5 text-[0.76rem] text-dim">{formatLastUpdatedWib(f.updatedAt)}</p>}
                   </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => onUpdateFaq && onUpdateFaq({ ...f, isPublished: f.isPublished === false ? true : false })}
-                      style={{
-                        padding: '5px 10px',
-                        borderRadius: '6px',
-                        background: 'var(--input-bg)',
-                        border: '1px solid var(--border-card)',
-                        color: 'var(--text-muted)',
-                        fontSize: '0.73rem',
-                        fontWeight: 700,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {f.isPublished === false ? 'Tampilkan' : 'Sembunyikan'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingItem({ type: 'faq', item: { ...f } })}
-                      style={{
-                        padding: '5px 10px',
-                        borderRadius: '6px',
-                        background: 'rgba(14, 165, 233, 0.12)',
-                        border: '1px solid #0284c7',
-                        color: '#0284c7',
-                        fontSize: '0.73rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Edit2 size={12} />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirm({ type: 'faq', id: f.id, name: f.question })}
-                      style={{
-                        padding: '5px 10px',
-                        borderRadius: '6px',
-                        background: 'rgba(244, 63, 94, 0.12)',
-                        border: '1px solid #f43f5e',
-                        color: '#f43f5e',
-                        fontSize: '0.73rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                    >
-                      <Trash2 size={12} />
-                      <span>Hapus</span>
-                    </button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button size="sm" variant="secondary" icon={published ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />} onClick={() => onUpdateFaq?.({ ...f, isPublished: !published })}>
+                      {published ? 'Sembunyikan' : 'Tampilkan'}
+                    </Button>
+                    <IconButton label="Edit pertanyaan" onClick={() => setEditingItem({ type: 'faq', item: { ...f } })}><Edit2 size={15} aria-hidden="true" /></IconButton>
+                    <IconButton label="Hapus pertanyaan" tone="danger" onClick={() => setDeleteConfirm({ type: 'faq', id: f.id, name: f.question })}><Trash2 size={15} aria-hidden="true" /></IconButton>
                   </div>
-                </div>
-              </div>
-            ))}
-            </div>
-            )}
-
-            {totalAdminFaqPages > 1 && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px',
-                padding: '12px 16px',
-                marginTop: '6px',
-                background: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-card)'
-              }}>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  Menampilkan <strong>{(safeAdminFaqPage - 1) * ADMIN_FAQS_PER_PAGE + 1} - {Math.min(safeAdminFaqPage * ADMIN_FAQS_PER_PAGE, filteredAdminFaqs.length)}</strong> dari <strong>{filteredAdminFaqs.length}</strong> pertanyaan FAQ
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button
-                    type="button"
-                    disabled={safeAdminFaqPage === 1}
-                    onClick={() => setAdminFaqPage((p: any) => Math.max(1, p - 1))}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--border-card)',
-                      color: safeAdminFaqPage === 1 ? 'var(--text-dim)' : 'var(--text-main)',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: safeAdminFaqPage === 1 ? 'not-allowed' : 'pointer',
-                      opacity: safeAdminFaqPage === 1 ? 0.45 : 1
-                    }}
-                  >
-                    <ChevronLeft size={14} />
-                    <span>Sebelumnya</span>
-                  </button>
-                  {Array.from({ length: totalAdminFaqPages }, (_, i) => i + 1).map((pg) => {
-                    const isActive = pg === safeAdminFaqPage;
-                    return (
-                      <button
-                        key={pg}
-                        type="button"
-                        onClick={() => setAdminFaqPage(pg)}
-                        style={{
-                          minWidth: '28px',
-                          height: '28px',
-                          padding: '0 6px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: isActive ? 'var(--mandiri-gold)' : 'var(--input-bg)',
-                          color: isActive ? '#040914' : 'var(--text-main)',
-                          border: isActive ? 'none' : '1px solid var(--border-card)',
-                          fontSize: '0.75rem',
-                          fontWeight: 800,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {pg}
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    disabled={safeAdminFaqPage === totalAdminFaqPages}
-                    onClick={() => setAdminFaqPage((p: any) => Math.min(totalAdminFaqPages, p + 1))}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 10px',
-                      borderRadius: 'var(--radius-sm)',
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--border-card)',
-                      color: safeAdminFaqPage === totalAdminFaqPages ? 'var(--text-dim)' : 'var(--text-main)',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: safeAdminFaqPage === totalAdminFaqPages ? 'not-allowed' : 'pointer',
-                      opacity: safeAdminFaqPage === totalAdminFaqPages ? 0.45 : 1
-                    }}
-                  >
-                    <span>Selanjutnya</span>
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-    </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <Pagination page={page} pageCount={pageCount} onChange={setAdminFaqPage} itemLabel="pertanyaan" total={filtered.length} pageSize={PER_PAGE} />
+      </div>
+    </AdminPanel>
   );
 }

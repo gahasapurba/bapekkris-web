@@ -1,28 +1,23 @@
-import { AlertTriangle, Eye, EyeOff, Globe, Layout } from 'lucide-react';
+import { AlertTriangle, Eye, EyeOff, Globe, Megaphone } from 'lucide-react';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
+import { Badge, Button, Field, Input, Select, cn } from '../../ui';
+import { AdminPanel, AdminSubsection, Switch } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
 
 export default function VisibilityTab() {
-  const {
-    activeTab,
-    announcementBar,
-    onUpdateAnnouncementBar,
-    onUpdatePageVisibility,
-    pageVisibility,
-    showToast
-  } = useAdminPortal();
+  const { announcementBar, onUpdateAnnouncementBar, onUpdatePageVisibility, pageVisibility, showToast } = useAdminPortal();
 
   const pageItems = [
-    { id: 'home', label: 'Beranda Utama', desc: 'Halaman depan (Hero Banner, Statistik, Visi & Misi, Pimpinan, dan Komisi Pelayanan)' },
-    { id: 'organisasi', label: 'Struktur Organisasi', desc: 'Halaman bagan hierarki organigram interaktif Penasehat, Pembina, Pimpinan, Divisi & Sub-Divisi' },
-    { id: 'event', label: 'Ibadah & Kegiatan', desc: 'Halaman kalender ibadah, retreat, perayaan paskah/natal, dan bakti sosial' },
-    { id: 'renungan', label: 'Renungan Harian', desc: 'Halaman santapan rohani harian, renungan firman, doa bersama, dan kartu share WhatsApp' },
-    { id: 'alkitab', label: 'Alkitab Digital', desc: 'Halaman pembacaan firman 66 kitab Alkitab Terjemahan Baru dengan integrasi EasyWorship' },
-    { id: 'lagu', label: 'Kidung & Lagu Rohani', desc: 'Halaman katalog Kidung Jemaat (KJ), PKJ, NKB, dan lagu pujian kontemporer' },
-    { id: 'easyworship', label: 'Multimedia Live (EasyWorship)', desc: 'Halaman konsol operator multimedia ibadah, proyektor output & tata ibadah' },
-    { id: 'galeri', label: 'Galeri Kegiatan', desc: 'Halaman dokumentasi foto carousel ibadah & tautan folder dokumentasi' },
-    { id: 'assets', label: 'Asset & Panduan', desc: 'Halaman pengunduhan buku panduan, logo resmi Bapekkris, dan dokumen' },
-    { id: 'form', label: 'Registrasi & Formulir', desc: 'Halaman pusat pendaftaran retreat, kepanitiaan, kebaktian khusus, & survei' },
+    { id: 'home', label: 'Beranda', desc: 'Sambutan, visi & misi, pimpinan, pendaftaran terbuka, dan agenda terdekat.' },
+    { id: 'organisasi', label: 'Organisasi', desc: 'Bagan kepengurusan: penasihat, pembina, pimpinan, divisi, dan sub-divisi.' },
+    { id: 'event', label: 'Ibadah & acara', desc: 'Daftar dan kalender ibadah, retreat, perayaan, serta bakti sosial.' },
+    { id: 'renungan', label: 'Renungan', desc: 'Renungan harian, doa, dan kartu bagikan ke WhatsApp.' },
+    { id: 'alkitab', label: 'Alkitab', desc: 'Alkitab Terjemahan Baru 66 kitab, terhubung ke Multimedia Live.' },
+    { id: 'lagu', label: 'Kidung & lagu', desc: 'Katalog KJ, PKJ, NKB, dan lagu pujian.' },
+    { id: 'easyworship', label: 'Multimedia Live', desc: 'Konsol operator tayangan ibadah dan layar proyektor.' },
+    { id: 'galeri', label: 'Galeri', desc: 'Album foto kegiatan dan tautan folder dokumentasi.' },
+    { id: 'assets', label: 'Aset & logo', desc: 'Logo resmi, template, dan dokumen panduan untuk diunduh.' },
+    { id: 'form', label: 'Registrasi & formulir', desc: 'Pendaftaran retreat, kepanitiaan, kebaktian khusus, dan survei.' },
   ];
 
   const isPageItemVisible = (id: any) => {
@@ -62,390 +57,77 @@ export default function VisibilityTab() {
     onUpdatePageVisibility(nextState);
   };
 
+  const saveBar = (patch: Record<string, unknown>, message: string) => { onUpdateAnnouncementBar({ ...announcementBar, ...patch }); showToast(message); };
+
   return (
-    <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+    <AdminPanel title="Visibilitas menu" description="Atur halaman yang tampil untuk publik. Jika semua halaman disembunyikan, pengunjung melihat layar pemeliharaan yang tetap menyediakan akses ke portal pengurus."
+      actions={<>
+        <Button size="sm" variant="secondary" icon={<Eye size={14} aria-hidden="true" />} onClick={() => handleSetAll(true, true)}>Tampilkan semua</Button>
+        <Button size="sm" variant="secondary" icon={<EyeOff size={14} aria-hidden="true" />} onClick={() => handleSetAll(false, true)}>Sembunyikan semua halaman</Button>
+        <Button size="sm" variant="danger" icon={<EyeOff size={14} aria-hidden="true" />} onClick={() => handleSetAll(false, false)}>Sembunyikan semua + navbar</Button>
+      </>}>
+      {pageVisibility?._updatedAt && <p className="-mt-2 text-[0.78rem] text-dim">{formatLastUpdatedWib(pageVisibility._updatedAt)}</p>}
+
+      <div role="status" className={cn('flex items-start gap-3 rounded-md border px-4 py-3 text-[0.9rem] text-ink', visiblePagesCount === 0 ? 'border-danger-line bg-danger-tint' : 'border-info-line bg-info-tint')}>
+        {visiblePagesCount === 0 ? <AlertTriangle size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-danger" /> : <Globe size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-info" />}
+        {visiblePagesCount === 0
+          ? <span><strong>Semua halaman sedang disembunyikan.</strong> Pengunjung melihat layar pemeliharaan.</span>
+          : <span><strong>{visiblePagesCount} dari {pageItems.length}</strong> halaman tampil · navbar <strong>{isNavbarVisible ? 'tampil' : 'disembunyikan'}</strong></span>}
+      </div>
+
+      <div className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4">
         <div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '6px' }}>
-            Kontrol Visibilitas Halaman & Navbar (View / Hide)
-          </h3>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '650px', lineHeight: 1.5, margin: 0 }}>
-            Atur halaman mana saja yang ditampilkan atau disembunyikan dari publik, termasuk visibilitas <strong>Navbar Utama</strong>. Jika seluruh halaman di-hide, pengunjung otomatis dialihkan ke tampilan <em>Mode Standby / Maintenance</em> yang tetap menyediakan tombol akses ke Portal Admin.
-          </p>
-          {pageVisibility?._updatedAt && (
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginTop: '8px' }}>
-              {formatLastUpdatedWib(pageVisibility._updatedAt)}
-            </div>
-          )}
+          <p className="font-semibold text-ink">Navbar utama</p>
+          <p className="text-[0.86rem] text-muted">Bar navigasi atas beserta logo, pencarian, dan tombol tema.</p>
         </div>
-
-        {/* Quick Bulk Actions */}
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => handleSetAll(true, true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(16, 185, 129, 0.15)',
-              border: '1px solid #10b981',
-              color: '#10b981',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              cursor: 'pointer'
-            }}
-          >
-            <Eye size={14} />
-            <span>Tampilkan Semua</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetAll(false, true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(255, 184, 0, 0.15)',
-              border: '1px solid var(--mandiri-gold)',
-              color: 'var(--mandiri-gold)',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              cursor: 'pointer'
-            }}
-          >
-            <EyeOff size={14} />
-            <span>Hide Semua Halaman</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleSetAll(false, false)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(244, 63, 94, 0.15)',
-              border: '1px solid #f43f5e',
-              color: '#f43f5e',
-              fontSize: '0.78rem',
-              fontWeight: 800,
-              cursor: 'pointer'
-            }}
-          >
-            <EyeOff size={14} />
-            <span>Hide Semua + Navbar</span>
-          </button>
-        </div>
+        <Switch checked={isNavbarVisible} onChange={() => handleToggleKey('navbar')} label="Tampilkan navbar utama" />
       </div>
 
-      {/* Live Status Banner */}
-      <div style={{
-        padding: '14px 18px',
-        borderRadius: 'var(--radius-md)',
-        background: visiblePagesCount === 0 
-          ? 'rgba(244, 63, 94, 0.12)' 
-          : 'rgba(14, 165, 233, 0.08)',
-        border: `1px solid ${visiblePagesCount === 0 ? '#f43f5e' : 'rgba(14, 165, 233, 0.3)'}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          {visiblePagesCount === 0 ? (
-            <AlertTriangle size={18} color="#f43f5e" />
-          ) : (
-            <Globe size={18} color="var(--neon-cyan)" />
-          )}
-          <div style={{ fontSize: '0.84rem', color: 'var(--text-main)' }}>
-            {visiblePagesCount === 0 ? (
-              <span>
-                <strong>Perhatian: Semua halaman sedang di-Hide!</strong> Pengunjung saat ini melihat layar <em>Mode Standby / Pemeliharaan</em> dengan akses langsung ke Portal Pengurus Bapekkris Bank Mandiri.
-              </span>
-            ) : (
-              <span>
-                Status Publik: <strong>{visiblePagesCount} dari {pageItems.length} halaman ditampilkan</strong> • Navbar Utama: <strong>{isNavbarVisible ? 'Ditampilkan (View)' : 'Disembunyikan (Hide)'}</strong>
-              </span>
-            )}
+      {typeof onUpdateAnnouncementBar === 'function' && (
+        <AdminSubsection title={<span className="inline-flex flex-wrap items-center gap-2"><Megaphone size={17} aria-hidden="true" className="text-gold-ink" />Pengumuman di atas halaman <Badge tone={announcementBar?.isActive ? 'success' : 'neutral'}>{announcementBar?.isActive ? 'Aktif' : 'Nonaktif'}</Badge></span>}>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-[0.86rem] text-muted">Info singkat seperti townhall atau batas pendaftaran, tampil di bagian paling atas situs.{announcementBar?._updatedAt && <span className="block text-[0.78rem] text-dim">{formatLastUpdatedWib(announcementBar._updatedAt)}</span>}</p>
+            <Switch checked={Boolean(announcementBar?.isActive)} label="Aktifkan pengumuman"
+              onChange={(next) => saveBar({ isActive: next }, next ? 'Pengumuman diaktifkan.' : 'Pengumuman disembunyikan.')} />
           </div>
-        </div>
-      </div>
-
-      {/* 1. Master Navbar Visibility Control */}
-      <div style={{
-        padding: '18px 20px',
-        borderRadius: 'var(--radius-md)',
-        background: isNavbarVisible ? 'rgba(56, 189, 248, 0.06)' : 'rgba(244, 63, 94, 0.06)',
-        border: `1.5px solid ${isNavbarVisible ? 'rgba(56, 189, 248, 0.35)' : 'rgba(244, 63, 94, 0.35)'}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: isNavbarVisible ? 'rgba(56, 189, 248, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-            color: isNavbarVisible ? 'var(--neon-cyan)' : '#f43f5e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <Layout size={22} />
+          <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
+            <Field label="Label" hint="Disimpan saat kolom ditinggalkan."><Input defaultValue={announcementBar?.badge || 'INFO TERBARU'} onBlur={(e) => saveBar({ badge: e.target.value.trim() || 'INFO' }, 'Label pengumuman disimpan.')} /></Field>
+            <Field label="Pesan"><Input defaultValue={announcementBar?.message || ''} onBlur={(e) => saveBar({ message: e.target.value.trim() }, 'Pesan pengumuman disimpan.')} /></Field>
+            <Field label="Teks tombol (opsional)"><Input defaultValue={announcementBar?.ctaText || ''} onBlur={(e) => saveBar({ ctaText: e.target.value.trim() }, 'Teks tombol disimpan.')} /></Field>
+            <Field label="Tujuan tombol">
+              <Select value={announcementBar?.ctaTab || 'oprec'} onChange={(e) => saveBar({ ctaTab: e.target.value }, 'Tujuan tombol disimpan.')}>
+                <option value="oprec">Registrasi & formulir</option>
+                <option value="program">Ibadah & acara</option>
+                <option value="organisasi">Struktur organisasi</option>
+                <option value="galeri">Galeri</option>
+                <option value="renungan">Renungan harian</option>
+                <option value="alkitab">Alkitab</option>
+                <option value="lagu">Kidung & lagu</option>
+                <option value="easyworship">Multimedia Live</option>
+                <option value="assets">Aset & logo</option>
+              </Select>
+            </Field>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>
-                Navbar Utama (Header Navigasi Atas)
-              </strong>
-              <span className={isNavbarVisible ? 'badge-cyan' : 'badge-gold'} style={{ fontSize: '0.66rem' }}>
-                {isNavbarVisible ? 'VIEW (TAMPIL)' : 'HIDDEN (SEMBUNYI)'}
-              </span>
-            </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Mengatur tampil/sembunyinya bar navigasi utama beserta logo, pemilih periode, dan tombol tema di bagian atas halaman.
-            </div>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => handleToggleKey('navbar')}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            borderRadius: 'var(--radius-full)',
-            fontWeight: 800,
-            fontSize: '0.82rem',
-            border: 'none',
-            cursor: 'pointer',
-            background: isNavbarVisible ? '#10b981' : '#f43f5e',
-            color: '#ffffff',
-            boxShadow: isNavbarVisible ? '0 4px 12px rgba(16, 185, 129, 0.3)' : '0 4px 12px rgba(244, 63, 94, 0.3)'
-          }}
-        >
-          {isNavbarVisible ? <Eye size={15} /> : <EyeOff size={15} />}
-          <span>{isNavbarVisible ? 'Ditampilkan (Klik untuk Hide)' : 'Disembunyikan (Klik untuk View)'}</span>
-        </button>
-      </div>
-
-      {/* 1.B. Live Announcement Running Banner Control (public.page_settings -> announcement_bar) */}
-      {onUpdateAnnouncementBar && (
-        <div style={{
-          padding: '20px',
-          borderRadius: 'var(--radius-md)',
-          background: 'rgba(255, 184, 0, 0.05)',
-          border: '1.5px solid rgba(255, 184, 0, 0.35)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <strong style={{ fontSize: '1rem', color: 'var(--text-main)' }}>
-                  📢 Pengumuman Penting / Top Running Banner
-                </strong>
-                <span className={announcementBar?.isActive ? 'badge-gold' : 'badge-cyan'} style={{ fontSize: '0.66rem' }}>
-                  {announcementBar?.isActive ? 'AKTIF TAMPIL' : 'NONAKTIF'}
-                </span>
-              </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Tampilkan pengumuman cepat (info Townhall, batas akhir Oprec, atau jadwal penting) di bagian paling atas halaman publik.
-              </div>
-              {announcementBar?._updatedAt && (
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '4px' }}>
-                  {formatLastUpdatedWib(announcementBar._updatedAt)}
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                const nextState = { ...announcementBar, isActive: !announcementBar?.isActive };
-                onUpdateAnnouncementBar(nextState);
-                showToast(nextState.isActive ? 'Banner Pengumuman diaktifkan!' : 'Banner Pengumuman disembunyikan!');
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 16px',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 800,
-                fontSize: '0.78rem',
-                border: 'none',
-                cursor: 'pointer',
-                background: announcementBar?.isActive ? '#10b981' : 'var(--input-bg)',
-                color: announcementBar?.isActive ? '#ffffff' : 'var(--text-muted)'
-              }}
-            >
-              {announcementBar?.isActive ? <Eye size={14} /> : <EyeOff size={14} />}
-              <span>{announcementBar?.isActive ? 'Banner Aktif (Klik Matikan)' : 'Aktifkan Banner'}</span>
-            </button>
-          </div>
-
-          <div className="mobile-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Label Tag / Kategori (misal: INFO / UPDATE)</label>
-              <input
-                type="text"
-                defaultValue={announcementBar?.badge || 'INFO TERBARU'}
-                onBlur={(e) => {
-                  onUpdateAnnouncementBar({ ...announcementBar, badge: e.target.value.trim() || 'INFO' });
-                  showToast('Label pengumuman disimpan!');
-                }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.82rem' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Isi Pesan Pengumuman</label>
-              <input
-                type="text"
-                defaultValue={announcementBar?.message || ''}
-                onBlur={(e) => {
-                  onUpdateAnnouncementBar({ ...announcementBar, message: e.target.value.trim() });
-                  showToast('Pesan pengumuman disimpan!');
-                }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.82rem' }}
-              />
-            </div>
-          </div>
-
-          <div className="mobile-two-col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Teks Tombol Aksi (Opsional)</label>
-              <input
-                type="text"
-                defaultValue={announcementBar?.ctaText || ''}
-                onBlur={(e) => {
-                  onUpdateAnnouncementBar({ ...announcementBar, ctaText: e.target.value.trim() });
-                  showToast('Tombol aksi pengumuman disimpan!');
-                }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.82rem' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Target Halaman Saat Diklik</label>
-              <select
-                value={announcementBar?.ctaTab || 'oprec'}
-                onChange={(e) => {
-                  onUpdateAnnouncementBar({ ...announcementBar, ctaTab: e.target.value });
-                  showToast('Target halaman pengumuman disimpan!');
-                }}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.82rem' }}
-              >
-                <option value="oprec">Registrasi & Formulir</option>
-                <option value="program">Program & Kalender</option>
-                <option value="organisasi">Struktur Organisasi</option>
-                <option value="galeri">Galeri Kegiatan</option>
-                <option value="renungan">Renungan Harian</option>
-                <option value="alkitab">Alkitab Digital</option>
-                <option value="lagu">Kidung & Lagu Rohani</option>
-                <option value="easyworship">Multimedia EasyWorship Live</option>
-                <option value="assets">Asset</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        </AdminSubsection>
       )}
 
-      {/* 2. Individual Pages Visibility Grid */}
-      <div>
-        <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px' }}>
-          Daftar Halaman Website ({visiblePagesCount}/{pageItems.length} Aktif):
-        </h4>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '12px' }}>
+      <div className="flex flex-col gap-3">
+        <h3 className="text-[0.98rem] font-semibold text-ink">Halaman situs <span className="font-normal text-muted">({visiblePagesCount}/{pageItems.length} tampil)</span></h3>
+        <ul className="grid list-none gap-3 md:grid-cols-2">
           {pageItems.map((page) => {
-            const isVisible = isPageItemVisible(page.id);
+            const on = isPageItemVisible(page.id);
             return (
-              <div
-                key={page.id}
-                style={{
-                  padding: '16px 18px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: `1px solid ${isVisible ? 'var(--border-card)' : 'rgba(244, 63, 94, 0.35)'}`,
-                  borderLeft: `4px solid ${isVisible ? '#10b981' : '#f43f5e'}`,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '14px',
-                  opacity: isVisible ? 1 : 0.85
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
-                    <strong style={{ fontSize: '0.96rem', color: 'var(--text-main)' }}>
-                      {page.label}
-                    </strong>
-                    <span style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 800,
-                      padding: '2px 8px',
-                      borderRadius: 'var(--radius-full)',
-                      background: isVisible ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                      color: isVisible ? '#10b981' : '#f43f5e'
-                    }}>
-                      {isVisible ? '● VIEW' : '○ HIDDEN'}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.45 }}>
-                    {page.desc}
-                  </p>
+              <li key={page.id} className={cn('flex items-start justify-between gap-4 rounded-md border p-4', on ? 'border-line bg-surface' : 'border-dashed border-line bg-subtle')}>
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{page.label}{!on && <Badge>Tersembunyi</Badge>}</p>
+                  <p className="mt-0.5 text-[0.84rem] leading-relaxed text-muted">{page.desc}</p>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-card)', paddingTop: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleKey(page.id)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '7px 14px',
-                      borderRadius: 'var(--radius-full)',
-                      fontSize: '0.76rem',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      border: `1px solid ${isVisible ? 'rgba(244, 63, 94, 0.4)' : 'rgba(16, 185, 129, 0.5)'}`,
-                      background: isVisible ? 'rgba(244, 63, 94, 0.1)' : 'rgba(16, 185, 129, 0.15)',
-                      color: isVisible ? '#f43f5e' : '#10b981'
-                    }}
-                  >
-                    {isVisible ? (
-                      <>
-                        <EyeOff size={13} />
-                        <span>Hide Halaman</span>
-                      </>
-                    ) : (
-                      <>
-                        <Eye size={13} />
-                        <span>View Halaman</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+                <Switch checked={on} onChange={() => handleToggleKey(page.id)} label={`Tampilkan halaman ${page.label}`} />
+              </li>
             );
           })}
-        </div>
+        </ul>
       </div>
-    </div>
+    </AdminPanel>
   );
-
 }
