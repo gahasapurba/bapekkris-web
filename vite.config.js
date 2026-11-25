@@ -20,9 +20,7 @@ export default defineConfig({
         manualChunks: {
           'vendor-react': ['react', 'react-dom'],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-icons': ['lucide-react'],
-          'vendor-pdf': ['jspdf', 'html2canvas'],
-          'vendor-qr': ['qrcode']
+          'vendor-icons': ['lucide-react']
         }
       }
     }

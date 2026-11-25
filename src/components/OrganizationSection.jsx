@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import CrewMemberCard, { getAdaptiveRoleColor } from './CrewMemberCard';
 import { soundFx } from '../utils/audio';
-import { exportPresentationToPdf } from '../utils/exportPdf';
 import { getTenureRoles, getMemberLevel, findMatchingRole, getDivisionLead, getDivisionStructure } from '../utils/memberQuotaUtils';
 
 function formatWaNumber(raw = '') {
@@ -70,6 +69,8 @@ export default function OrganizationSection({
     soundFx.playClick();
     setIsExporting(true);
     try {
+      // PDF libraries (~600 KB) are loaded only when an export is requested
+      const { exportPresentationToPdf } = await import('../utils/exportPdf');
       await exportPresentationToPdf('org-tree-export-container', null, currentTenure || activeTenure);
     } catch (e) {
       console.error(e);
