@@ -97,7 +97,7 @@ export default function ProjectorDisplay() {
       alignItems: 'center',
       overflow: 'hidden',
       color: '#ffffff',
-      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+      fontFamily: "'Inter', system-ui, sans-serif",
       transition: 'background 0.4s ease',
       zIndex: 999999,
       ...getBackgroundStyle()

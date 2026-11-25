@@ -110,17 +110,17 @@ export default function DailyDevotionSection({
 
       // Header Tag
       ctx.fillStyle = '#ffb800';
-      ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+      ctx.font = 'bold 24px "Inter", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('✝️  BAPEKKRIS PT BANK MANDIRI (PERSERO) TBK.', width / 2, 120);
 
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 22px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '600 22px "Inter", sans-serif';
       ctx.fillText(`RENUNGAN HARIAN  •  ${formatToIndonesianDate(devotion.devotionDate).toUpperCase()}`, width / 2, 160);
 
       // Devotion Title
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 44px "Plus Jakarta Sans", sans-serif';
+      ctx.font = 'bold 44px "Inter", sans-serif';
       ctx.textAlign = 'center';
 
       // Wrap Title
@@ -148,18 +148,18 @@ export default function DailyDevotionSection({
       ctx.strokeRect(100, scriptureY, width - 200, 180);
 
       ctx.fillStyle = '#ffb800';
-      ctx.font = 'bold 26px "Plus Jakarta Sans", sans-serif';
+      ctx.font = 'bold 26px "Inter", sans-serif';
       ctx.textAlign = 'left';
       ctx.fillText(`📖 ${devotion.scriptureRef || ''}`, 130, scriptureY + 48);
 
       ctx.fillStyle = '#f8fafc';
-      ctx.font = 'italic 24px "Plus Jakarta Sans", sans-serif';
+      ctx.font = 'italic 24px "Inter", sans-serif';
       const quoteText = `"${(devotion.scriptureText || '').slice(0, 160)}..."`;
       ctx.fillText(quoteText, 130, scriptureY + 95, width - 260);
 
       // Reflection Body Preview
       ctx.fillStyle = '#cbd5e1';
-      ctx.font = '22px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '22px "Inter", sans-serif';
       ctx.textAlign = 'left';
 
       const bodyText = (devotion.body || '').slice(0, 320) + '...';
@@ -182,18 +182,18 @@ export default function DailyDevotionSection({
       if (devotion.prayer) {
         const prayerY = textY + 40;
         ctx.fillStyle = '#ffb800';
-        ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+        ctx.font = 'bold 22px "Inter", sans-serif';
         ctx.fillText(`🙏 Doa:`, 110, prayerY);
 
         ctx.fillStyle = '#e2e8f0';
-        ctx.font = 'italic 20px "Plus Jakarta Sans", sans-serif';
+        ctx.font = 'italic 20px "Inter", sans-serif';
         const prayerSnippet = `"${devotion.prayer.slice(0, 180)}..."`;
         ctx.fillText(prayerSnippet, 110, prayerY + 36, width - 220);
       }
 
       // Footer
       ctx.fillStyle = '#64748b';
-      ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
+      ctx.font = '600 20px "Inter", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(`bapekkris-mandiri.netlify.app  •  Penulis: ${devotion.author || 'Bapekkris Bank Mandiri'}`, width / 2, height - 90);
 

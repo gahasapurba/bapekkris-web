@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { EyeOff, Sun, Moon, Search, X, Users, Calendar, ClipboardList, Download, ChevronRight } from 'lucide-react';
-import StarfieldBackground from './components/StarfieldBackground';
 import Navbar from './components/Navbar';
 import HomeSection from './components/HomeSection';
 import Footer from './components/Footer';
@@ -44,6 +43,7 @@ import {
   deleteMediaFromCloud
 } from './lib/supabase';
 import { useLocation } from 'react-router';
+import { getInitialTheme, getSavedTheme, saveTheme, watchSystemTheme } from './lib/theme';
 import {
   AppNavigationContext,
   PUBLIC_PAGE_IDS,
@@ -202,18 +202,21 @@ function MainApp() {
   }, [pageSettings?.pageVisibility, legacyPageVisibility]);
   const setPageVisibilityState = (nextVisibility) => updatePageSettings({ pageVisibility: nextVisibility });
 
-  // Default theme is LIGHT THEME as requested
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('bapekkris_theme') || 'light';
-  });
+  // Follows the OS setting until the visitor picks a theme (src/lib/theme.ts)
+  const [theme, setTheme] = useState(getInitialTheme);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('bapekkris_theme', theme);
   }, [theme]);
 
+  useEffect(() => watchSystemTheme((systemTheme) => {
+    if (!getSavedTheme()) setTheme(systemTheme);
+  }), []);
+
   const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+    const next = theme === 'dark' ? 'light' : 'dark';
+    saveTheme(next);
+    setTheme(next);
   };
 
   // Supabase Auth session of an admin: 'loading' | 'signedOut' | 'admin'
@@ -958,8 +961,6 @@ function MainApp() {
   return (
     <AppNavigationContext.Provider value={navigateTo}>
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
-      {/* Background Canvas */}
-      <StarfieldBackground theme={theme} />
 
       {persistError && (
         <div

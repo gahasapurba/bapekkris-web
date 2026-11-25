@@ -1,0 +1,112 @@
+/*
+ * Design tokens — concept A "Sanctuary Editorial" (public pages) / B "Corporate Bento" (admin).
+ * Warm ivory, deep Mandiri navy, gold used sparingly; serif display type (Fraunces) with Inter.
+ *
+ * Colors are plain hex/rgba on purpose: the org-chart PDF export (html2canvas) cannot parse
+ * color-mix()/oklch(). Contrast of text tokens is WCAG AA (>= 4.5:1) on their backgrounds unless
+ * noted.
+ */
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+
+  /* Brand */
+  --mandiri-blue: #0b2f5e;          /* deep navy; white text 13.3:1 */
+  --mandiri-gold-hover: #7a5a07;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  --space-section: clamp(56px, 8vw, 104px);
+  --measure: 68ch;                  /* comfortable line length for reading */
+
+  color-scheme: light;
+}
+
+/* LIGHT (default) — ivory paper, navy ink */
+[data-theme='light'] {
+  --bg-page: #f7f3ea;
+  --bg-nav: rgba(247, 243, 234, 0.94);
+  --bg-card: #fffdf8;
+  --bg-card-hover: #ffffff;
+  --bg-subtle: #efe8d9;
+  --border-card: #e3dac7;
+  --border-card-hover: #0b2f5e;
+
+  --text-main: #0e1a2b;             /* 15.8:1 on page */
+  --text-muted: #3f4a5c;            /* 8.1:1 */
+  --text-dim: #5f6778;              /* >= 4.5:1 */
+
+  /* Gold: legacy code uses --mandiri-gold both as text and as a button fill, so it holds a
+     compromise (about 4.1-4.4:1 either way). New components use --gold-fill / --gold-ink. */
+  --mandiri-gold: #94700c;
+  --gold-fill: #e0a100;             /* dark text on it 8.8:1 */
+  --gold-ink: #8a6508;              /* 4.8:1 on page */
+
+  --neon-cyan: #2b5d97;             /* calm "info" blue, 6.1:1 */
+  --neon-purple: #5b4a8b;
+  --neon-emerald: #1f7a55;
+  --neon-rose: #b42340;
+
+  --badge-bg: rgba(11, 47, 94, 0.06);
+  --badge-text: #0b2f5e;
+  --badge-border: rgba(11, 47, 94, 0.18);
+
+  --input-bg: #fffdf8;
+  --input-border: #d4c9b3;
+
+  --shadow-card: 0 1px 2px rgba(14, 26, 43, 0.04), 0 10px 28px -16px rgba(14, 26, 43, 0.18);
+  --shadow-glow: 0 0 0 1px rgba(11, 47, 94, 0.08);
+
+  color-scheme: light;
+}
+
+/* DARK — night navy, warm off-white text */
+[data-theme='dark'] {
+  --bg-page: #0b1424;
+  --bg-nav: rgba(11, 20, 36, 0.94);
+  --bg-card: #111d33;
+  --bg-card-hover: #15233d;
+  --bg-subtle: #172540;
+  --border-card: rgba(242, 237, 227, 0.1);
+  --border-card-hover: rgba(227, 179, 65, 0.55);
+
+  --text-main: #f2ede3;
+  --text-muted: #a9b2c3;
+  --text-dim: #8b95a8;
+
+  --mandiri-gold: #e3b341;
+  --gold-fill: #e3b341;
+  --gold-ink: #e3b341;
+
+  --neon-cyan: #7aa7dd;
+  --neon-purple: #b4a3e0;
+  --neon-emerald: #5cc79a;
+  --neon-rose: #f07890;
+
+  --badge-bg: rgba(227, 179, 65, 0.12);
+  --badge-text: #e3b341;
+  --badge-border: rgba(227, 179, 65, 0.3);
+
+  --input-bg: #0e1a2e;
+  --input-border: rgba(242, 237, 227, 0.16);
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -18px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 0 1px rgba(227, 179, 65, 0.18);
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
