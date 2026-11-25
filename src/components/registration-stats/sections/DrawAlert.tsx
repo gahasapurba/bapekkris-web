@@ -1,99 +1,20 @@
-import { CheckCircle2, Sparkles, X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { useRegistrationStats } from '../RegistrationStatsContext';
 
+/** Bottom-right notice for each new registrant (queued by the hook). */
 export default function DrawAlert() {
-  const {
-    activeAlert,
-    isDark,
-    setActiveAlert
-  } = useRegistrationStats();
-
+  const { activeAlert, setActiveAlert } = useRegistrationStats();
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        bottom: '24px',
-        right: '24px',
-        zIndex: 99999,
-        maxWidth: '380px',
-        width: 'calc(100vw - 32px)',
-        background: isDark
-          ? 'linear-gradient(135deg, rgba(14, 25, 55, 0.98) 0%, rgba(6, 78, 59, 0.95) 100%)'
-          : 'linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%)',
-        border: '1.5px solid #10b981',
-        borderRadius: 'var(--radius-md)',
-        boxShadow: isDark
-          ? '0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.35)'
-          : '0 10px 30px rgba(16, 185, 129, 0.25)',
-        padding: '14px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        animation: 'slideUpToast 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-        boxSizing: 'border-box'
-      }}
-    >
-      <div style={{
-        width: '38px',
-        height: '38px',
-        borderRadius: '50%',
-        background: 'rgba(16, 185, 129, 0.2)',
-        border: '1px solid #10b981',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0
-      }}>
-        <Sparkles size={20} color="#10b981" />
+    <div role="status" aria-live="polite"
+      className="fixed bottom-6 right-4 z-[99999] flex w-[calc(100vw-32px)] max-w-[380px] items-center gap-3 rounded-lg border border-success-line bg-surface p-4 shadow-card md:right-6">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-success-tint text-success"><Sparkles size={18} aria-hidden="true" /></span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[0.74rem] font-semibold uppercase tracking-wide text-success">Pendaftar baru</p>
+        <p className="truncate font-semibold text-ink">Selamat datang, {activeAlert.name}!</p>
       </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{
-          fontSize: '0.72rem',
-          fontWeight: 800,
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
-          color: '#10b981',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '5px'
-        }}>
-          <CheckCircle2 size={12} />
-          <span>Pendaftar Baru Masuk</span>
-        </div>
-        <div style={{
-          fontSize: '0.92rem',
-          fontWeight: 800,
-          color: 'var(--text-main)',
-          marginTop: '2px',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap'
-        }}>
-          Selamat Datang, {activeAlert.name}! 🎉
-        </div>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => setActiveAlert(null)}
-        title="Tutup notifikasi"
-        style={{
-          background: 'transparent',
-          border: 'none',
-          color: 'var(--text-muted)',
-          cursor: 'pointer',
-          padding: '4px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}
-      >
-        <X size={16} />
+      <button type="button" onClick={() => setActiveAlert(null)} aria-label="Tutup notifikasi"
+        className="inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-muted hover:bg-subtle hover:text-ink">
+        <X size={16} aria-hidden="true" />
       </button>
     </div>
   );
