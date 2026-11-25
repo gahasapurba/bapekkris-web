@@ -3,9 +3,7 @@ import {
   Lock, 
   ArrowLeft, 
   LogOut,
-  CheckCircle2,
   AlertCircle,
-  X,
   ClipboardList,
   Download,
   Globe,
@@ -29,6 +27,7 @@ import {
 
 import { AdminPortalContext } from '../admin/AdminPortalContext';
 import AdminLoginForm from '../admin/AdminLoginForm';
+import { Badge, Button, useFeedback } from '../ui';
 import {
   collectFieldErrors,
   brandAssetCreateSchema,
@@ -173,14 +172,9 @@ export default function AdminPortal({
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showExecutiveReportModal, setShowExecutiveReportModal] = useState(false);
 
-  // Modern Toast Notification State (replaces native browser alert)
-  const [toast, setToast] = useState(null);
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type, id: Date.now() });
-    setTimeout(() => {
-      setToast((prev) => (prev && prev.message === message ? null : prev));
-    }, 3800);
-  };
+  // Notices go through the site-wide toast (src/ui/Toast).
+  const { toast: notify } = useFeedback();
+  const showToast = (message, type = 'success') => notify(message, type === 'error' ? 'error' : 'success');
 
   // Custom Inline Field Validation State (replaces native browser required tooltips)
   const [formErrors, setFormErrors] = useState({});
@@ -1472,91 +1466,16 @@ export default function AdminPortal({
   // IF NOT AUTHENTICATED: SHOW LOGIN FORM
   if (!isAuthenticated) {
     return (
-      <div style={{ maxWidth: '440px', margin: '40px auto 80px auto', padding: '0 16px', position: 'relative' }}>
-        {/* Floating Toast Notification Banner */}
-        {toast && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: '24px',
-              right: '24px',
-              zIndex: 1000000,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '13px 20px',
-              borderRadius: 'var(--radius-full)',
-              background: toast.type === 'error' ? 'rgba(244, 63, 94, 0.96)' : 'rgba(16, 185, 129, 0.96)',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.86rem',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.45)',
-              border: '1px solid rgba(255,255,255,0.25)',
-              backdropFilter: 'blur(12px)'
-            }}
-          >
-            {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-            <span>{toast.message}</span>
-            <button
-              type="button"
-              onClick={() => setToast(null)}
-              style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', padding: '2px' }}
-            >
-              <X size={15} />
-            </button>
+      <div className="mx-auto w-full max-w-[440px] px-4 pb-24 pt-8">
+        <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="mb-5">Kembali ke beranda</Button>
+        <div className="rounded-xl border border-line bg-surface p-7 shadow-card md:p-9">
+          <div className="mb-6 text-center">
+            <img src={isDark ? '/assets/mandiri-club-bapekkris-white.png' : '/assets/mandiri-club-bapekkris-original.png'} alt="Bapekkris Bank Mandiri"
+              className="mx-auto mb-5 block h-12 w-auto object-contain" onError={(e) => { e.currentTarget.src = '/assets/mandiri-club-bapekkris-original.png'; }} />
+            <span className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-gold-tint text-gold-ink"><Lock size={20} aria-hidden="true" /></span>
+            <h1 className="font-display text-[1.6rem] font-semibold text-ink">Portal pengurus</h1>
+            <p className="mt-1 text-[0.9rem] text-muted">Masuk untuk mengelola acara, pengurus, renungan, lagu, dan konten lainnya.</p>
           </div>
-        )}
-        <button
-          onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'transparent',
-            border: 'none',
-            color: 'var(--text-muted)',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: 600,
-            marginBottom: '20px'
-          }}
-        >
-          <ArrowLeft size={16} />
-          <span>Kembali ke Beranda Utama</span>
-        </button>
-
-        <div className="glass-panel" style={{ padding: '36px 32px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-            <img 
-              src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
-              alt="Bapekkris Bank Mandiri" 
-              style={{ height: '48px', width: 'auto', objectFit: 'contain', margin: '0 auto 14px auto', display: 'block' }} 
-              onError={(e) => {
-                e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
-              }}
-            />
-            <div style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '50%',
-              background: 'rgba(255, 184, 0, 0.15)',
-              border: '1px solid var(--mandiri-gold)',
-              color: 'var(--mandiri-gold)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px auto'
-            }}>
-              <Lock size={22} />
-            </div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-main)' }}>
-              Portal Pengurus Bapekkris Bank Mandiri
-            </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Masuk untuk mengelola ibadah, renungan, lagu, event, pengurus, dll.
-            </p>
-          </div>
-
           <AdminLoginForm onLogin={handleLogin} showToast={showToast} />
         </div>
       </div>
@@ -1987,121 +1906,8 @@ export default function AdminPortal({
     worshipSongs
   };
 
-  return (
-    <AdminPortalContext.Provider value={adminPortalContext}>
-    <div className="admin-portal-wrapper" style={{ maxWidth: '1000px', margin: '0 auto 80px auto', paddingTop: '36px', display: 'flex', flexDirection: 'column', gap: '28px', position: 'relative' }}>
-      {/* Floating Toast Notification Banner */}
-      {toast && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '24px',
-            right: '24px',
-            zIndex: 1000000,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '13px 20px',
-            borderRadius: 'var(--radius-full)',
-            background: toast.type === 'error' ? 'rgba(244, 63, 94, 0.96)' : 'rgba(16, 185, 129, 0.96)',
-            color: '#ffffff',
-            fontWeight: 800,
-            fontSize: '0.86rem',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.45)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            backdropFilter: 'blur(12px)'
-          }}
-        >
-          {toast.type === 'error' ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
-          <span>{toast.message}</span>
-          <button
-            type="button"
-            onClick={() => setToast(null)}
-            style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', padding: '2px' }}
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
-
-      {/* Admin Top Bar */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-          <button
-            onClick={onBack}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.88rem'
-            }}
-          >
-            <ArrowLeft size={16} />
-            <span>Kembali ke Web</span>
-          </button>
-          <div style={{ height: '20px', width: '1px', background: 'var(--border-card)' }} />
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-            Admin Dashboard Bapekkris Bank Mandiri
-          </h2>
-          {/* Cloud Sync Badge */}
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '0.73rem',
-              fontWeight: 800,
-              background: SYNC_BADGE[syncStatus].background,
-              border: `1px solid ${SYNC_BADGE[syncStatus].color}`,
-              color: SYNC_BADGE[syncStatus].color
-            }}
-            title="Seluruh perubahan otomatis disimpan di Cloud Database agar tersinkronisasi di semua perangkat"
-          >
-            <Globe size={13} />
-            <span>{SYNC_BADGE[syncStatus].label}</span>
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setShowExecutiveReportModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(16, 185, 129, 0.14)',
-              color: '#10b981',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              padding: '7px 14px',
-              borderRadius: 'var(--radius-full)',
-              fontWeight: 800,
-              fontSize: '0.78rem',
-              cursor: 'pointer'
-            }}
-            title="Buka & Cetak Laporan Eksekutif / LPJ Periode Kepengurusan"
-          >
-            <ClipboardList size={14} />
-            <span>📄 Laporan Eksekutif / LPJ</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              const snapshot = {
+  const downloadBackup = () => {
+    const snapshot = {
                 meta: {
                   app: 'Bapekkris Bank Mandiri Portal',
                   exportedAt: new Date().toISOString(),
@@ -2137,51 +1943,9 @@ export default function AdminPortal({
               document.body.removeChild(link);
               URL.revokeObjectURL(url);
               showToast('Snapshot Backup Penuh (.json) seluruh 13 tabel berhasil diunduh!');
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(168, 85, 247, 0.14)',
-              color: '#c084fc',
-              border: '1px solid rgba(168, 85, 247, 0.4)',
-              padding: '7px 13px',
-              borderRadius: 'var(--radius-full)',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              cursor: 'pointer'
-            }}
-            title="Unduh Backup Penuh (.json) seluruh data database Bapekkris Bank Mandiri"
-          >
-            <Download size={13} />
-            <span>💾 Backup (.json)</span>
-          </button>
-
-          {onRestoreBackup && (
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(14, 165, 233, 0.12)',
-                color: '#38bdf8',
-                border: '1px solid rgba(14, 165, 233, 0.35)',
-                padding: '7px 13px',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                cursor: 'pointer'
-              }}
-              title="Pulihkan (Restore) seluruh data dari file Backup (.json)"
-            >
-              <Upload size={13} />
-              <span>📂 Restore (.json)</span>
-              <input
-                type="file"
-                accept=".json,application/json"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
+  };
+  const restoreBackupFile = (e) => {
+    const file = e.target.files?.[0];
                   if (!file) return;
                   const reader = new FileReader();
                   reader.onload = async (evt) => {
@@ -2199,70 +1963,47 @@ export default function AdminPortal({
                   };
                   reader.readAsText(file);
                   e.target.value = '';
-                }}
-              />
+  };
+  const handleLogoutClick = async () => {
+    try {
+      await onAdminLogout();
+    } catch (err) {
+      showToast(err.message || 'Gagal keluar dari sesi admin', 'error');
+    }
+  };
+
+  return (
+    <AdminPortalContext.Provider value={adminPortalContext}>
+    <div className="admin-portal-wrapper mx-auto w-full max-w-[1360px] px-4 pb-24 pt-6 md:px-6">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+        <div className="min-w-0">
+          <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="-ml-3 mb-2">Kembali ke situs</Button>
+          <h1 className="font-display text-[clamp(1.6rem,3vw,2.1rem)] font-semibold leading-tight text-ink">Portal pengurus</h1>
+          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.86rem] text-muted">
+            <span>{adminProfile?.displayName || adminProfile?.email || 'Admin'} · {isSuperAdmin ? 'Super admin' : 'Admin divisi'}</span>
+            <Badge tone={syncStatus === 'synced' ? 'success' : syncStatus === 'error' ? 'danger' : 'gold'}><Globe size={12} aria-hidden="true" />{SYNC_BADGE[syncStatus].label}</Badge>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="secondary" icon={<ClipboardList size={14} aria-hidden="true" />} onClick={() => setShowExecutiveReportModal(true)}>Laporan / LPJ</Button>
+          <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={downloadBackup} title="Unduh cadangan lengkap seluruh data (.json)">Backup</Button>
+          {onRestoreBackup && (
+            <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-[0.8rem] font-semibold text-ink hover:border-line-strong focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-navy-ink" title="Pulihkan seluruh data dari file cadangan (.json)">
+              <Upload size={14} aria-hidden="true" />Restore
+              <input type="file" accept=".json,application/json" className="sr-only" onChange={restoreBackupFile} />
             </label>
           )}
-
           {onResetDefault && (
-            <button
-              type="button"
-              onClick={() => setDeleteConfirm({ type: 'reset_all', id: 'reset', name: 'Sync Data' })}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(56, 189, 248, 0.14)',
-                color: 'var(--neon-cyan)',
-                border: '1px solid rgba(56, 189, 248, 0.45)',
-                padding: '7px 13px',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 700,
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 0 12px rgba(56, 189, 248, 0.12)'
-              }}
-              title="Clear cache lokal dan reload data terbaru dari database"
-            >
-              <RefreshCw size={13} />
-              <span>Sync Data</span>
-            </button>
+            <Button size="sm" variant="secondary" icon={<RefreshCw size={14} aria-hidden="true" />} onClick={() => setDeleteConfirm({ type: 'reset_all', id: 'reset', name: 'Sync Data' })} title="Kosongkan cache lokal dan muat ulang data terbaru">Sinkronkan</Button>
           )}
-
-          <button
-            onClick={async () => {
-              try {
-                await onAdminLogout();
-              } catch (err) {
-                showToast(err.message || 'Gagal keluar dari sesi admin', 'error');
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: 'rgba(244, 63, 94, 0.15)',
-              color: '#f43f5e',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
-              padding: '7px 14px',
-              borderRadius: 'var(--radius-full)',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              cursor: 'pointer'
-            }}
-          >
-            <LogOut size={14} />
-            <span>Logout Admin</span>
-          </button>
+          <Button size="sm" variant="danger" icon={<LogOut size={14} aria-hidden="true" />} onClick={handleLogoutClick} className="lg:hidden">Keluar</Button>
         </div>
-      </div>
+      </header>
 
-      {/* Executive Summary Analytics Bar */}
+      <div className="grid gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
+      <AdminTabNavigation onLogout={handleLogoutClick} />
+      <div className="flex min-w-0 flex-col gap-6">
       <AdminSummaryBar />
-
-      {/* Tabs Desktop & Mobile */}
-      <AdminTabNavigation />
 
       {/* TAB CONTENT: VISIBILITAS HALAMAN & NAVBAR (VIEW / HIDE) */}
       {activeTab === 'admins' && isSuperAdmin && (
@@ -2327,7 +2068,8 @@ export default function AdminPortal({
 
       {/* PRINT-READY EXECUTIVE REPORT & LPJ MODAL */}
       {showExecutiveReportModal && <ExecutiveReportModal />}
-
+      </div>
+      </div>
     </div>
     </AdminPortalContext.Provider>
   );
