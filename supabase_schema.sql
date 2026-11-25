@@ -284,6 +284,7 @@ CREATE INDEX IF NOT EXISTS idx_songs_category ON public.worship_songs(category);
 -- ==============================================================================
 -- KEAMANAN AKSES: AKUN ADMIN MULTI-PERAN, RLS PER TABEL, RPC PUBLIK & STORAGE
 -- ==============================================================================
+ALTER TABLE public.event_rsvps DROP COLUMN IF EXISTS department_id;
 DROP TABLE IF EXISTS public.departments CASCADE;
 DROP TABLE IF EXISTS public.aspirasi CASCADE;
 
