@@ -1308,7 +1308,7 @@ export default function App() {
               : visiblePublicPages[0]));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
       {/* Background Canvas */}
       <StarfieldBackground theme={theme} />
 

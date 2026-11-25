@@ -7000,9 +7000,10 @@ export default function AdminPortal({
                       marginTop: '4px',
                       marginBottom: '8px',
                       padding: '10px 14px',
-                      background: 'rgba(0, 0, 0, 0.18)',
+                      background: isDark ? 'rgba(0, 0, 0, 0.25)' : '#ffffff',
                       borderRadius: 'var(--radius-sm)',
-                      border: '1px dashed var(--border-card)'
+                      border: isDark ? '1px dashed var(--border-card)' : '1px solid #e2e8f0',
+                      boxShadow: isDark ? 'none' : '0 1px 4px rgba(0, 0, 0, 0.04)'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -7039,7 +7040,7 @@ export default function AdminPortal({
                       {isExpanded && (
                         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '10px', borderTop: '1px solid var(--border-card)' }}>
                           {/* Form Tambah Sub-Divisi */}
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: 'var(--radius-sm)' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'flex-start', background: isDark ? 'rgba(255,255,255,0.02)' : '#f8fafc', padding: '10px', borderRadius: 'var(--radius-sm)', border: isDark ? 'none' : '1px solid #e2e8f0' }}>
                             <div style={{ flex: '2', minWidth: '160px' }}>
                               <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>Nama Sub-Divisi *</label>
                               <input
@@ -7055,8 +7056,8 @@ export default function AdminPortal({
                                   width: '100%',
                                   padding: '7px 10px',
                                   borderRadius: 'var(--radius-sm)',
-                                  background: 'var(--input-bg)',
-                                  border: `1px solid ${subDivError.divId === d.id && subDivError.message ? '#f43f5e' : 'var(--border-card)'}`,
+                                  background: isDark ? 'var(--input-bg)' : '#ffffff',
+                                  border: `1px solid ${subDivError.divId === d.id && subDivError.message ? '#f43f5e' : (isDark ? 'var(--border-card)' : '#cbd5e1')}`,
                                   color: 'var(--text-main)',
                                   fontSize: '0.8rem'
                                 }}
@@ -7077,7 +7078,7 @@ export default function AdminPortal({
                                   setNewSubDivDivisionId(d.id);
                                   setNewSubDivCode(e.target.value);
                                 }}
-                                style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.8rem' }}
+                                style={{ width: '100%', padding: '7px 10px', borderRadius: 'var(--radius-sm)', background: isDark ? 'var(--input-bg)' : '#ffffff', border: isDark ? '1px solid var(--border-card)' : '1px solid #cbd5e1', color: 'var(--text-main)', fontSize: '0.8rem' }}
                               />
                             </div>
                             <button
@@ -7130,12 +7131,12 @@ export default function AdminPortal({
                               {currentSubs.map((sd) => {
                                 const assignedMemCount = (members || []).filter(m => m.subDivisionId === sd.id).length;
                                 return (
-                                  <div key={sd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '6px' }}>
+                                  <div key={sd.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '6px', border: isDark ? 'none' : '1px solid #e2e8f0' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                       <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>{sd.name}</span>
                                       {sd.code && <span className="badge-gold" style={{ fontSize: '0.65rem', padding: '1px 6px' }}>{sd.code}</span>}
                                       {assignedMemCount > 0 && (
-                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0', padding: '1px 6px', borderRadius: '4px' }}>
                                           {assignedMemCount} Anggota
                                         </span>
                                       )}
@@ -10856,8 +10857,9 @@ export default function AdminPortal({
               flexDirection: 'column',
               overflow: 'hidden',
               padding: 0,
-              border: '1.5px solid var(--mandiri-gold)',
-              boxShadow: '0 25px 65px rgba(0, 0, 0, 0.75)',
+              background: isDark ? '#0b1329' : '#ffffff',
+              border: isDark ? '1.5px solid var(--mandiri-gold)' : '1px solid #e2e8f0',
+              boxShadow: isDark ? '0 25px 65px rgba(0, 0, 0, 0.75)' : '0 20px 50px rgba(0, 61, 121, 0.12)',
               borderRadius: 'var(--radius-lg)'
             }}
           >
@@ -10868,7 +10870,7 @@ export default function AdminPortal({
               justifyContent: 'space-between',
               padding: '16px 22px',
               borderBottom: '1px solid var(--border-card)',
-              background: 'var(--bg-card)',
+              background: isDark ? 'var(--bg-card)' : '#ffffff',
               flexShrink: 0
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -11366,7 +11368,7 @@ export default function AdminPortal({
                       value={editingItem.item.name || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
                       placeholder="Contoh: Sie Multimedia / Sie Musik"
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: isDark ? 'var(--input-bg)' : '#f8fafc', border: isDark ? '1px solid var(--input-border)' : '1px solid #cbd5e1', color: 'var(--text-main)', fontSize: '0.86rem' }}
                     />
                   </div>
                   <div>
@@ -11376,7 +11378,7 @@ export default function AdminPortal({
                       value={editingItem.item.code || ''}
                       onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, code: e.target.value.toUpperCase() } })}
                       placeholder="Contoh: MULTI"
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
+                      style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: isDark ? 'var(--input-bg)' : '#f8fafc', border: isDark ? '1px solid var(--input-border)' : '1px solid #cbd5e1', color: 'var(--text-main)', fontSize: '0.86rem' }}
                     />
                   </div>
                 </div>
@@ -11387,7 +11389,7 @@ export default function AdminPortal({
                     value={editingItem.item.description || ''}
                     onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
                     placeholder="Deskripsi tugas atau tanggung jawab sub-divisi ini..."
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: isDark ? 'var(--input-bg)' : '#f8fafc', border: isDark ? '1px solid var(--input-border)' : '1px solid #cbd5e1', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
                   />
                 </div>
               </div>
@@ -13632,7 +13634,7 @@ export default function AdminPortal({
               gap: '10px',
               padding: '14px 22px',
               borderTop: '1px solid var(--border-card)',
-              background: 'var(--bg-card)',
+              background: isDark ? 'var(--bg-card)' : '#ffffff',
               flexShrink: 0
             }}>
               <button
@@ -14777,6 +14779,7 @@ export default function AdminPortal({
             maxHeight: '92vh',
             overflowY: 'auto',
             padding: '24px',
+            background: isDark ? '#0e1937' : '#ffffff',
             border: deleteConfirm.type === 'reset_all' 
               ? '1.5px solid rgba(56, 189, 248, 0.55)' 
               : (deleteConfirm.isBlocked
@@ -15142,8 +15145,8 @@ export default function AdminPortal({
                     Sub-divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih memiliki <strong>{deleteConfirm.memCount} personel / anggota</strong> yang ditempatkan di sub-divisi ini.
                   </p>
                   <div style={{
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
+                    background: isDark ? 'var(--input-bg)' : '#f8fafc',
+                    border: isDark ? '1px solid var(--border-card)' : '1px solid #e2e8f0',
                     borderRadius: '10px',
                     padding: '12px',
                     textAlign: 'left'
@@ -15209,8 +15212,8 @@ export default function AdminPortal({
                   </p>
 
                   <div style={{
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
+                    background: isDark ? 'var(--input-bg)' : '#f8fafc',
+                    border: isDark ? '1px solid var(--border-card)' : '1px solid #e2e8f0',
                     borderRadius: '10px',
                     padding: '12px',
                     textAlign: 'left'
@@ -15626,8 +15629,8 @@ export default function AdminPortal({
                   </p>
 
                   <div style={{
-                    background: 'var(--input-bg)',
-                    border: '1px solid var(--border-card)',
+                    background: isDark ? 'var(--input-bg)' : '#f8fafc',
+                    border: isDark ? '1px solid var(--border-card)' : '1px solid #e2e8f0',
                     borderRadius: '10px',
                     padding: '12px',
                     textAlign: 'left'
