@@ -30,6 +30,25 @@ import { generateFormQrPoster } from '../utils/qrPosterGenerator';
 import { getPublicBaseUrl } from '../utils/urlUtils';
 import { getUnifiedFormQuota } from '../utils/quotaUtils';
 
+// Limits for public registration input. The storage bucket rejects files above 20 MB.
+const TEXT_MAX_LENGTH = 200;
+const TEXTAREA_MAX_LENGTH = 2000;
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const DEFAULT_FILE_ACCEPT = '.pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip';
+
+// Checks a file against an accept list such as ".pdf,.png" or "image/*".
+function isFileAccepted(file, accept) {
+  const rules = String(accept || DEFAULT_FILE_ACCEPT).split(',').map(r => r.trim().toLowerCase()).filter(Boolean);
+  const name = file.name.toLowerCase();
+  const type = (file.type || '').toLowerCase();
+  return rules.some((rule) => {
+    if (rule === '*/*') return true;
+    if (rule.startsWith('.')) return name.endsWith(rule);
+    if (rule.endsWith('/*')) return type.startsWith(rule.slice(0, -1));
+    return type === rule;
+  });
+}
+
 export default function DynamicFormSection({ 
   forms = [], 
   divisions = [], 
@@ -367,12 +386,18 @@ export default function DynamicFormSection({
   };
 
   // Handle File Selection - Deferred upload on Submit only (never prematurely on file pick)
-  const handleFileUpload = (fieldId, e) => {
+  const handleFileUpload = (field, e) => {
+    const fieldId = field.id;
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
-    if (file.size > 25 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, [fieldId]: 'Ukuran file maksimal 25MB' }));
+    if (file.size > MAX_FILE_BYTES) {
+      setErrors(prev => ({ ...prev, [fieldId]: 'Ukuran file maksimal 20 MB' }));
+      return;
+    }
+    if (!isFileAccepted(file, field.accept)) {
+      setErrors(prev => ({ ...prev, [fieldId]: `Tipe berkas tidak didukung. Gunakan: ${field.accept || DEFAULT_FILE_ACCEPT}` }));
       return;
     }
 
@@ -404,10 +429,21 @@ export default function DynamicFormSection({
           newErrors[field.id] = (field.type === 'select' || field.type === 'radio') 
             ? `${field.label} wajib dipilih` 
             : `${field.label} wajib diisi`;
-        } else if (field.type === 'email' && !/\S+@\S+\.\S+/.test(val)) {
-          newErrors[field.id] = 'Format email tidak valid';
         } else if (field.type === 'textarea' && val.trim().length < 10) {
           newErrors[field.id] = `${field.label} minimal 10 karakter`;
+        }
+      }
+
+      // Format & length checks apply to every filled field, required or not
+      const textVal = typeof val === 'string' ? val.trim() : '';
+      if (!newErrors[field.id] && textVal) {
+        const maxLength = field.type === 'textarea' ? TEXTAREA_MAX_LENGTH : TEXT_MAX_LENGTH;
+        if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(textVal)) {
+          newErrors[field.id] = 'Format email tidak valid';
+        } else if (field.type === 'number' && !/^-?\d+([.,]\d+)?$/.test(textVal)) {
+          newErrors[field.id] = `${field.label} harus berupa angka`;
+        } else if (field.type !== 'file' && textVal.length > maxLength) {
+          newErrors[field.id] = `${field.label} maksimal ${maxLength} karakter`;
         }
       }
 
@@ -1362,6 +1398,7 @@ export default function DynamicFormSection({
                           <input
                             type={field.type}
                             placeholder={field.placeholder || ''}
+                            maxLength={TEXT_MAX_LENGTH}
                             value={formData[field.id] || ''}
                             onChange={(e) => handleInputChange(field.id, e.target.value)}
                             onBlur={() => handleInputBlur(field)}
@@ -1374,6 +1411,7 @@ export default function DynamicFormSection({
                           <textarea
                             rows={4}
                             placeholder={field.placeholder || ''}
+                            maxLength={TEXTAREA_MAX_LENGTH}
                             value={formData[field.id] || ''}
                             onChange={(e) => handleInputChange(field.id, e.target.value)}
                             onBlur={() => handleInputBlur(field)}
@@ -1465,8 +1503,8 @@ export default function DynamicFormSection({
                               <label style={{ cursor: 'pointer', flex: 1, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                 <input
                                   type="file"
-                                  accept={field.accept || '*/*,.zip,.rar,.7z,.pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx'}
-                                  onChange={(e) => handleFileUpload(field.id, e)}
+                                  accept={field.accept || DEFAULT_FILE_ACCEPT}
+                                  onChange={(e) => handleFileUpload(field, e)}
                                   style={{ display: 'none' }}
                                 />
                                 {uploadingFieldId === field.id ? (
@@ -1478,7 +1516,7 @@ export default function DynamicFormSection({
                                     ✓ {fileData[field.id].name} ({fileData[field.id].size}) &bull; Siap dikirim saat klik Kirim
                                   </span>
                                 ) : (
-                                  <span>Klik untuk memilih berkas ({field.accept || 'ZIP, PDF, PNG, JPG, Dokumen max 25MB'})</span>
+                                  <span>Klik untuk memilih berkas ({field.accept || 'PDF, gambar, dokumen Office, ZIP'} • maks. 20 MB)</span>
                                 )}
                               </label>
                               {fileData[field.id] && (

@@ -1469,6 +1469,7 @@ export default function HomeSection({
                     <input
                       type="text"
                       placeholder="Nama / Unit Kerja Anda (Opsional)"
+                      maxLength={120}
                       value={askName}
                       onChange={(e) => setAskName(e.target.value)}
                       style={{
@@ -1509,6 +1510,7 @@ export default function HomeSection({
                       <input
                         type="text"
                         placeholder="Tuliskan pertanyaan Anda di sini... *"
+                        maxLength={1000}
                         value={askQuestionText}
                         onChange={(e) => {
                           setAskQuestionText(e.target.value);

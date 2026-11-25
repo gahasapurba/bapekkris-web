@@ -1617,6 +1617,7 @@ export default function ProgramSection({
                               <input
                                 type="text"
                                 placeholder="Nama Lengkap Anda *"
+                                maxLength={120}
                                 value={rsvpName}
                                 onChange={(e) => {
                                   setRsvpName(e.target.value);
@@ -1662,6 +1663,7 @@ export default function ProgramSection({
                               <input
                                 type="text"
                                 placeholder="Catatan singkat (opsional)..."
+                                maxLength={500}
                                 value={rsvpNotes}
                                 onChange={(e) => setRsvpNotes(e.target.value)}
                                 style={{
