@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (Fase 2 selesai — TypeScript, React Router, TanStack Query, pemecahan komponen, validasi zod).
+Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, layout & Beranda selesai).
 
 ---
 
@@ -117,6 +117,19 @@ Terakhir diperbarui: 25 November 2026 (Fase 2 selesai — TypeScript, React Rout
 **Fase 2 selesai.** Lanjut ke Fase 3.
 
 ### Fase 3 — Redesign UI (konsep A + B)
+
+**Progres (rilis langsung ke `main`, sesuai keputusan pengguna 25 Nov 2026):**
+- ✅ Fondasi: token konsep A di `src/styles/tokens.css` (ivory/navy/emas, terang & gelap, kontras AA), Fraunces + Inter, Tailwind v4 **tanpa preflight** (CSS lama di layer `legacy` → `src/styles/legacy.css`), tema awal mengikuti OS sampai pengunjung memilih (`src/lib/theme.ts`), glass/glow/starfield dihapus, `prefers-reduced-motion`.
+- ✅ Komponen dasar `src/ui/` (Button, Card, Badge, Field/Input/Select/Textarea, Dialog, Sheet, Tabs, Skeleton, EmptyState, PageHeader, toast + confirm via `useFeedback`). Pratinjau: `npm run dev` lalu buka `/#ui-kit` (tidak ikut build produksi). Semua `alert()`/`confirm()` sudah diganti.
+- ✅ Layout: `src/components/layout/` (SiteHeader, menu seluler Sheet, SiteFooter, `navItems.ts`).
+- ✅ Beranda: `src/components/home/`.
+- ⏭️ Berikutnya (urutan): Acara (`ProgramSection`, `EventCalendarView`) → Formulir (`dynamic-form/sections`) → Renungan/Alkitab/Kidung/EasyWorship → Organisasi → Galeri/Aset → Admin (konsep B) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
+
+**Aturan teknis redesign:**
+- Halaman yang sudah di-redesign didaftarkan di `FULL_BLEED_TABS` (`App.jsx`) agar lepas dari `.container` lama dan mengatur lebarnya sendiri (`Container`/`Section` di `home/shared.tsx`).
+- Jangan pakai warna bawaan Tailwind atau modifier opasitas (`bg-navy/10`) → keduanya jadi `oklch()`/`color-mix()` yang membuat ekspor PDF bagan organisasi (html2canvas) crash. Pakai token `*-tint`/`*-line`.
+- Tanpa preflight: `<button>` perlu `border-0 bg-transparent`, dan `[font:inherit]` bila membungkus teks judul; `<ul>` perlu `list-none`.
+- Teks emas: komponen baru pakai `--gold-ink` (teks) / `--gold-fill` (latar tombol); `--mandiri-gold` lama bernilai kompromi.
 - Tailwind v4 + design tokens (warna, tipografi, spacing, radius, light/dark + `prefers-color-scheme`).
 - Komponen dasar: Button, Card, Input, Select, Dialog, Tabs, Badge, Skeleton, EmptyState, PageHeader, Toast.
 - Redesign per halaman: Layout/Navbar/Footer → Home → Acara → Form → Renungan/Alkitab/Kidung → Organisasi → Galeri/Asset → Admin.
