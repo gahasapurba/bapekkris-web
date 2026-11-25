@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (commit `0169824`).
+Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 1 — TypeScript `src/lib` & `src/utils` selesai).
 
 ---
 
@@ -85,7 +85,8 @@ Terakhir diperbarui: 25 November 2026 (commit `0169824`).
        -H "Authorization: Bearer $TOKEN" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).types))' > src/types/database.ts
      ```
    - ✅ `src/lib/supabase.ts` bertipe (client `Database`, mapper `fromDb` per tabel, RPC bertipe). `AppItem` sengaja masih longgar sampai state ditipekan di langkah TanStack Query.
-   - ⏭️ Berikutnya: `src/utils/*` (mulai `dateUtils`, `urlUtils`, `quotaUtils`).
+   - ✅ Seluruh `src/utils/*` sudah `.ts` (`dateUtils`, `quotaUtils`, `urlUtils`, `memberQuotaUtils`, `audio`, `exportPdf`, `qrPosterGenerator`). Output lama vs baru dibandingkan: 914 pemanggilan contoh (3 zona waktu), 0 perbedaan.
+   - ⏭️ Berikutnya: langkah 2 (React Router). Komponen `.jsx` dimigrasi ke `.tsx` saat dipecah di langkah 4, bukan terpisah.
 2. **React Router**: ganti routing hash manual di `App.jsx` (`parseLocationRoute`, `setCurrentTab` yang selalu `replaceState`) agar tombol Back berfungsi; pertahankan format link share `/?event=…`, `/?form=…`, `/?gallery=…`, `/?stats=…`, `/admin`.
 3. **TanStack Query** sebagai lapisan data (menggantikan `fetchAllCloudState` + polling 60 dtk + state besar di `App.jsx`), invalidasi per tabel dari realtime.
 4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
