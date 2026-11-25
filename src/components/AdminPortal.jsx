@@ -881,15 +881,15 @@ export default function AdminPortal({
         errs.memDivisionId = 'Divisi masih kosong pada periode ini. Silakan buat divisi terlebih dahulu.';
       } else if (!memDivisionId || !availableDivsForMember.some(d => d.id === memDivisionId)) {
         errs.memDivisionId = `Divisi wajib dipilih untuk jabatan "${selectedRole.name}"`;
-
-    if (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) {
-      const divSubs = subDivisions.filter(sd => sd.divisionId === memDivisionId);
-      if (divSubs.length === 0) {
-        errs.memSubDivisionId = 'Divisi yang dipilih belum memiliki sub-divisi. Silakan buat sub-divisi terlebih dahulu di tab Kelola Divisi.';
-      } else if (!memSubDivisionId || !divSubs.some(sd => sd.id === memSubDivisionId)) {
-        errs.memSubDivisionId = `Sub-divisi wajib dipilih untuk jabatan "${selectedRole.name}"`;
       }
-    }
+
+      if (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) {
+        const divSubs = subDivisions.filter(sd => sd.divisionId === memDivisionId);
+        if (divSubs.length === 0) {
+          errs.memSubDivisionId = 'Divisi yang dipilih belum memiliki sub-divisi. Silakan buat sub-divisi terlebih dahulu di tab Kelola Divisi.';
+        } else if (!memSubDivisionId || !divSubs.some(sd => sd.id === memSubDivisionId)) {
+          errs.memSubDivisionId = `Sub-divisi wajib dipilih untuk jabatan "${selectedRole.name}"`;
+        }
       }
     }
 
@@ -899,12 +899,14 @@ export default function AdminPortal({
         tenureId: targetTenureId,
         roleId: selectedRole?.id,
         role: selectedRole?.name || memRole,
-        divisionId: selectedRole?.requiresDivision ? memDivisionId : undefined
+        divisionId: selectedRole?.requiresDivision ? memDivisionId : undefined,
+        subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? memSubDivisionId : undefined
       },
       members,
       divisions,
       roleQuotas,
-      tenureRoles
+      tenureRoles,
+      subDivisions
     );
 
     if (!quotaCheck.isValid) {
@@ -13783,12 +13785,14 @@ export default function AdminPortal({
                         roleId: selectedRole?.id,
                         role: selectedRole?.name || editingItem.item.role,
                         divisionId: selectedRole?.requiresDivision ? editingItem.item.divisionId : undefined,
+                        subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? editingItem.item.subDivisionId : undefined,
                         excludeMemberId: editingItem.item.id
                       },
                       members,
                       divisions,
                       roleQuotas,
-                      tenureRoles
+                      tenureRoles,
+                      subDivisions
                     );
 
                     if (!quotaCheck.isValid) {
