@@ -1,7 +1,7 @@
 import { CalendarDays, ChevronDown, Filter, LayoutGrid } from 'lucide-react';
 import type { AppItem } from '../../lib/supabase';
 import { PageHeader, cn } from '../../ui';
-import EventCalendarView from '../EventCalendarView';
+import EventCalendarView from './EventCalendarView';
 import { useProgramSection } from './useProgramSection';
 import { ProgramSectionContext } from './ProgramSectionContext';
 import DraftEventNotice from './sections/DraftEventNotice';

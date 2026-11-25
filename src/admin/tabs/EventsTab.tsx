@@ -1,5 +1,5 @@
 import { Calendar, CalendarDays, ChevronLeft, ChevronRight, Download, Edit2, Grid, Plus, Search, Trash2, X } from 'lucide-react';
-import EventCalendarView from '../../components/EventCalendarView';
+import EventCalendarView from '../../components/events/EventCalendarView';
 import { formatLastUpdatedWib, formatWibEventRange, formatWibTimestamp, toDatetimeLocalValue } from '../../utils/dateUtils';
 import { getUnifiedEventAttendees } from '../../utils/quotaUtils';
 import { useAdminPortal } from '../AdminPortalContext';
