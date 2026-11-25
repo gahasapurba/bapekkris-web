@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 3 — TanStack Query selesai).
+Terakhir diperbarui: 25 November 2026 (Fase 2 selesai — TypeScript, React Router, TanStack Query, pemecahan komponen, validasi zod).
 
 ---
 
@@ -100,9 +100,21 @@ Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 3 — TanStack Query seles
    - Nama divisi di acara/galeri, ketua divisi, kategori anggota, status "Completed", dan tenure aktif kini diturunkan (`useMemo`) dari data mentah — selalu konsisten, bukan hanya saat sinkronisasi.
    - Tabel pribadi (`submissions`, `event_rsvps`, `lucky_draws`) hanya di-query saat admin login dan dihapus dari memori saat logout; ganti peran memuat ulang semua data.
    - Diuji Playwright: 15 skenario lapisan data (termasuk login/logout admin, hanya baca) + 37 skenario navigasi.
-   - ⏭️ Berikutnya: langkah 4 (pecah `AdminPortal.jsx` dkk. ke `.tsx`).
 4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
+   - ✅ `AdminPortal.jsx` 16.057 → ~2.500 baris (kini hanya state + handler). Tampilan pindah ke `src/admin/`: `tabs/*Tab.tsx` (14 tab), `modals/*.tsx`, `modals/edit/*Fields.tsx` (field dialog edit per jenis data), `AdminSummaryBar`, `AdminTabNavigation`, `AdminLoginForm`, `AdminAccountsPanel`.
+   - State sengaja tetap di `AdminPortal` dan dibagikan lewat `AdminPortalContext` (bertipe: koleksi `AppItem[]`, setter `Dispatch<SetStateAction>`), agar filter & isian setengah jadi tetap ada saat pindah tab. Memindahkan state ke hook per tab = pekerjaan lanjutan (cocok dilakukan saat redesign Fase 3).
+   - ✅ `EventRegistrationStats` → `src/components/registration-stats/` (hook `useEventRegistrationStats` + 8 section); `DynamicFormSection` → `src/components/dynamic-form/` (hook `useDynamicForm` + 7 section). Hook masih `.js/.jsx`; context-nya bertipe per kunci (nilai `any`).
+   - Parameter callback yang belum bertipe ditandai `: any` secara eksplisit (±150 tempat) — cari `: any` untuk melanjutkan penipean.
+   - Kode dipindah apa adanya dengan ekstraktor berbasis Babel; diverifikasi dengan membandingkan teks tampilan versi lama vs baru (16 tab admin, 9 dialog edit, halaman formulir, statistik & lucky draw semua acara): identik.
+   - Bug lama yang ikut diperbaiki: `setOptionFilter` (tidak pernah dideklarasikan) melempar `ReferenceError` setiap memilih field diagram statistik; `soundFx.playPop?.()` (tidak ada) dihapus.
 5. Validasi form admin dengan zod + react-hook-form.
+   - ✅ Semua aturan validasi admin di `src/admin/validation/schemas.ts` (zod 4): form tambah (pengurus, role, divisi, periode, acara, formulir, galeri, asset, FAQ), dialog edit (`editItemError`), login, dan akun admin. `collectFieldErrors` = semua error sekaligus (field map, seperti sebelumnya); `firstError` = satu pesan untuk dialog.
+   - ✅ react-hook-form + `zodResolver` untuk form yang state-nya mandiri: `AdminLoginForm` dan `AdminAccountsPanel`. Form tab lain masih memakai state di `AdminPortal`; dipindah ke RHF saat form-nya dibangun ulang dengan komponen Fase 3.
+   - Pesan & kondisi identik dengan kode lama: diuji fuzz 52.000 kombinasi (termasuk kunci yang hilang) lawan salinan validator lama → 0 beda, plus uji browser (pesan yang tampil sama, tanpa ada request tulis).
+   - Aturan yang butuh data lain tetap fungsi bisnis: kuota jabatan (`validateMemberQuota`), duplikat field unik, cek URL foto (async).
+   - ✅ `npm test` (Vitest): uji unit skema validasi & routing (`*.test.ts`).
+
+**Fase 2 selesai.** Lanjut ke Fase 3.
 
 ### Fase 3 — Redesign UI (konsep A + B)
 - Tailwind v4 + design tokens (warna, tipografi, spacing, radius, light/dark + `prefers-color-scheme`).

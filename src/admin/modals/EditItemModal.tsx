@@ -14,6 +14,7 @@ import BrandAssetFields from './edit/BrandAssetFields';
 import FaqFields from './edit/FaqFields';
 import RoleFields from './edit/RoleFields';
 import { useAdminPortal } from '../AdminPortalContext';
+import { editItemError } from '../validation/schemas';
 
 export default function EditItemModal() {
   const {
@@ -236,55 +237,13 @@ export default function EditItemModal() {
             onClick={async () => {
               setEditModalError('');
               const it = editingItem.item || {};
-              if ((editingItem.type === 'member' || editingItem.type === 'division' || editingItem.type === 'sub_division' || editingItem.type === 'role') && !(it.name || '').trim()) {
-                setEditModalError('Nama wajib diisi sebelum menyimpan perubahan');
-                showToast('Nama wajib diisi sebelum menyimpan perubahan', 'error');
+              const fieldError = editItemError(editingItem.type, it);
+              if (fieldError) {
+                setEditModalError(fieldError);
+                showToast(fieldError, 'error');
                 return;
-              }
-              if ((editingItem.type === 'gallery' || editingItem.type === 'tenure' || editingItem.type === 'form' || editingItem.type === 'event' || editingItem.type === 'brand_asset') && !(it.title || '').trim()) {
-                setEditModalError('Judul wajib diisi sebelum menyimpan perubahan');
-                showToast('Judul wajib diisi sebelum menyimpan perubahan', 'error');
-                return;
-              }
-              if (editingItem.type === 'tenure' && !(it.code || '').trim()) {
-                setEditModalError('Kode tahun periode wajib diisi');
-                showToast('Kode tahun periode wajib diisi', 'error');
-                return;
-              }
-              if (editingItem.type === 'faq') {
-                if (!(it.category || '').trim()) {
-                  setEditModalError('Kategori topik FAQ wajib dipilih');
-                  showToast('Kategori topik FAQ wajib dipilih', 'error');
-                  return;
-                }
-                if (!(it.question || '').trim() || !(it.answer || '').trim()) {
-                  setEditModalError('Pertanyaan dan jawaban FAQ wajib diisi');
-                  showToast('Pertanyaan dan jawaban FAQ wajib diisi', 'error');
-                  return;
-                }
               }
               if (editingItem.type === 'form') {
-                if (!(it.category || '').trim()) {
-                  setEditModalError('Kategori formulir wajib dipilih');
-                  showToast('Kategori formulir wajib dipilih', 'error');
-                  return;
-                }
-                if (!(it.deadline || '').trim()) {
-                  setEditModalError('Batas Akhir / Deadline Pendaftaran wajib ditentukan');
-                  showToast('Batas Akhir / Deadline Pendaftaran wajib ditentukan', 'error');
-                  return;
-                }
-                if (it.isLimited && (!it.maxQuota || parseInt(it.maxQuota, 10) <= 0)) {
-                  setEditModalError('Maksimal kuota responden harus lebih dari 0 jika kuota dibatasi');
-                  showToast('Maksimal kuota responden harus lebih dari 0 jika kuota dibatasi', 'error');
-                  return;
-                }
-                if (it.isEventConnected && !it.eventId) {
-                  setEditModalError('Silakan pilih Acara / Event yang terhubung');
-                  showToast('Silakan pilih Acara / Event yang terhubung', 'error');
-                  return;
-                }
-
                 // Validasi Integritas Unik: Periksa apakah ada field isUnique yang memiliki data duplikat di riwayat pengisian responden
                 const formFields = it.fields || [];
                 const uniqueFields = formFields.filter((f: any) => f.isUnique);

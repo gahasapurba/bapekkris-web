@@ -2,6 +2,7 @@ import { Calendar, ChevronLeft, ChevronRight, Edit2, MessageCircle, Plus, Search
 import { formatDeadlineWib, formatLastUpdatedWib, formatToIndonesianDate, getDeadlineStatus, toDatetimeLocalSecondsValue } from '../../utils/dateUtils';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
 import { useAdminPortal } from '../AdminPortalContext';
+import { collectFieldErrors, formCreateSchema } from '../validation/schemas';
 
 export default function FormsTab() {
   const {
@@ -81,16 +82,15 @@ export default function FormsTab() {
                 noValidate
                 onSubmit={(e) => {
                   e.preventDefault();
-                  const errs: Record<string, string> = {};
-                  if (!newFormTitle.trim()) errs.newFormTitle = 'Judul Formulir wajib diisi';
-                  if (!newFormCategory.trim()) errs.newFormCategory = 'Kategori Formulir wajib dipilih';
-                  if (!newFormDeadline.trim()) errs.newFormDeadline = 'Batas Akhir / Deadline Pendaftaran wajib ditentukan';
-                  if (newFormIsLimited && (!newFormMaxQuota || parseInt(newFormMaxQuota, 10) <= 0)) {
-                    errs.newFormMaxQuota = 'Maksimal kuota harus lebih dari 0 jika kuota dibatasi';
-                  }
-                  if (newFormIsEventConnected && !newFormEventId) {
-                    errs.newFormEventId = 'Silakan pilih event / acara yang terhubung';
-                  }
+                  const errs = collectFieldErrors(formCreateSchema, {
+                    newFormTitle,
+                    newFormCategory,
+                    newFormDeadline,
+                    newFormIsLimited,
+                    newFormMaxQuota,
+                    newFormIsEventConnected,
+                    newFormEventId
+                  });
                   if (Object.keys(errs).length > 0) {
                     setFormErrors((prev: any) => ({ ...prev, ...errs }));
                     showToast('Mohon lengkapi kolom wajib pada form Formulir', 'error');
