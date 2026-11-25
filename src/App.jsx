@@ -8,7 +8,7 @@ import AdminOnlyNotice from './components/AdminOnlyNotice';
 
 const OrganizationSection = lazy(() => import('./components/organization/OrganizationSection'));
 const ProgramSection = lazy(() => import('./components/events/ProgramSection'));
-const GallerySection = lazy(() => import('./components/GallerySection'));
+const GallerySection = lazy(() => import('./components/gallery/GallerySection'));
 const DailyDevotionSection = lazy(() => import('./components/devotions/DailyDevotionSection'));
 const BibleSection = lazy(() => import('./components/bible/BibleSection'));
 const WorshipSongSection = lazy(() => import('./components/songs/WorshipSongSection'));
@@ -67,7 +67,7 @@ import { deriveRegistrationCounts } from './utils/quotaUtils';
 const EMPTY_ROLE_QUOTAS = {};
 
 // Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
-const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'easyworship', 'organisasi']);
+const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'easyworship', 'organisasi', 'galeri']);
 
 // Parents are restored before children so foreign keys always resolve.
 const RESTORE_ORDER = [

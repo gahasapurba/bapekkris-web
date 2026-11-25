@@ -126,7 +126,8 @@ Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, la
 - ✅ Ibadah & Acara: `src/components/events/` (daftar, modal detail + RSVP, kalender — kalender juga dipakai Admin).
 - ✅ Formulir: `src/components/dynamic-form/sections/`.
 - ✅ Renungan (`devotions/`), Alkitab (`bible/`), Kidung (`songs/`), EasyWorship (`easyworship/`). Pola: logika lama dipindah apa adanya ke hook `useX.jsx`, markup ditulis ulang di `X.tsx`.
-- ⏭️ Berikutnya: Organisasi (perhatikan ekspor PDF html2canvas) → Galeri/Aset → statistik pendaftaran acara (`registration-stats`) → Admin (konsep B) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
+- ✅ Organisasi (`organization/`; bagan tetap memakai `#org-tree-export-container` + kelas `crew-member-card`/`org-anggota-box` untuk ekspor PDF) dan Galeri (`gallery/`; lightbox `role=dialog`).
+- ⏭️ Berikutnya: Aset (`AssetKitSection.jsx`) → statistik pendaftaran acara (`registration-stats`) → Admin (konsep B) → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
 
 **Aturan teknis redesign:**
 - Halaman yang sudah di-redesign didaftarkan di `FULL_BLEED_TABS` (`App.jsx`) agar lepas dari `.container` lama dan mengatur lebarnya sendiri (`Container`/`Section` di `home/shared.tsx`).
