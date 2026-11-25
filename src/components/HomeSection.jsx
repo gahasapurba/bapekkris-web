@@ -595,16 +595,28 @@ export default function HomeSection({
                   borderRadius: '50%',
                   overflow: 'hidden',
                   border: `2px solid ${person.color || 'var(--mandiri-gold)'}`,
-                  background: '#040914'
+                  background: '#040914',
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '1.1rem'
                 }}>
-                  <img
-                    src={person.image}
-                    alt={person.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+                  {person.image ? (
+                    <img
+                      src={person.image}
+                      alt={person.name}
+                      loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <span aria-hidden="true">
+                      {String(person.name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase()}
+                    </span>
+                  )}
                 </div>
 
                 <div>

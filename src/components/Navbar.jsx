@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { getDeadlineStatus } from '../utils/dateUtils';
 import { 
@@ -33,6 +33,23 @@ export default function Navbar({
   onOpenQuickSearch
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isMoreOpen, setIsMoreOpen] = React.useState(false);
+  const moreMenuRef = useRef(null);
+
+  // Close the "Lainnya" dropdown on outside click or Escape
+  useEffect(() => {
+    if (!isMoreOpen) return undefined;
+    const handlePointer = (e) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target)) setIsMoreOpen(false);
+    };
+    const handleKey = (e) => { if (e.key === 'Escape') setIsMoreOpen(false); };
+    document.addEventListener('mousedown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isMoreOpen]);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -60,11 +77,12 @@ export default function Navbar({
     { id: 'organisasi', label: 'Organisasi', icon: Users },
     { id: 'event', label: 'Ibadah & Event', icon: Calendar },
     { id: 'renungan', label: 'Renungan', icon: BookOpen },
-    { id: 'alkitab', label: 'Alkitab', icon: BookmarkCheck },
-    { id: 'lagu', label: 'Kidung & Lagu', icon: Music },
-    { id: 'easyworship', label: 'Multimedia Live', icon: MonitorPlay },
     { id: 'galeri', label: 'Galeri', icon: ImageIcon },
-    { id: 'assets', label: 'Asset', icon: Download },
+    // Grouped under "Lainnya" on desktop so the bar fits; listed individually in the mobile drawer
+    { id: 'alkitab', label: 'Alkitab', icon: BookmarkCheck, inMoreMenu: true },
+    { id: 'lagu', label: 'Kidung & Lagu', icon: Music, inMoreMenu: true },
+    { id: 'easyworship', label: 'Multimedia Live', icon: MonitorPlay, inMoreMenu: true },
+    { id: 'assets', label: 'Asset', icon: Download, inMoreMenu: true },
   ];
 
   const isTabVisible = (id) => {
@@ -74,13 +92,34 @@ export default function Navbar({
   };
 
   const navItems = allNavItems.filter(tab => isTabVisible(tab.id));
+  const primaryNavItems = navItems.filter(tab => !tab.inMoreMenu);
+  const moreNavItems = navItems.filter(tab => tab.inMoreMenu);
+  const isMoreActive = moreNavItems.some(tab => tab.id === currentTab);
   const isFormVisible = isTabVisible('form');
   const isFormActive = currentTab === 'form' || currentTab === 'oprec';
 
   const handleSelectTab = (tabId) => {
     setCurrentTab(tabId);
     setIsMobileMenuOpen(false);
+    setIsMoreOpen(false);
   };
+
+  const navButtonStyle = (isActive) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px clamp(5px, 0.6vw, 9px)',
+    borderRadius: 'var(--radius-md)',
+    background: isActive ? (isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(0, 61, 121, 0.09)') : 'transparent',
+    color: isActive ? (isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)') : 'var(--text-muted)',
+    border: 'none',
+    fontWeight: isActive ? 700 : 600,
+    fontSize: '0.78rem',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+    transition: 'all 0.15s ease',
+    flexShrink: 0
+  });
 
   const handleLogoClick = () => {
     if (pageVisibility.home !== false) {
@@ -171,36 +210,58 @@ export default function Navbar({
           padding: '2px 0',
           overflow: 'visible'
         }}>
-          {navItems.map((tab) => {
+          {primaryNavItems.map((tab) => {
             const Icon = tab.icon;
-            const isActive = currentTab === tab.id || (tab.id === 'event' && currentTab === 'program') || (tab.id === 'form' && currentTab === 'oprec');
-
+            const isActive = currentTab === tab.id || (tab.id === 'event' && currentTab === 'program');
             return (
-              <button
-                key={tab.id}
-                onClick={() => handleSelectTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px clamp(5px, 0.6vw, 9px)',
-                  borderRadius: 'var(--radius-md)',
-                  background: isActive ? (isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(0, 61, 121, 0.09)') : 'transparent',
-                  color: isActive ? (isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)') : 'var(--text-muted)',
-                  border: 'none',
-                  fontWeight: isActive ? 700 : 600,
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease',
-                  flexShrink: 0
-                }}
-              >
+              <button key={tab.id} onClick={() => handleSelectTab(tab.id)} style={navButtonStyle(isActive)} aria-current={isActive ? 'page' : undefined}>
                 <Icon size={13} />
                 <span>{tab.label}</span>
               </button>
             );
           })}
+
+          {moreNavItems.length > 0 && (
+            <div ref={moreMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => setIsMoreOpen(open => !open)}
+                style={navButtonStyle(isMoreActive)}
+                aria-haspopup="menu"
+                aria-expanded={isMoreOpen}
+              >
+                <span>Lainnya</span>
+                <ChevronDown size={13} style={{ transform: isMoreOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }} />
+              </button>
+              {isMoreOpen && (
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute', top: 'calc(100% + 8px)', left: 0, minWidth: '200px', zIndex: 1001,
+                    display: 'flex', flexDirection: 'column', gap: '2px', padding: '6px',
+                    background: 'var(--bg-card)', border: '1px solid var(--border-card)',
+                    borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)'
+                  }}
+                >
+                  {moreNavItems.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = currentTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        role="menuitem"
+                        onClick={() => handleSelectTab(tab.id)}
+                        style={{ ...navButtonStyle(isActive), width: '100%', padding: '9px 12px', gap: '8px', fontSize: '0.82rem' }}
+                      >
+                        <Icon size={15} />
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Highlighted Dynamic Registration / Forms Button */}
           {isFormVisible && (
