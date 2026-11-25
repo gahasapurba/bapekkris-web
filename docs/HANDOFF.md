@@ -1,0 +1,100 @@
+# Catatan Serah-Terima Pengembangan — Bapekkris Web
+
+Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
+
+Terakhir diperbarui: 25 November 2026 (commit `0169824`).
+
+---
+
+## 1. Cara melanjutkan di perangkat lain
+
+1. `git pull origin main` (wajib, sesuai [standar kerja](../.agent/rules/standar-kerja.md)).
+2. Pastikan file `.env` ada di root repo (tidak ikut Git) dengan tiga variabel:
+   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `SUPABASE_MGMT_TOKEN`.
+3. `npm install` lalu `npm run build` untuk memastikan semuanya beres.
+4. Untuk AI (Claude Code): minta baca dokumen ini dan `.agent/rules/standar-kerja.md`, lalu lanjutkan dari bagian **5. Langkah berikutnya**.
+
+---
+
+## 2. Keputusan yang sudah disepakati
+
+| Topik | Keputusan |
+|---|---|
+| Konsep desain | **A "Sanctuary Editorial"** untuk halaman publik (ivory/putih hangat, navy Mandiri pekat, gold hemat, serif display seperti Fraunces/Instrument Serif + Inter, whitespace lega, ayat besar, foto full-bleed) + **pola B "Corporate Bento"** untuk Admin Portal (sidebar + tabel, gaya dashboard SaaS) |
+| Akun admin | Supabase Auth, **multi-peran**: `super_admin` (semua data + kelola admin) dan `division_admin` (pengurus, acara, formulir terhubung acara, pendaftaran, galeri divisinya) |
+| Stack target | Migrasi bertahap ke **TypeScript + Tailwind CSS v4 + Radix/shadcn + React Router + TanStack Query** |
+| Alur kerja | Satu modul per langkah, fitur yang sudah jalan dipertahankan, commit per bagian, push ke `main`, laporan 5 bagian sesuai standar kerja |
+
+---
+
+## 3. Yang sudah selesai (Fase 1 + prioritas Sedang)
+
+### Keamanan & integritas data
+- **RLS berbasis peran** menggantikan "Public full access" — migration `supabase/migrations/20261125000000_secure_access_and_admin_roles.sql` (sudah diterapkan di produksi).
+  - Pengunjung hanya membaca konten publik (acara draft & FAQ belum terbit tersembunyi).
+  - `submissions`, `event_rsvps`, `lucky_draws` hanya terbaca admin yang berwenang.
+  - Fungsi helper: `is_admin`, `is_super_admin`, `can_manage_division`, `can_manage_event`, `can_manage_form`.
+- **RPC publik** (SECURITY DEFINER): `get_registration_counts`, `get_event_attendees`, `is_submission_value_taken`, `track_submissions`, `get_accepted_submissions`, `submit_form`, `submit_rsvp` (kuota, tenggat WIB, field unik diperiksa atomik). Admin: `assign_admin_role`, `revoke_admin_role`.
+- **Login admin** memakai Supabase Auth (hash SHA-256 di bundle dihapus). Tab "Kelola Admin" untuk super admin.
+- **Lapisan data**: penulisan per baris (`saveRow`, `deleteRow`, dst.) dengan cek error — pola lama "tulis seluruh list lalu hapus yang tidak ada" yang bisa menghapus data orang lain sudah dihapus. Data pribadi tidak lagi disimpan di localStorage.
+- Lucky draw: detail pemenang tersimpan (`lucky_draws.details`), pemenang ganda dicegah unique index; halaman `?stats=` wajib login admin.
+- Tabel lama `departments`, `aspirasi` dihapus.
+
+### Bug & performa
+- Tenggat, status acara selesai, dan "hari ini" dihitung dalam **WIB** (`parseWibDateTime`, `toWibIsoDate` di `src/utils/dateUtils.js`), identik dengan `parse_wib_deadline` di database.
+- Library PDF (595 KB) hanya dimuat saat Export PDF; `html2pdf.js` dihapus, `pg` ke devDependencies.
+- Validasi input publik: batas panjang, email/angka, tipe & ukuran file (≤ 20 MB sesuai bucket).
+- Admin Divisi hanya melihat data divisinya (`adminScope` di `App.jsx`).
+- Navbar tidak lagi tumpang-tindih (menu sekunder di dropdown "Lainnya", hamburger < 1280 px).
+- Edge function `og-preview` hanya berjalan di `/` dengan timeout; acara draft tidak dipratinjau.
+- Alkitab: versi TB2/BIMK yang salah label dihapus, fallback CDN benar, loader tidak macet.
+
+### Sudah diverifikasi
+- Uji RLS lewat REST sebagai anon, super admin, dan admin divisi (akun uji sementara, sudah dihapus).
+- Uji UI end-to-end (Playwright): kirim form, cek NIP duplikat, lacak status, RSVP, halaman statistik terkunci, login/logout admin, Kelola Admin, Data Pendaftaran — 12/12 lolos.
+
+---
+
+## 4. Catatan operasional
+
+- **Produksi**: https://bapekkris-mandiri.netlify.app (auto-deploy dari `main`). Supabase project `zkvjudumhhnwxchhakjl`.
+- **Menjalankan SQL di produksi** (butuh `SUPABASE_MGMT_TOKEN` di `.env`):
+  ```bash
+  TOKEN=$(grep '^SUPABASE_MGMT_TOKEN=' .env | cut -d= -f2)
+  curl -s -X POST "https://api.supabase.com/v1/projects/zkvjudumhhnwxchhakjl/database/query" \
+    -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+    -d '{"query":"select 1"}'
+  ```
+  Setiap perubahan skema: tulis migration baru di `supabase/migrations/`, gabungkan ke `supabase_schema.sql` (idempotent), push → GitHub Actions otomatis backup.
+- **Menambah admin**: buat user di Supabase → Authentication → Users, lalu di website: Admin Portal → Kelola Admin (super admin).
+- **GitHub CLI**: `gh run list` untuk melihat status backup; `gh workflow run daily-backup.yml` untuk backup manual.
+- **Uji UI**: `npx playwright install chromium` lalu jalankan skrip ke `http://localhost:5173` (`npm run dev`) atau langsung ke produksi. Di laptop kantor, Chrome/Edge memblokir `*.netlify.app` (MDM), sehingga uji dilakukan ke `localhost`.
+- Selalu matikan dev server setelah selesai (Zero Background Task).
+
+---
+
+## 5. Langkah berikutnya
+
+### Fase 2 — Arsitektur (berikutnya)
+1. **TypeScript bertahap**: `tsconfig` dengan `allowJs`, `supabase gen types typescript` untuk tipe tabel, migrasi mulai dari `src/lib` dan `src/utils`.
+2. **React Router**: ganti routing hash manual di `App.jsx` (`parseLocationRoute`, `setCurrentTab` yang selalu `replaceState`) agar tombol Back berfungsi; pertahankan format link share `/?event=…`, `/?form=…`, `/?gallery=…`, `/?stats=…`, `/admin`.
+3. **TanStack Query** sebagai lapisan data (menggantikan `fetchAllCloudState` + polling 60 dtk + state besar di `App.jsx`), invalidasi per tabel dari realtime.
+4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
+5. Validasi form admin dengan zod + react-hook-form.
+
+### Fase 3 — Redesign UI (konsep A + B)
+- Tailwind v4 + design tokens (warna, tipografi, spacing, radius, light/dark + `prefers-color-scheme`).
+- Komponen dasar: Button, Card, Input, Select, Dialog, Tabs, Badge, Skeleton, EmptyState, PageHeader, Toast.
+- Redesign per halaman: Layout/Navbar/Footer → Home → Acara → Form → Renungan/Alkitab/Kidung → Organisasi → Galeri/Asset → Admin.
+- Aksesibilitas (focus-visible, aria, kontras AA, tombol bukan `div onClick`), ganti `alert()` dengan toast, rapikan copy sisa template ("Agenda/Program Budaya" → Ibadah/Pelayanan), kurangi emoji di UI, starfield hormati `prefers-reduced-motion`.
+
+### Fase 4 — Fitur baru (urut prioritas)
+1. Halaman ganti password admin (saat ini lewat dashboard Supabase).
+2. Check-in QR di lokasi acara (scan ID registrasi → tandai hadir → laporan).
+3. EasyWorship/Projector lintas perangkat via Supabase Realtime.
+4. SEO: `document.title` per halaman, sitemap, robots.txt, JSON-LD.
+5. PWA (renungan, Alkitab, lirik bisa offline), pengingat acara, pokok doa, pencarian global, analytics ringan.
+
+### Temuan kecil yang masih terbuka
+- Rapikan sisa logika duplikat (ekstraksi nama peserta di `EventRegistrationStats.jsx`, field `_eventId` di `fields[0]` yang menduplikasi kolom `event_id`).
+- `formatDeadlineWib` dan beberapa formatter lain masih memakai `new Date(y, m, d)` untuk nama hari (aman, tapi bisa diseragamkan ke helper WIB).
