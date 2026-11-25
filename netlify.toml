@@ -2,10 +2,6 @@
   command = "npm run build"
   publish = "dist"
 
-[[edge_functions]]
-  function = "og-preview"
-  path = "/*"
-
 # SPA Catch-all navigation fallback
 [[redirects]]
   from = "/*"

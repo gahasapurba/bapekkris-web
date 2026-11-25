@@ -1,7 +1,43 @@
-const SUPABASE_URL = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_URL")) || 
+// Serves Open Graph previews of shared event / gallery / form links to social crawlers
+// (WhatsApp, Telegram, ...). Regular browsers always continue to the SPA untouched.
+
+const SUPABASE_URL = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_URL")) ||
                      (typeof Deno !== "undefined" && Deno.env?.get("VITE_SUPABASE_URL")) || "";
-const SUPABASE_ANON_KEY = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_ANON_KEY")) || 
+const SUPABASE_ANON_KEY = (typeof Netlify !== "undefined" && Netlify.env?.get("VITE_SUPABASE_ANON_KEY")) ||
                           (typeof Deno !== "undefined" && Deno.env?.get("VITE_SUPABASE_ANON_KEY")) || "";
+
+const CRAWLER_PATTERN = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Google-Structured-Data-Testing-Tool|bingbot|crawler|spider/i;
+const FETCH_TIMEOUT_MS = 2500;
+const DEFAULT_IMAGE = "/assets/mandiri-club-bapekkris-original.png";
+
+// Each previewable resource: query params, table, hash route, and how to describe a row.
+// Rows are read with the anon key, so RLS decides visibility (draft events are not returned).
+const RESOURCES = [
+  {
+    params: ["event", "eventId"],
+    table: "events",
+    route: "event",
+    title: (row) => `${row.title} — Kegiatan Bapekkris Bank Mandiri`,
+    description: (row) => row.description || "Agenda kegiatan dan ibadah persekutuan Bapekkris PT Bank Mandiri (Persero) Tbk.",
+    image: (row) => row.banner_image || row.image || row.poster_url
+  },
+  {
+    params: ["gallery", "galleryId"],
+    table: "galleries",
+    route: "galeri",
+    title: (row) => `${row.title} — Dokumentasi Kegiatan Bapekkris Bank Mandiri`,
+    description: (row) => row.description || "Dokumentasi kegiatan persekutuan Bapekkris Bank Mandiri",
+    image: (row) => (Array.isArray(row.photos) ? row.photos[0] : null)
+  },
+  {
+    params: ["form", "formId"],
+    table: "forms",
+    route: "form",
+    title: (row) => `${row.title} — Formulir Registrasi Bapekkris Bank Mandiri`,
+    description: (row) => row.subtitle || row.description || "Formulir pendaftaran dan registrasi kegiatan resmi Bapekkris PT Bank Mandiri (Persero) Tbk.",
+    image: (row) => row.banner_image || row.poster_url || row.image
+  }
+];
 
 function escapeHtml(str = "") {
   return String(str)
@@ -12,245 +48,92 @@ function escapeHtml(str = "") {
     .replace(/'/g, "&#039;");
 }
 
+function truncate(text, max = 200) {
+  return text.length > max ? `${text.slice(0, max - 3)}...` : text;
+}
+
+function absoluteUrl(origin, value) {
+  const src = value || DEFAULT_IMAGE;
+  return src.startsWith("/") ? `${origin}${src}` : src;
+}
+
+async function fetchRow(table, id) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&select=*`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS)
+  });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+}
+
+function renderPreview({ title, ogTitle, description, image, canonicalUrl }) {
+  const t = escapeHtml(title);
+  const ogT = escapeHtml(ogTitle);
+  const d = escapeHtml(description);
+  const img = escapeHtml(image);
+  const href = escapeHtml(canonicalUrl);
+  // JSON-encoded for the inline script; "<" escaped so the value cannot close the tag.
+  const scriptUrl = JSON.stringify(canonicalUrl).replace(/</g, "\\u003c");
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <title>${t}</title>
+  <meta name="description" content="${d}" />
+  <meta property="og:type" content="article" />
+  <meta property="og:site_name" content="Bapekkris Bank Mandiri" />
+  <meta property="og:title" content="${ogT}" />
+  <meta property="og:description" content="${d}" />
+  <meta property="og:image" content="${img}" />
+  <meta property="og:image:secure_url" content="${img}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:url" content="${href}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${ogT}" />
+  <meta name="twitter:description" content="${d}" />
+  <meta name="twitter:image" content="${img}" />
+  <meta http-equiv="refresh" content="0;url=${href}" />
+</head>
+<body>
+  <script>window.location.replace(${scriptUrl});</script>
+  <p>Membuka <a href="${href}">${ogT}</a>...</p>
+</body>
+</html>`;
+}
+
 export default async function handler(request, context) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return context.next();
+  if (!CRAWLER_PATTERN.test(request.headers.get("user-agent") || "")) return context.next();
+
   const url = new URL(request.url);
-  const galleryId = url.searchParams.get("gallery") || url.searchParams.get("galleryId");
-  const eventId = url.searchParams.get("event") || url.searchParams.get("eventId");
-  const formId = url.searchParams.get("form") || url.searchParams.get("formId");
-
-  // Only intercept if gallery, event, or form query param is present
-  if (!galleryId && !eventId && !formId) {
-    return context.next();
-  }
-
-  const userAgent = request.headers.get("user-agent") || "";
-  const isCrawler = /WhatsApp|facebookexternalhit|Facebot|Twitterbot|TelegramBot|LinkedInBot|Slackbot|Discordbot|SkypeUriPreview|Google-Structured-Data-Testing-Tool|bingbot|crawler|spider/i.test(userAgent);
-
-  // If normal browser user (not a preview crawler bot), continue to React SPA app
-  if (!isCrawler) {
-    return context.next();
-  }
-
-  // If Supabase credentials are not configured in environment, continue
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    return context.next();
-  }
-
-  try {
-    // 1. Handle Gallery Preview for WhatsApp / Social Crawlers
-    if (galleryId) {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/galleries?id=eq.${encodeURIComponent(galleryId)}&select=*`,
-        {
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const gal = data[0];
-          const rawPhotos = Array.isArray(gal.photos) ? gal.photos : [];
-          let firstPhoto = rawPhotos[0] || `${url.origin}/assets/mandiri-logo.png`;
-          if (firstPhoto.startsWith("/")) {
-            firstPhoto = `${url.origin}${firstPhoto}`;
-          }
-
-          const rawDesc = gal.description || "Dokumentasi kegiatan persekutuan Bapekkris Bank Mandiri";
-          const snippetDesc = rawDesc.length > 200 ? rawDesc.slice(0, 197) + "..." : rawDesc;
-          const metaTitle = `${gal.title} — Dokumentasi Kegiatan Bapekkris Bank Mandiri`;
-          const canonicalUrl = `${url.origin}/?gallery=${encodeURIComponent(gal.id)}#galeri`;
-
-          const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(metaTitle)}</title>
-  <meta name="description" content="${escapeHtml(snippetDesc)}" />
-  
-  <!-- Open Graph / WhatsApp Preview Meta Tags -->
-  <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Bapekkris Bank Mandiri" />
-  <meta property="og:title" content="${escapeHtml(gal.title)}" />
-  <meta property="og:description" content="${escapeHtml(snippetDesc)}" />
-  <meta property="og:image" content="${escapeHtml(firstPhoto)}" />
-  <meta property="og:image:secure_url" content="${escapeHtml(firstPhoto)}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:type" content="image/jpeg" />
-  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(gal.title)}" />
-  <meta name="twitter:description" content="${escapeHtml(snippetDesc)}" />
-  <meta name="twitter:image" content="${escapeHtml(firstPhoto)}" />
-
-  <meta http-equiv="refresh" content="0;url=${escapeHtml(canonicalUrl)}" />
-</head>
-<body>
-  <script>window.location.replace("${escapeHtml(canonicalUrl)}");</script>
-  <p>Membuka <a href="${escapeHtml(canonicalUrl)}">${escapeHtml(gal.title)}</a>...</p>
-</body>
-</html>`;
-
-          return new Response(html, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-              "Cache-Control": "public, max-age=300"
-            }
-          });
-        }
-      }
+  for (const resource of RESOURCES) {
+    const id = resource.params.map((p) => url.searchParams.get(p)).find(Boolean);
+    if (!id) continue;
+    try {
+      const row = await fetchRow(resource.table, id);
+      if (!row) return context.next();
+      const html = renderPreview({
+        title: resource.title(row),
+        ogTitle: row.title,
+        description: truncate(resource.description(row)),
+        image: absoluteUrl(url.origin, resource.image(row)),
+        canonicalUrl: `${url.origin}/?${resource.params[0]}=${encodeURIComponent(row.id)}#${resource.route}`
+      });
+      return new Response(html, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" }
+      });
+    } catch (err) {
+      console.error(`OG preview for ${resource.table} failed:`, err);
+      return context.next();
     }
-
-    // 2. Handle Event Preview for WhatsApp / Social Crawlers
-    if (eventId) {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/events?id=eq.${encodeURIComponent(eventId)}&select=*`,
-        {
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const evt = data[0];
-          let eventImg = evt.banner_image || evt.image || evt.poster_url || `${url.origin}/assets/mandiri-club-bapekkris-original.png`;
-          if (eventImg.startsWith("/")) {
-            eventImg = `${url.origin}${eventImg}`;
-          }
-
-          const rawDesc = evt.description || "Agenda kegiatan dan ibadah persekutuan Bapekkris PT Bank Mandiri (Persero) Tbk.";
-          const snippetDesc = rawDesc.length > 200 ? rawDesc.slice(0, 197) + "..." : rawDesc;
-          const canonicalUrl = `${url.origin}/?event=${encodeURIComponent(evt.id)}#event`;
-
-          const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(evt.title)} — Kegiatan Bapekkris Bank Mandiri</title>
-  <meta name="description" content="${escapeHtml(snippetDesc)}" />
-  
-  <!-- Open Graph / WhatsApp Preview Meta Tags -->
-  <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Bapekkris Bank Mandiri" />
-  <meta property="og:title" content="${escapeHtml(evt.title)}" />
-  <meta property="og:description" content="${escapeHtml(snippetDesc)}" />
-  <meta property="og:image" content="${escapeHtml(eventImg)}" />
-  <meta property="og:image:secure_url" content="${escapeHtml(eventImg)}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(evt.title)}" />
-  <meta name="twitter:description" content="${escapeHtml(snippetDesc)}" />
-  <meta name="twitter:image" content="${escapeHtml(eventImg)}" />
-
-  <meta http-equiv="refresh" content="0;url=${escapeHtml(canonicalUrl)}" />
-</head>
-<body>
-  <script>window.location.replace("${escapeHtml(canonicalUrl)}");</script>
-  <p>Membuka <a href="${escapeHtml(canonicalUrl)}">${escapeHtml(evt.title)}</a>...</p>
-</body>
-</html>`;
-
-          return new Response(html, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-              "Cache-Control": "public, max-age=300"
-            }
-          });
-        }
-      }
-    }
-
-    // 3. Handle Form Preview for WhatsApp / Social Crawlers
-    if (formId) {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/forms?id=eq.${encodeURIComponent(formId)}&select=*`,
-        {
-          headers: {
-            apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
-          }
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const frm = data[0];
-          let formImg = frm.banner_image || frm.poster_url || frm.image || `${url.origin}/assets/mandiri-club-bapekkris-original.png`;
-          if (formImg.startsWith("/")) {
-            formImg = `${url.origin}${formImg}`;
-          }
-
-          const rawDesc = frm.subtitle || frm.description || "Formulir pendaftaran dan registrasi kegiatan resmi Bapekkris PT Bank Mandiri (Persero) Tbk.";
-          const snippetDesc = rawDesc.length > 200 ? rawDesc.slice(0, 197) + "..." : rawDesc;
-          const canonicalUrl = `${url.origin}/?form=${encodeURIComponent(frm.id)}#form`;
-
-          const html = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="utf-8" />
-  <title>${escapeHtml(frm.title)} — Formulir Registrasi Bapekkris Bank Mandiri</title>
-  <meta name="description" content="${escapeHtml(snippetDesc)}" />
-  
-  <!-- Open Graph / WhatsApp Preview Meta Tags -->
-  <meta property="og:type" content="article" />
-  <meta property="og:site_name" content="Bapekkris Bank Mandiri" />
-  <meta property="og:title" content="${escapeHtml(frm.title)}" />
-  <meta property="og:description" content="${escapeHtml(snippetDesc)}" />
-  <meta property="og:image" content="${escapeHtml(formImg)}" />
-  <meta property="og:image:secure_url" content="${escapeHtml(formImg)}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="${escapeHtml(frm.title)}" />
-  <meta name="twitter:description" content="${escapeHtml(snippetDesc)}" />
-  <meta name="twitter:image" content="${escapeHtml(formImg)}" />
-
-  <meta http-equiv="refresh" content="0;url=${escapeHtml(canonicalUrl)}" />
-</head>
-<body>
-  <script>window.location.replace("${escapeHtml(canonicalUrl)}");</script>
-  <p>Membuka <a href="${escapeHtml(canonicalUrl)}">${escapeHtml(frm.title)}</a>...</p>
-</body>
-</html>`;
-
-          return new Response(html, {
-            status: 200,
-            headers: {
-              "Content-Type": "text/html; charset=utf-8",
-              "Cache-Control": "public, max-age=300"
-            }
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error("OG Preview Edge Function error:", err);
   }
-
-  // Fallback to normal SPA handling
   return context.next();
 }
 
+// Shared links always point at the site root ("/?event=..."), so assets and other paths skip this function.
 export const config = {
-  path: "/*"
+  path: "/"
 };
