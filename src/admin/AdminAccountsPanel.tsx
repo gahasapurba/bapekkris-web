@@ -1,24 +1,15 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ShieldCheck, Trash2, UserPlus, Loader2 } from 'lucide-react';
+import { ShieldCheck, Trash2 } from 'lucide-react';
 import { listAdminProfiles, assignAdminRole, revokeAdminRole, type AdminProfile, type AppItem } from '../lib/supabase';
 import { adminAccountSchema, type AdminAccountValues } from './validation/schemas';
-import { useFeedback } from '../ui';
+import { Badge, Button, Field, Input, Select, Skeleton, useFeedback } from '../ui';
+import { AdminEmpty, AdminPanel, AdminSubsection } from './AdminUi';
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
   division_admin: 'Admin Divisi'
-};
-
-const inputStyle: CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  borderRadius: 'var(--radius-md)',
-  background: 'var(--input-bg)',
-  border: '1px solid var(--border-card)',
-  color: 'var(--text-main)',
-  fontSize: '0.88rem'
 };
 
 /**
@@ -50,7 +41,6 @@ export default function AdminAccountsPanel({ divisions = [], currentUserId, show
     reValidateMode: 'onSubmit'
   });
   const role = watch('role');
-  const validationError = errors.email?.message || errors.divisionId?.message || '';
 
   const loadAdmins = useCallback(async () => {
     setIsLoading(true);
@@ -103,103 +93,55 @@ export default function AdminAccountsPanel({ divisions = [], currentUserId, show
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div className="glass-panel" style={{ padding: '22px', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <UserPlus size={20} color="var(--mandiri-blue)" />
-          <h3 style={{ margin: 0, fontSize: '1.05rem', color: 'var(--text-main)' }}>Beri Akses Admin</h3>
-        </div>
-        <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          Buat akun terlebih dahulu di Supabase → Authentication → Users, lalu masukkan email akun tersebut di sini.
-          Admin Divisi hanya dapat mengelola pengurus, acara, formulir, pendaftaran, dan galeri divisinya.
-        </p>
-        <form onSubmit={handleAssign} noValidate style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Email akun
-            <input type="email" {...register('email')} placeholder="nama@bankmandiri.co.id" style={inputStyle} autoComplete="off" />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Nama tampilan
-            <input type="text" {...register('displayName')} placeholder="Opsional" style={inputStyle} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Peran
-            <select {...register('role')} style={inputStyle}>
+    <AdminPanel title={`Kelola admin (${admins.length})`} description="Beri atau cabut akses portal. Admin Divisi hanya bisa mengelola pengurus, acara, formulir, pendaftaran, dan galeri divisinya.">
+      <AdminSubsection title="Beri akses admin">
+        <p className="-mt-1 text-[0.86rem] text-muted">Buat akunnya dulu di Supabase → Authentication → Users, lalu masukkan email akun tersebut di sini.</p>
+        <form onSubmit={handleAssign} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Email akun" required error={errors.email?.message}><Input type="email" autoComplete="off" placeholder="nama@bankmandiri.co.id" {...register('email')} /></Field>
+          <Field label="Nama tampilan" hint="Opsional"><Input {...register('displayName')} /></Field>
+          <Field label="Peran">
+            <Select {...register('role')}>
               <option value="division_admin">{ROLE_LABELS.division_admin}</option>
               <option value="super_admin">{ROLE_LABELS.super_admin}</option>
-            </select>
-          </label>
+            </Select>
+          </Field>
           {role === 'division_admin' && (
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Divisi
-              <select {...register('divisionId')} style={inputStyle}>
+            <Field label="Divisi" required error={errors.divisionId?.message}>
+              <Select {...register('divisionId')}>
                 <option value="">Pilih divisi</option>
-                {divisions.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
-              </select>
-            </label>
+                {divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </Select>
+            </Field>
           )}
-          <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-            <button
-              type="submit"
-              disabled={isSaving}
-              style={{
-                width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                padding: '11px 16px', borderRadius: 'var(--radius-md)', border: 'none', cursor: isSaving ? 'wait' : 'pointer',
-                background: 'var(--mandiri-blue)', color: '#ffffff', fontWeight: 700, opacity: isSaving ? 0.7 : 1
-              }}
-            >
-              {isSaving ? <Loader2 size={16} className="spin" /> : <ShieldCheck size={16} />}
-              Simpan Akses
-            </button>
-          </div>
+          {error && <p role="alert" className="rounded-md border border-danger-line bg-danger-tint px-3 py-2 text-[0.86rem] text-ink md:col-span-2">{error}</p>}
+          <div className="flex justify-end md:col-span-2"><Button type="submit" loading={isSaving} icon={<ShieldCheck size={16} aria-hidden="true" />}>Simpan akses</Button></div>
         </form>
-        {(validationError || error) && <div role="alert" style={{ color: '#dc2626', fontSize: '0.84rem' }}>{validationError || error}</div>}
-      </div>
+      </AdminSubsection>
 
-      <div className="glass-panel" style={{ padding: '22px', borderRadius: 'var(--radius-lg)' }}>
-        <h3 style={{ margin: '0 0 14px', fontSize: '1.05rem', color: 'var(--text-main)' }}>Daftar Admin ({admins.length})</h3>
+      <div className="flex flex-col gap-3">
+        <h3 className="text-[0.98rem] font-semibold text-ink">Daftar admin</h3>
         {isLoading ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Memuat daftar admin...</div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {admins.map(admin => (
-              <div
-                key={admin.userId}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
-                  padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-card)', background: 'var(--bg-card)'
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.9rem' }}>
+          <div className="flex flex-col gap-2" aria-busy="true" aria-label="Memuat daftar admin"><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
+        ) : admins.length === 0 ? <AdminEmpty>Belum ada admin terdaftar.</AdminEmpty> : (
+          <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
+            {admins.map((admin) => (
+              <li key={admin.userId} className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3">
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                     {admin.displayName || admin.email}
-                    {admin.userId === currentUserId && <span style={{ color: 'var(--text-dim)', fontWeight: 500 }}> (Anda)</span>}
-                  </div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {admin.email} • {ROLE_LABELS[admin.role]}
-                    {admin.role === 'division_admin' && ` • ${divisionName(admin.divisionId)}`}
-                  </div>
+                    {admin.userId === currentUserId && <Badge>Anda</Badge>}
+                    <Badge tone={admin.role === 'super_admin' ? 'gold' : 'navy'}>{ROLE_LABELS[admin.role]}</Badge>
+                  </p>
+                  <p className="mt-0.5 text-[0.84rem] text-muted">{admin.email}{admin.role === 'division_admin' && ` · ${divisionName(admin.divisionId)}`}</p>
                 </div>
                 {admin.userId !== currentUserId && (
-                  <button
-                    type="button"
-                    onClick={() => handleRevoke(admin)}
-                    aria-label={`Cabut akses ${admin.email}`}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 12px',
-                      borderRadius: 'var(--radius-full)', border: '1px solid rgba(244, 63, 94, 0.35)',
-                      background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer'
-                    }}
-                  >
-                    <Trash2 size={14} />
-                    Cabut Akses
-                  </button>
+                  <Button size="sm" variant="danger" icon={<Trash2 size={14} aria-hidden="true" />} onClick={() => handleRevoke(admin)} aria-label={`Cabut akses ${admin.email}`}>Cabut akses</Button>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
-    </div>
+    </AdminPanel>
   );
 }
