@@ -5,6 +5,45 @@ export const INDONESIAN_MONTHS = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
+const WIB_OFFSET_HOURS = 7;
+const WIB_DATE_TIME_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?)?\s*(Z|[+-]\d{2}:?\d{2})?$/;
+
+/** Builds the instant of a wall-clock time in WIB (Asia/Jakarta, UTC+7, no daylight saving). */
+function wibInstant(year, month, day, hour = 0, minute = 0, second = 0, ms = 0) {
+  return new Date(Date.UTC(year, month - 1, day, hour - WIB_OFFSET_HOURS, minute, second, ms));
+}
+
+/**
+ * Parses "YYYY-MM-DD", "YYYY-MM-DDTHH:mm[:ss]" (read as WIB wall-clock time) or a string with an
+ * explicit offset/Z. A missing time becomes 23:59:59.999 when endOfDay is set, otherwise 00:00.
+ * Missing seconds become :59 when endOfDay is set. Returns null when the string is not such a date.
+ */
+export function parseWibDateTime(str, { endOfDay = false } = {}) {
+  const match = String(str || '').trim().match(WIB_DATE_TIME_PATTERN);
+  if (!match) return null;
+  const [, y, mo, d, h, mi, s, offset] = match;
+  if (offset) {
+    const explicit = new Date(String(str).trim());
+    return isNaN(explicit.getTime()) ? null : explicit;
+  }
+  if (h === undefined) {
+    return endOfDay
+      ? wibInstant(+y, +mo, +d, 23, 59, 59, 999)
+      : wibInstant(+y, +mo, +d);
+  }
+  const seconds = s !== undefined ? +s : (endOfDay ? 59 : 0);
+  return wibInstant(+y, +mo, +d, +h, +mi, seconds);
+}
+
+/** Calendar date ("YYYY-MM-DD") of the given instant in WIB. Defaults to now. */
+export function toWibIsoDate(date = new Date()) {
+  const parts = {};
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' })
+    .formatToParts(date)
+    .forEach((p) => { parts[p.type] = p.value; });
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 /**
  * Parses an Indonesian date string (e.g. "31 Maret 2026") or ISO string ("2026-03-31")
  * into a valid ISO string "YYYY-MM-DD". Returns empty string if invalid.
@@ -29,7 +68,7 @@ export function parseDateToIso(str) {
   // Fallback try standard JS Date
   const d = new Date(trimmed);
   if (!isNaN(d.getTime())) {
-    return d.toISOString().split('T')[0];
+    return toWibIsoDate(d);
   }
 
   return '';
@@ -197,32 +236,11 @@ export function getDeadlineStatus(deadlineStr) {
     };
   }
 
-  let deadlineDate = null;
-  const dtMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/);
-  if (dtMatch) {
-    const y = parseInt(dtMatch[1], 10);
-    const mo = parseInt(dtMatch[2], 10);
-    const dNum = parseInt(dtMatch[3], 10);
-    const h = dtMatch[4] !== undefined ? parseInt(dtMatch[4], 10) : 23;
-    const mi = dtMatch[5] !== undefined ? parseInt(dtMatch[5], 10) : 59;
-    const s = dtMatch[6] !== undefined ? parseInt(dtMatch[6], 10) : 59;
-    deadlineDate = new Date(y, mo - 1, dNum, h, mi, s);
-  } else if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    const [y, m, dNum] = trimmed.split('-').map(Number);
-    deadlineDate = new Date(y, m - 1, dNum, 23, 59, 59, 999);
-  } else {
-    const d = new Date(trimmed);
-    if (!isNaN(d.getTime())) {
-      deadlineDate = d;
-    }
-  }
-
+  // Deadlines are WIB wall-clock times, matching the database (parse_wib_deadline)
+  let deadlineDate = parseWibDateTime(trimmed, { endOfDay: true });
   if (!deadlineDate) {
     const iso = parseDateToIso(trimmed);
-    if (iso) {
-      const [y, m, dNum] = iso.split('-').map(Number);
-      deadlineDate = new Date(y, m - 1, dNum, 23, 59, 59, 999);
-    }
+    if (iso) deadlineDate = parseWibDateTime(iso, { endOfDay: true });
   }
 
   if (!deadlineDate) {
@@ -529,9 +547,8 @@ export function formatWibDateTime(str, options = {}) {
  * Modes: 'date' (Tanggal Lengkap), 'range' (Rentang Tanggal), 'month' (Bulan & Tahun), 'year' (Tahun Saja)
  */
 export function parseFlexibleDate(str) {
-  const curYear = new Date().getFullYear();
-  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-  const today = new Date().toISOString().split('T')[0];
+  const today = toWibIsoDate();
+  const [curYear, curMonth] = [Number(today.slice(0, 4)), today.slice(5, 7)];
 
   if (!str) {
     return {
@@ -700,9 +717,8 @@ export function formatMultipleDates(dates = []) {
  * Builds the compact standard ISO string based on the chosen mode.
  */
 export function buildFlexibleDate(mode, fields = {}) {
-  const curYear = new Date().getFullYear();
-  const curMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-  const today = new Date().toISOString().split('T')[0];
+  const today = toWibIsoDate();
+  const [curYear, curMonth] = [Number(today.slice(0, 4)), today.slice(5, 7)];
 
   if (mode === 'dates') {
     const list = Array.isArray(fields.dates) ? fields.dates : [];
@@ -853,23 +869,9 @@ export function isEventPassed(startDateStr, endDateStr) {
   const targetStr = String(endDateStr || startDateStr || '').trim();
   if (!targetStr) return false;
 
-  const now = new Date();
-  if (targetStr.includes('T')) {
-    const d = new Date(targetStr);
-    if (!isNaN(d.getTime())) {
-      return now.getTime() > d.getTime();
-    }
-  }
-
-  const dateOnly = targetStr.slice(0, 10);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
-    const endOfDay = new Date(`${dateOnly}T23:59:59`);
-    if (!isNaN(endOfDay.getTime())) {
-      return now.getTime() > endOfDay.getTime();
-    }
-  }
-
-  return false;
+  const end = parseWibDateTime(targetStr, { endOfDay: true })
+    || parseWibDateTime(targetStr.slice(0, 10), { endOfDay: true });
+  return end ? Date.now() > end.getTime() : false;
 }
 
 

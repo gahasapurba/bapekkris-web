@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { toWibIsoDate } from '../utils/dateUtils.js';
 
 const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
@@ -461,7 +462,7 @@ export const rowMappers = {
     toDb: (item) => ({
       id: String(item.id),
       title: String(item.title || '').trim(),
-      devotion_date: item.devotionDate || new Date().toISOString().slice(0, 10),
+      devotion_date: item.devotionDate || toWibIsoDate(),
       scripture_ref: String(item.scriptureRef || '').trim(),
       scripture_text: item.scriptureText || '',
       body: String(item.body || '').trim(),
