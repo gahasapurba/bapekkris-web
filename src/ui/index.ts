@@ -4,6 +4,7 @@ export { Card, CardTitle } from './Card';
 export { Badge, type BadgeTone } from './Badge';
 export { Field, Input, Select, Textarea } from './Field';
 export { Dialog } from './Dialog';
+export { Sheet } from './Sheet';
 export { Tabs, type TabItem } from './Tabs';
 export { Skeleton } from './Skeleton';
 export { EmptyState } from './EmptyState';

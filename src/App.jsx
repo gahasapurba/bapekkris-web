@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { EyeOff, Sun, Moon, Search, X, Users, Calendar, ClipboardList, Download, ChevronRight } from 'lucide-react';
-import Navbar from './components/Navbar';
+import SiteHeader from './components/layout/SiteHeader';
 import HomeSection from './components/HomeSection';
-import Footer from './components/Footer';
+import SiteFooter from './components/layout/SiteFooter';
 import ErrorBoundary from './components/ErrorBoundary';
 import AdminOnlyNotice from './components/AdminOnlyNotice';
 
@@ -993,7 +993,7 @@ function MainApp() {
 
       {/* Responsive Navbar (Can be toggled View / Hide) */}
       {isNavbarVisible && (
-        <Navbar
+        <SiteHeader
           currentTab={effectiveTab}
           setCurrentTab={setCurrentTab}
           tenures={tenures}
@@ -1880,7 +1880,7 @@ function MainApp() {
       })()}
 
       {/* Clean Footer */}
-      <Footer theme={theme} />
+      <SiteFooter theme={theme} pageVisibility={pageVisibility} setCurrentTab={setCurrentTab} />
     </div>
     </AppNavigationContext.Provider>
   );

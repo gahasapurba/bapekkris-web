@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from './cn';
+import { useModalBehavior } from './useModalBehavior';
 
 interface DialogProps {
   open: boolean;
@@ -17,7 +18,6 @@ interface DialogProps {
 }
 
 const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-3xl' };
-const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
 /**
  * Modal dialog: rendered in a portal, labelled for screen readers, keeps keyboard focus inside,
@@ -27,36 +27,7 @@ export function Dialog({ open, onClose, title, description, children, footer, si
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descriptionId = useId();
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-
-  useEffect(() => {
-    if (!open) return;
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    (panel?.querySelector<HTMLElement>('[data-autofocus]') ?? panel?.querySelector<HTMLElement>(FOCUSABLE) ?? panel)?.focus();
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && dismissible) {
-        e.stopPropagation();
-        onCloseRef.current();
-      } else if (e.key === 'Tab' && panel) {
-        const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
-        if (items.length === 0) return;
-        const first = items[0], last = items[items.length - 1];
-        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-      }
-    };
-    document.addEventListener('keydown', onKeyDown, true);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown, true);
-      document.body.style.overflow = overflow;
-      previouslyFocused?.focus?.();
-    };
-  }, [open, dismissible]);
+  useModalBehavior(panelRef, open, onClose, dismissible);
 
   if (!open) return null;
   return createPortal(
