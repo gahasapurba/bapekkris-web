@@ -64,7 +64,7 @@ export function Switch({ checked, onChange, label, className }: { checked: boole
   return (
     <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)}
       className={cn('relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-0 p-0.5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink',
-        checked ? 'bg-success' : 'bg-line-strong', className)}>
+        checked ? 'bg-success' : 'bg-dim', className)}>
       <span className={cn('block size-5 rounded-full bg-white shadow-card transition-transform', checked ? 'translate-x-5' : 'translate-x-0')} />
     </button>
   );
