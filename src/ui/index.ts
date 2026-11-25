@@ -7,6 +7,7 @@ export { Dialog } from './Dialog';
 export { Sheet } from './Sheet';
 export { Tabs, type TabItem } from './Tabs';
 export { Skeleton } from './Skeleton';
+export { Pagination } from './Pagination';
 export { EmptyState } from './EmptyState';
 export { PageHeader } from './PageHeader';
 export { FeedbackProvider, useFeedback, type ToastTone } from './Toast';
