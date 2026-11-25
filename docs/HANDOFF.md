@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, layout & Beranda selesai).
+Terakhir diperbarui: 26 November 2026 (Fase 3 selesai — seluruh halaman publik & Admin Portal sudah konsep baru).
 
 ---
 
@@ -129,8 +129,13 @@ Terakhir diperbarui: 25 November 2026 (Fase 3 berjalan — fondasi, komponen, la
 - ✅ Organisasi (`organization/`; bagan tetap memakai `#org-tree-export-container` + kelas `crew-member-card`/`org-anggota-box` untuk ekspor PDF) Galeri (`gallery/`; lightbox `role=dialog`), dan Aset (`assets/`; pratinjau selalu berlatar terang agar logo navy terbaca di mode gelap).
 - ✅ Statistik pendaftaran & undian acara (`registration-stats/`, khusus admin; modal memakai `Dialog`).
 - ✅ Admin — kerangka konsep B: sidebar berkelompok (`AdminTabNavigation.tsx`, Sheet di seluler), top bar aksi, ringkasan bento (`AdminSummaryBar.tsx`), login baru; notifikasi admin kini lewat `useFeedback`. Blok bersama tab admin di `src/admin/AdminUi.tsx` (AdminPanel, AdminSubsection, AdminList/Row, AdminEmpty, IconButton, Switch).
-- ✅ Tab admin baru: Renungan, Kidung, EasyWorship, FAQ, Visibilitas.
-- ⏭️ Berikutnya: tab admin sisanya (Aset, Periode, Role, Divisi, Pengurus, Galeri, Data pendaftaran, Formulir, Ibadah & acara) + modal (DeleteConfirm, EditItem, OrgRoles, RoleForm, Laporan), Kelola admin, form login → sisa a11y & copy. Pengumuman (announcement bar) & pencarian cepat di `App.jsx` juga masih gaya lama.
+- ✅ Semua 15 tab admin memakai blok `AdminUi` (+ `FlexibleDateField`, `csv.ts`). Kelola admin & login memakai `Field`/`Input`.
+- ✅ Modal admin: `EditItemModal` (logika simpan dipertahankan; field edit dikonversi ke `Input/Select/Textarea` dengan label tertaut lewat codemod), `DeleteConfirmModal` (alertdialog), `ExecutiveReportModal` (portal; cetak/PDF menyembunyikan sisa halaman lewat `body:has(> .executive-report-modal)` di `legacy.css`). Escape ditangani `useModalBehavior` (sadar tumpukan); penangan Escape global di AdminPortal dihapus.
+- ✅ `layout/AnnouncementBar.tsx` & `layout/QuickSearch.tsx` (Ctrl/⌘+K, navigasi panah, hasil lagu kini tampil, hasil mengikuti halaman yang disembunyikan).
+- ✅ Aksesibilitas: audit axe-core (WCAG 2.1 AA) 0 pelanggaran di semua halaman publik (terang & gelap), semua tab admin, login, dan statistik. Token disesuaikan: `--gold-ink` #7a5806, `--neon-emerald` #186844.
+- 🧹 Opsional (tidak mendesak): (1) hapus state/handler role lama di `AdminPortal.jsx` (`roleModal`, `isOrgRolesOpen`, `roleDeleteWarning`, `handleSaveRole`, `handleDeleteRole`) — modalnya sudah dihapus karena tak pernah bisa dibuka; (2) pangkas aturan `legacy.css` yang tak lagi dipakai (`.glass-panel`, `.admin-desktop-tabs`, dll.); (3) pindahkan state form admin ke react-hook-form per tab.
+
+**Fase 3 selesai.**
 
 **Aturan teknis redesign:**
 - Halaman yang sudah di-redesign didaftarkan di `FULL_BLEED_TABS` (`App.jsx`) agar lepas dari `.container` lama dan mengatur lebarnya sendiri (`Container`/`Section` di `home/shared.tsx`).

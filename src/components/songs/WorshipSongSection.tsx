@@ -35,7 +35,7 @@ export default function WorshipSongSection(props: any) {
                 <button key={c.id} type="button" aria-pressed={selectedCategory === c.id} onClick={() => { soundFx.playClick(); setSelectedCategory(c.id); }}
                   className={cn('inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[0.84rem] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy-ink',
                     selectedCategory === c.id ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-muted hover:border-line-strong hover:text-ink')}>
-                  {c.label}<span className="opacity-70">{categoryCounts[c.id] || 0}</span>
+                  {c.label}<span className="tabular-nums">{categoryCounts[c.id] || 0}</span>
                 </button>
               ))}
             </div>

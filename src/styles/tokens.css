@@ -44,11 +44,11 @@
      compromise (about 4.1-4.4:1 either way). New components use --gold-fill / --gold-ink. */
   --mandiri-gold: #94700c;
   --gold-fill: #e0a100;             /* dark text on it 8.8:1 */
-  --gold-ink: #8a6508;              /* 4.8:1 on page */
+  --gold-ink: #7a5806;              /* 5.6:1 on page, 5.0:1 on subtle */
 
   --neon-cyan: #2b5d97;             /* calm "info" blue, 6.1:1 */
   --neon-purple: #5b4a8b;
-  --neon-emerald: #1f7a55;
+  --neon-emerald: #186844;
   --neon-rose: #b42340;
 
   --badge-bg: rgba(11, 47, 94, 0.06);

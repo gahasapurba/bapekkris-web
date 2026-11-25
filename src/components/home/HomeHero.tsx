@@ -54,17 +54,17 @@ export function HomeHero({ activeTenure, activeForms, stats, showEvents, showOrg
         )}
 
         {stats.length > 0 && (
-          <dl className="mt-16 grid w-full max-w-4xl grid-cols-2 border-y border-line md:grid-cols-4">
+          <ul className="mt-16 grid w-full max-w-4xl list-none grid-cols-2 border-y border-line md:grid-cols-4">
             {stats.map((s, i) => (
-              <div key={s.label} className={cn('border-line', i % 2 === 1 && 'border-l', i === 2 && 'md:border-l', i >= 2 && 'border-t md:border-t-0')}>
+              <li key={s.label} className={cn('border-line', i % 2 === 1 && 'border-l', i === 2 && 'md:border-l', i >= 2 && 'border-t md:border-t-0')}>
                 <button type="button" onClick={() => go(s.tab)} className="flex h-full w-full cursor-pointer flex-col items-center gap-1 border-0 bg-transparent px-4 py-7 transition-colors hover:bg-surface focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy-ink">
-                  <dt className="order-2 text-[0.82rem] font-semibold text-ink">{s.label}</dt>
-                  <dd className="order-1 font-display text-[2.4rem] font-semibold leading-none text-ink">{s.value}</dd>
-                  <dd className="order-3 text-[0.78rem] text-dim">{s.caption}</dd>
+                  <span className="order-2 text-[0.82rem] font-semibold text-ink">{s.label}</span>
+                  <span className="order-1 font-display text-[2.4rem] font-semibold leading-none text-ink">{s.value}</span>
+                  <span className="order-3 text-[0.78rem] text-dim">{s.caption}</span>
                 </button>
-              </div>
+              </li>
             ))}
-          </dl>
+          </ul>
         )}
       </Container>
     </section>
