@@ -91,8 +91,6 @@ export const BIBLE_BOOKS = [
 
 export const BIBLE_VERSIONS = [
   { id: 'TB', name: 'TB (Terjemahan Baru)', short: 'TB', source: 'LAI' },
-  { id: 'TB2', name: 'TB2 (Edisi 2)', short: 'TB2', source: 'LAI' },
-  { id: 'BIMK', name: 'BIMK (Masa Kini)', short: 'BIMK', source: 'LAI' },
   { id: 'KJV', name: 'KJV (King James)', short: 'KJV', source: 'English' },
   { id: 'WEB', name: 'WEB (World English)', short: 'WEB', source: 'English' }
 ];
@@ -110,130 +108,71 @@ export default function BibleSection({
   const [copiedVerse, setCopiedVerse] = useState(null);
   const [fontSize, setFontSize] = useState(16); // px
 
-  // In-memory cache for downloaded book chapters: { [bookId]: { "1": [...], "2": [...] } }
-  const [bookChapterCache, setBookChapterCache] = useState({});
-  // API verses fetch state
+  // Downloaded Terjemahan Baru books by book id ({ "1": [...verses], ... }) and verses per version/chapter
+  const bookCacheRef = React.useRef({});
   const [apiVerses, setApiVerses] = useState({});
+  const apiVersesRef = React.useRef(apiVerses);
+  apiVersesRef.current = apiVerses;
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
 
-  // Fetch verses with multi-tier official LAI & CDN fallback
   React.useEffect(() => {
     const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
-    if (apiVerses[cacheKey]) return;
-
-    // Check in-memory full book chapter cache for Indonesian versions
-    if (selectedVersion === 'TB' || selectedVersion === 'TB2' || selectedVersion === 'BIMK') {
-      const cachedChapters = bookChapterCache[selectedBook.id];
-      if (cachedChapters && cachedChapters[String(selectedChapter)]) {
-        const cleaned = cachedChapters[String(selectedChapter)].map(v => ({
-          verse: v.verse,
-          text: (v.text || '').trim()
-        }));
-        setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
-        return;
-      }
+    if (apiVersesRef.current[cacheKey]) {
+      setIsLoadingVerses(false);
+      return undefined;
     }
 
-    let isMounted = true;
-    setIsLoadingVerses(true);
+    const controller = new AbortController();
+    const { signal } = controller;
+    const cleanVerses = (list) => (Array.isArray(list) ? list : []).map(v => ({ verse: v.verse, text: (v.text || '').trim() }));
 
-    if (selectedVersion === 'KJV' || selectedVersion === 'WEB') {
+    const loadEnglish = async () => {
       const bookQuery = selectedBook.en || selectedBook.name;
-      fetch(`https://bible-api.com/${encodeURIComponent(bookQuery)}+${selectedChapter}?translation=${selectedVersion.toLowerCase()}`)
-        .then(res => {
-          if (!res.ok) throw new Error('API error');
-          return res.json();
-        })
-        .then(json => {
-          if (!isMounted) return;
-          if (json?.verses && Array.isArray(json.verses)) {
-            const cleaned = json.verses.map(v => ({
-              verse: v.verse,
-              text: (v.text || '').trim()
-            }));
-            if (cleaned.length > 0) {
-              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
-            }
+      const res = await fetch(`https://bible-api.com/${encodeURIComponent(bookQuery)}+${selectedChapter}?translation=${selectedVersion.toLowerCase()}`, { signal });
+      if (!res.ok) throw new Error(`bible-api.com status ${res.status}`);
+      return cleanVerses((await res.json())?.verses);
+    };
+
+    // Terjemahan Baru (LAI) text from the open alkitab-api dataset: jsDelivr first, GitHub raw as fallback
+    const loadTerjemahanBaru = async () => {
+      let chapters = bookCacheRef.current[selectedBook.id];
+      if (!chapters) {
+        const slug = selectedBook.slug || selectedBook.name.toLowerCase().replace(/[\s-]+/g, '_');
+        const dir = (selectedBook.testament || 'PL').toLowerCase();
+        const sources = [
+          `https://cdn.jsdelivr.net/gh/tobiasagyasta/alkitab-api@master/lib/${dir}/${slug}.json`,
+          `https://raw.githubusercontent.com/tobiasagyasta/alkitab-api/master/lib/${dir}/${slug}.json`
+        ];
+        for (const source of sources) {
+          try {
+            const res = await fetch(source, { signal });
+            if (!res.ok) continue;
+            chapters = (await res.json())?.chapters;
+            if (chapters) break;
+          } catch (err) {
+            if (err.name === 'AbortError') throw err;
           }
-        })
-        .catch(() => {})
-        .finally(() => {
-          if (isMounted) setIsLoadingVerses(false);
-        });
-    } else {
-      // Indonesian versions (TB - Lembaga Alkitab Indonesia)
-      const slug = selectedBook.slug || selectedBook.name.toLowerCase().replace(/[\s-]+/g, '_');
-      const dir = (selectedBook.testament || 'PL').toLowerCase();
-      const laiApiKey = import.meta.env.VITE_LAI_BIBLE_API_KEY;
-
-      const loadFromCdn = () => {
-        const cdnUrl = `https://cdn.jsdelivr.net/gh/tobiasagyasta/alkitab-api@master/lib/${dir}/${slug}.json`;
-        const rawUrl = `https://raw.githubusercontent.com/tobiasagyasta/alkitab-api/master/lib/${dir}/${slug}.json`;
-
-        fetch(cdnUrl)
-          .catch(() => fetch(rawUrl))
-          .then(res => {
-            if (!res.ok) throw new Error('CDN error');
-            return res.json();
-          })
-          .then(json => {
-            if (!isMounted) return;
-            if (json?.chapters) {
-              setBookChapterCache(prev => ({ ...prev, [selectedBook.id]: json.chapters }));
-              const chVerses = json.chapters[String(selectedChapter)] || [];
-              const cleaned = chVerses.map(v => ({
-                verse: v.verse,
-                text: (v.text || '').trim()
-              }));
-              if (cleaned.length > 0) {
-                setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
-              }
-            }
-          })
-          .catch(err => {
-            console.error('Alkitab fetch error:', err);
-          })
-          .finally(() => {
-            if (isMounted) setIsLoadingVerses(false);
-          });
-      };
-
-      if (laiApiKey) {
-        // Official LAI API endpoint
-        fetch(`https://bible-api.alkitab.or.id/bible-api/api/v1/bible/tb/${slug}/${selectedChapter}`, {
-          headers: {
-            'Authorization': `Bearer ${laiApiKey}`,
-            'Accept': 'application/json'
-          }
-        })
-          .then(res => {
-            if (!res.ok) throw new Error('LAI status ' + res.status);
-            return res.json();
-          })
-          .then(json => {
-            if (!isMounted) return;
-            const versesList = json?.data?.verses || json?.verses || [];
-            if (Array.isArray(versesList) && versesList.length > 0) {
-              const cleaned = versesList.map(v => ({
-                verse: v.verse || v.number,
-                text: (v.text || v.content || '').trim()
-              }));
-              setApiVerses(prev => ({ ...prev, [cacheKey]: cleaned }));
-              setIsLoadingVerses(false);
-            } else {
-              loadFromCdn();
-            }
-          })
-          .catch(() => {
-            loadFromCdn();
-          });
-      } else {
-        loadFromCdn();
+        }
+        if (!chapters) throw new Error(`Kitab ${selectedBook.name} tidak dapat dimuat dari server Alkitab`);
+        bookCacheRef.current[selectedBook.id] = chapters;
       }
-    }
+      return cleanVerses(chapters[String(selectedChapter)]);
+    };
 
-    return () => { isMounted = false; };
-  }, [selectedBook, selectedChapter, selectedVersion, bookChapterCache]);
+    setIsLoadingVerses(true);
+    (selectedVersion === 'TB' ? loadTerjemahanBaru() : loadEnglish())
+      .then((verses) => {
+        if (verses.length > 0) setApiVerses(prev => ({ ...prev, [cacheKey]: verses }));
+      })
+      .catch((err) => {
+        if (err.name !== 'AbortError') console.error('Alkitab fetch error:', err);
+      })
+      .finally(() => {
+        if (!signal.aborted) setIsLoadingVerses(false);
+      });
+
+    return () => controller.abort();
+  }, [selectedBook, selectedChapter, selectedVersion]);
 
   const filteredBooks = useMemo(() => {
     return BIBLE_BOOKS.filter(b => {
