@@ -1,22 +1,18 @@
-import { Download, X } from 'lucide-react';
+import { useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Printer, X } from 'lucide-react';
 import { formatWibEventRange } from '../../utils/dateUtils';
+import { Badge, Button } from '../../ui';
+import { useModalBehavior } from '../../ui/useModalBehavior';
+import { AdminTable, tdClass, thClass } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
 
+/** Printable accountability report (LPJ) for one tenure. Printing hides the rest of the page (see legacy.css @media print). */
 export default function ExecutiveReportModal() {
-  const {
-    activeTenure,
-    devotions,
-    divisions,
-    events,
-    galleries,
-    members,
-    reportTenureId,
-    setReportTenureId,
-    setShowExecutiveReportModal,
-    showExecutiveReportModal,
-    tenures,
-    worshipSongs
-  } = useAdminPortal();
+  const { activeTenure, devotions, divisions, events, galleries, members, reportTenureId, setReportTenureId, setShowExecutiveReportModal, tenures, worshipSongs } = useAdminPortal();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const close = () => setShowExecutiveReportModal(false);
+  useModalBehavior(panelRef, true, close);
 
   const selectedReportTenureId = reportTenureId || activeTenure?.id || tenures[0]?.id || '';
   const selectedReportTenure = tenures.find(t => t.id === selectedReportTenureId) || activeTenure || tenures[0];
@@ -30,208 +26,88 @@ export default function ExecutiveReportModal() {
   const totalRab = reportEvents.reduce((acc, e) => acc + Number(e.totalRab || 0), 0);
   const coreLeaders = reportMembers.filter(m => m.category === 'pembina' || m.category === 'inti' || m.category === 'pimpro');
 
-  return (
-    <div className="executive-report-modal" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.82)',
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-      zIndex: 99999,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div className="glass-panel modal-container executive-report-container" style={{
-        maxWidth: '900px',
-        width: '100%',
-        maxHeight: '92vh',
-        overflowY: 'auto',
-        padding: '32px',
-        border: '1.5px solid var(--mandiri-gold)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px'
-      }}>
-        {/* Modal Top Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-card)', paddingBottom: '16px' }}>
-          <div>
-            <span className="badge-gold" style={{ fontSize: '0.68rem', marginBottom: '4px' }}>
-              Executive Summary & LPJ Resmi
-            </span>
-            <h2 style={{ fontSize: 'clamp(1.15rem, 4vw, 1.45rem)', fontWeight: 900, color: 'var(--text-main)', margin: 0 }}>
-              Laporan Pertanggungjawaban & Progres Bapekkris Bank Mandiri
-            </h2>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Periode: <strong>{selectedReportTenure?.title || selectedReportTenure?.code || 'Kepengurusan'}</strong>{selectedReportTenure?.themeTagline ? ` • Tema: "${selectedReportTenure.themeTagline}"` : ''}
-            </div>
-          </div>
-
-          <div className="no-print" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <select
-              value={selectedReportTenureId}
-              onChange={(e) => setReportTenureId(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--input-bg)',
-                border: '1.5px solid var(--mandiri-gold)',
-                color: 'var(--text-main)',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              {tenures.map((t) => (
-                <option key={t.id} value={t.id}>
-                  Periode {t.code || t.title}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={() => window.print()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '9px 18px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--mandiri-gold)',
-                color: '#040914',
-                border: 'none',
-                fontWeight: 800,
-                fontSize: '0.82rem',
-                cursor: 'pointer'
-              }}
-            >
-              <Download size={15} />
-              <span>🖨️ Cetak / Simpan PDF</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowExecutiveReportModal(false)}
-              style={{
-                background: 'var(--input-bg)',
-                border: '1px solid var(--border-card)',
-                color: 'var(--text-main)',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-
-        {/* 1. Key Performance Metrics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(135px, 42vw, 170px), 1fr))', gap: '10px' }}>
-          <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: 'var(--input-bg)', border: '1px solid var(--border-card)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 700 }}>TOTAL PERSONEL</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '4px' }}>{reportMembers.length} Orang</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{reportMembers.filter(m => m.category === 'pembina').length} Pembina • 4 Divisi & BPH Inti</div>
-          </div>
-          <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: 'var(--input-bg)', border: '1px solid var(--border-card)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 700 }}>REALISASI KEGIATAN</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#10b981', marginTop: '4px' }}>{completedEvents}/{reportEvents.length} ({eventPercent}%)</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{reportGalleries.length} Dokumentasi Galeri</div>
-          </div>
-          <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: 'var(--input-bg)', border: '1px solid var(--border-card)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 700 }}>TOTAL ANGGARAN (RAB)</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--neon-cyan)', marginTop: '4px' }}>Rp {(totalRab / 1000000).toFixed(1)} Jt</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Rp {totalRab.toLocaleString('id-ID')}</div>
-          </div>
-          <div style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: 'var(--input-bg)', border: '1px solid var(--border-card)' }}>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-dim)', fontWeight: 700 }}>PELAYANAN & FIRMAN</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--mandiri-gold)', marginTop: '4px' }}>{devotions.length} Renungan</div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{worshipSongs.length} Kidung Pujian & Lagu Rohani</div>
-          </div>
-        </div>
-
-        {/* 2. Tabel Realisasi Kegiatan & Anggaran */}
-        <div>
-          <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '10px' }}>
-            I. Rekapitulasi Kegiatan & Rencana Anggaran Biaya (RAB)
-          </h4>
-          <div style={{ overflowX: 'auto', border: '1px solid var(--border-card)', borderRadius: 'var(--radius-md)' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '580px' }}>
-              <thead>
-                <tr style={{ background: 'var(--input-bg)', textAlign: 'left', color: 'var(--text-muted)' }}>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)' }}>Nama Kegiatan</th>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)' }}>Divisi</th>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)' }}>Jadwal</th>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)' }}>Peserta</th>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)' }}>Status</th>
-                  <th style={{ padding: '10px 12px', borderBottom: '1px solid var(--border-card)', textAlign: 'right' }}>Total RAB</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reportEvents.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: '24px 16px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      Belum ada kegiatan yang terdaftar di database untuk periode ini.
-                    </td>
-                  </tr>
-                ) : (
-                  reportEvents.map((evt) => (
-                    <tr key={evt.id} style={{ borderBottom: '1px solid var(--border-card)' }}>
-                      <td style={{ padding: '9px 12px', fontWeight: 700, color: 'var(--text-main)' }}>{evt.title}</td>
-                      <td style={{ padding: '9px 12px', color: 'var(--text-muted)' }}>{evt.divisionName}</td>
-                      <td style={{ padding: '9px 12px', color: 'var(--text-muted)' }}>{evt.date || formatWibEventRange(evt.startDate, evt.endDate)}</td>
-                      <td style={{ padding: '9px 12px', color: 'var(--text-muted)' }}>{evt.peserta || evt.kpi}</td>
-                      <td style={{ padding: '9px 12px' }}>
-                        <span style={{
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          color: evt.status === 'Completed' ? '#10b981' : 'var(--mandiri-gold)'
-                        }}>
-                          {evt.status === 'Completed' ? '✓ Selesai' : evt.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-main)' }}>
-                        Rp {Number(evt.totalRab || 0).toLocaleString('id-ID')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* 3. Susunan Pimpinan & Ketua Divisi */}
-        <div>
-          <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '10px' }}>
-            II. Susunan Dewan Pembina, Pengurus Inti & Ketua Divisi
-          </h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(clamp(170px, 45vw, 220px), 1fr))', gap: '10px' }}>
-            {coreLeaders.length === 0 ? (
-              <div style={{ padding: '16px', color: 'var(--text-muted)', fontStyle: 'italic', gridColumn: '1 / -1' }}>
-                Belum ada susunan pengurus/pimpinan yang terdaftar pada periode ini.
-              </div>
-            ) : (
-              coreLeaders.map((ldr) => (
-                <div key={ldr.id} style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)' }}>
-                  <div style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--mandiri-gold)', textTransform: 'uppercase' }}>{ldr.role}</div>
-                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-main)' }}>{ldr.name}</div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{ldr.title}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
+  const divisionCount = divisions.filter((d: any) => d.tenureId === selectedReportTenureId).length;
+  const metric = (label: string, value: string, sub: string) => (
+    <div className="rounded-md border border-line bg-subtle p-4">
+      <p className="text-[0.74rem] font-semibold uppercase tracking-wide text-dim">{label}</p>
+      <p className="mt-1 font-display text-[1.45rem] font-semibold leading-tight text-ink">{value}</p>
+      <p className="text-[0.8rem] text-muted">{sub}</p>
     </div>
   );
 
+  return createPortal(
+    <div className="executive-report-modal fixed inset-0 z-[100004] flex items-center justify-center bg-overlay p-3 sm:p-6" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="report-title" tabIndex={-1}
+        className="executive-report-container flex max-h-[94vh] w-full max-w-5xl flex-col gap-6 overflow-y-auto rounded-xl border border-line bg-surface p-5 shadow-card outline-none md:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5">
+          <div>
+            <Badge tone="gold">Laporan pertanggungjawaban</Badge>
+            <h2 id="report-title" className="mt-2 font-display text-[clamp(1.3rem,3vw,1.8rem)] font-semibold leading-tight text-ink">Laporan Pertanggungjawaban Bapekkris Bank Mandiri</h2>
+            <p className="mt-1 text-[0.9rem] text-muted">Periode <strong className="text-ink">{selectedReportTenure?.title || selectedReportTenure?.code || 'Kepengurusan'}</strong>{selectedReportTenure?.themeTagline ? ` · Tema “${selectedReportTenure.themeTagline}”` : ''}</p>
+          </div>
+          <div className="no-print flex flex-wrap items-center gap-2">
+            <select aria-label="Pilih periode laporan" value={selectedReportTenureId} onChange={(e) => setReportTenureId(e.target.value)}
+              className="h-10 cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong">
+              {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+            </select>
+            <Button icon={<Printer size={15} aria-hidden="true" />} onClick={() => window.print()}>Cetak / simpan PDF</Button>
+            <button type="button" onClick={close} aria-label="Tutup" className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-muted hover:bg-subtle hover:text-ink"><X size={18} aria-hidden="true" /></button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {metric('Personel', `${reportMembers.length} orang`, `${reportMembers.filter((m: any) => m.category === 'pembina').length} pembina · ${divisionCount} divisi`)}
+          {metric('Realisasi kegiatan', `${completedEvents}/${reportEvents.length} (${eventPercent}%)`, `${reportGalleries.length} album dokumentasi`)}
+          {metric('Total anggaran', `Rp ${totalRab.toLocaleString('id-ID')}`, `${reportEvents.length} kegiatan`)}
+          {metric('Pelayanan firman', `${devotions.length} renungan`, `${worshipSongs.length} kidung & lagu`)}
+        </div>
+
+        <section className="flex flex-col gap-3">
+          <h3 className="font-display text-[1.1rem] font-semibold text-ink">I. Rekapitulasi kegiatan & anggaran</h3>
+          <AdminTable label="Rekapitulasi kegiatan">
+            <thead>
+              <tr>
+                <th scope="col" className={thClass}>Kegiatan</th>
+                <th scope="col" className={thClass}>Divisi</th>
+                <th scope="col" className={thClass}>Jadwal</th>
+                <th scope="col" className={thClass}>Peserta</th>
+                <th scope="col" className={thClass}>Status</th>
+                <th scope="col" className={`${thClass} text-right`}>RAB</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reportEvents.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-muted">Belum ada kegiatan pada periode ini.</td></tr>
+              ) : reportEvents.map((evt: any) => (
+                <tr key={evt.id}>
+                  <td className={`${tdClass} font-semibold`}>{evt.title}</td>
+                  <td className={`${tdClass} text-muted`}>{evt.divisionName}</td>
+                  <td className={`${tdClass} text-muted`}>{evt.date || formatWibEventRange(evt.startDate, evt.endDate)}</td>
+                  <td className={`${tdClass} text-muted`}>{evt.peserta || evt.kpi}</td>
+                  <td className={tdClass}><Badge tone={evt.status === 'Completed' ? 'success' : 'gold'}>{evt.status === 'Completed' ? 'Selesai' : evt.status === 'Ongoing' ? 'Berjalan' : 'Akan datang'}</Badge></td>
+                  <td className={`${tdClass} whitespace-nowrap text-right font-semibold`}>Rp {Number(evt.totalRab || 0).toLocaleString('id-ID')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </AdminTable>
+        </section>
+
+        <section className="flex flex-col gap-3">
+          <h3 className="font-display text-[1.1rem] font-semibold text-ink">II. Dewan pembina, pengurus inti & ketua divisi</h3>
+          {coreLeaders.length === 0 ? <p className="text-[0.9rem] text-muted">Belum ada susunan pengurus pada periode ini.</p> : (
+            <ul className="grid list-none gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {coreLeaders.map((l: any) => (
+                <li key={l.id} className="rounded-md border border-line bg-subtle px-3 py-2.5">
+                  <p className="text-[0.74rem] font-semibold uppercase tracking-wide text-gold-ink">{l.role}</p>
+                  <p className="font-semibold text-ink">{l.name}</p>
+                  {l.title && <p className="text-[0.82rem] text-muted">{l.title}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </div>,
+    document.body
+  );
 }

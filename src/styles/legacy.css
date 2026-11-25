@@ -703,8 +703,8 @@ select option {
     display: none !important;
   }
 
-  /* When printing, hide all other AdminPortal content */
-  .admin-portal-wrapper > *:not(.executive-report-modal) {
+  /* When printing the report (rendered in a portal on <body>), hide everything else */
+  body:has(> .executive-report-modal) > *:not(.executive-report-modal) {
     display: none !important;
   }
 
@@ -720,6 +720,9 @@ select option {
     --mandiri-blue: #003d79 !important;
     --mandiri-gold: #b45309 !important;
     --neon-cyan: #0284c7 !important;
+    --bg-subtle: #f1f5f9 !important;
+    --gold-ink: #92400e !important;
+    --navy-ink: #003d79 !important;
   }
 
   body {

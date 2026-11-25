@@ -58,9 +58,6 @@ import EasyWorshipTab from '../admin/tabs/EasyWorshipTab';
 import AssetsTab from '../admin/tabs/AssetsTab';
 import FaqsTab from '../admin/tabs/FaqsTab';
 import EditItemModal from '../admin/modals/EditItemModal';
-import OrgRolesModal from '../admin/modals/OrgRolesModal';
-import RoleFormModal from '../admin/modals/RoleFormModal';
-import RoleDeleteWarningModal from '../admin/modals/RoleDeleteWarningModal';
 import DeleteConfirmModal from '../admin/modals/DeleteConfirmModal';
 import ExecutiveReportModal from '../admin/modals/ExecutiveReportModal';
 
@@ -581,18 +578,7 @@ export default function AdminPortal({
     });
   };
 
-  // Close modals on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        // The edit dialog handles Escape itself (useModalBehavior, stack-aware).
-        if (editingItem || deleteConfirm) return;
-        if (showExecutiveReportModal) setShowExecutiveReportModal(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editingItem, deleteConfirm, showExecutiveReportModal]);
+  // Escape for the edit, delete and report dialogs is handled by useModalBehavior (stack-aware).
 
   // Form states for new Gallery Event (Flexible 5 Date Modes)
   const [galTitle, setGalTitle] = useState('');
@@ -2053,15 +2039,6 @@ export default function AdminPortal({
 
       {/* EDIT MODAL DIALOG */}
       {editingItem && <EditItemModal />}
-
-      {/* MODAL 1: PENGATURAN STRUKTUR ORGANISASI & ROLE KEPENGURUSAN */}
-      {isOrgRolesOpen && <OrgRolesModal />}
-
-      {/* MODAL 2: ADD / EDIT ROLE */}
-      {roleModal.isOpen && <RoleFormModal />}
-
-      {/* MODAL 3: ROLE DELETE DEPENDENCY WARNING */}
-      {roleDeleteWarning && <RoleDeleteWarningModal />}
 
       {/* CONFIRMATION DELETE DIALOG */}
       {deleteConfirm && <DeleteConfirmModal />}
