@@ -496,6 +496,23 @@ export default function App() {
     [isAdmin, submissions, eventRsvps, publicRegistrationCounts]
   );
 
+  // Division admins see only their own division's data in the Admin Portal, so every division
+  // picker offers just that division. The database (RLS) enforces the same scope on writes.
+  const adminDivisionId = adminSession.profile?.role === 'division_admin' ? adminSession.profile.divisionId : null;
+  const adminScope = useMemo(() => {
+    if (!adminDivisionId) return { divisions, forms, galleries, members, events, subDivisions };
+    const scopedEvents = events.filter(e => e.divisionId === adminDivisionId);
+    const eventIds = new Set(scopedEvents.map(e => e.id));
+    return {
+      divisions: divisions.filter(d => d.id === adminDivisionId),
+      subDivisions: subDivisions.filter(sd => sd.divisionId === adminDivisionId),
+      members: members.filter(m => m.divisionId === adminDivisionId),
+      events: scopedEvents,
+      galleries: galleries.filter(g => g.divisionId === adminDivisionId || eventIds.has(g.eventId)),
+      forms: forms.filter(f => eventIds.has(f.eventId))
+    };
+  }, [adminDivisionId, divisions, forms, galleries, members, events, subDivisions]);
+
   const handleAdminLogin = async (email, password) => {
     const profile = await signInAdmin(email, password);
     setAdminSession({ status: 'admin', profile });
@@ -1501,30 +1518,30 @@ export default function App() {
                 onAddTenure={handleAddTenure}
                 onUpdateTenure={handleUpdateTenure}
                 onDeleteTenure={handleDeleteTenure}
-                divisions={divisions}
+                divisions={adminScope.divisions}
                 onAddDivision={handleAddDivision}
                 onUpdateDivision={handleUpdateDivision}
                 onDeleteDivision={handleDeleteDivision}
-                forms={forms}
+                forms={adminScope.forms}
                 onAddForm={handleAddForm}
                 onUpdateForm={handleUpdateForm}
                 onDeleteForm={handleDeleteForm}
                 submissions={submissions}
                 onUpdateSubmission={handleUpdateSubmission}
                 onDeleteSubmission={handleDeleteSubmission}
-                galleries={galleries}
+                galleries={adminScope.galleries}
                 onAddGallery={handleAddGallery}
                 onUpdateGallery={handleUpdateGallery}
                 onDeleteGallery={handleUpdateGallery ? handleDeleteGallery : undefined}
-                members={members}
+                members={adminScope.members}
                 onAddMember={handleAddMember}
                 onUpdateMember={handleUpdateMember}
                 onDeleteMember={handleDeleteMember}
-                events={events}
+                events={adminScope.events}
                 onAddEvent={handleAddEvent}
                 onUpdateEvent={handleAddEvent ? handleUpdateEvent : undefined}
                 onDeleteEvent={handleDeleteEvent}
-                subDivisions={subDivisions}
+                subDivisions={adminScope.subDivisions}
                 onAddSubDivision={handleAddSubDivision}
                 onUpdateSubDivision={handleUpdateSubDivision}
                 onDeleteSubDivision={handleDeleteSubDivision}
