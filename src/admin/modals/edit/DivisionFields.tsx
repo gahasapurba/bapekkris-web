@@ -1,4 +1,5 @@
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `division` items. */
 export default function DivisionFields() {
@@ -14,17 +15,16 @@ export default function DivisionFields() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nama Divisi</label>
-          <input
+          <label htmlFor="ef-division-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Divisi</label>
+          <Input id="ef-division-1"
             type="text"
             value={editingItem.item.name || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Periode Kepengurusan</label>
-          <select
+          <label htmlFor="ef-division-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Periode Kepengurusan</label>
+          <Select id="ef-division-2"
             value={editingItem.item.tenureId || activeTenure?.id || ''}
             onChange={(e) => {
               const newTenure = e.target.value;
@@ -39,69 +39,64 @@ export default function DivisionFields() {
                 }
               });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             {tenures.map(t => (
               <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Status Rekrutmen Divisi (Publik)</label>
-          <select
+          <label htmlFor="ef-division-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Status Rekrutmen Divisi (Publik)</label>
+          <Select id="ef-division-3"
             value={Boolean(editingItem.item.isRecruiting) ? 'open' : 'closed'}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, isRecruiting: e.target.value === 'open' } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             <option value="open">● Membuka Rekrutmen (Rekrutmen Buka)</option>
             <option value="closed">○ Ditutup (Badge Hilang di Web)</option>
-          </select>
+          </Select>
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Warna Identitas Divisi</label>
+          <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Warna Identitas Divisi</label>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <input
+            <input aria-label="Pilih warna divisi"
               type="color"
               value={editingItem.item.color || '#0284c7'}
               onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, color: e.target.value } })}
               style={{ width: '40px', height: '36px', border: 'none', background: 'transparent', cursor: 'pointer' }}
             />
-            <input
+            <Input aria-label="Kode warna divisi (hex)" className="min-w-0 flex-1"
               type="text"
               value={editingItem.item.color || '#0284c7'}
               onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, color: e.target.value } })}
-              style={{ flex: 1, padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.84rem' }}
             />
           </div>
         </div>
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Motto Divisi</label>
-        <input
+        <label htmlFor="ef-division-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Motto Divisi</label>
+        <Input id="ef-division-4"
           type="text"
           value={editingItem.item.motto || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, motto: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi Peran</label>
-        <textarea
+        <label htmlFor="ef-division-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi Peran</label>
+        <Textarea id="ef-division-5"
           rows={3}
           value={editingItem.item.description || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Fokus Area (Pisahkan dengan koma)</label>
-        <input
+        <label htmlFor="ef-division-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Fokus Area (Pisahkan dengan koma)</label>
+        <Input id="ef-division-6"
           type="text"
           value={editingItem.item.rawFocusAreas !== undefined ? editingItem.item.rawFocusAreas : (Array.isArray(editingItem.item.focusAreas) ? editingItem.item.focusAreas.join(', ') : '')}
           onChange={(e) => {
@@ -117,7 +112,6 @@ export default function DivisionFields() {
             });
           }}
           placeholder="Contoh: Internal Engagement, Wellness, Learning"
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.84rem' }}
         />
         <div style={{ marginTop: '5px', fontSize: '0.72rem', color: 'var(--text-dim)' }}>
           {Array.isArray(editingItem.item.focusAreas) && editingItem.item.focusAreas.length > 0 ? (

@@ -1,4 +1,8 @@
-import { AlertCircle, Edit2, X } from 'lucide-react';
+import { useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { AlertCircle, X } from 'lucide-react';
+import { Button } from '../../ui';
+import { useModalBehavior } from '../../ui/useModalBehavior';
 import { getCategoryFromLevel, getTenureRoles, validateMemberQuota } from '../../utils/memberQuotaUtils';
 import { formatWibEventRange, toDatetimeLocalSecondsValue, toDatetimeLocalValue } from '../../utils/dateUtils';
 import { uploadMediaToCloud } from '../../lib/supabase';
@@ -46,195 +50,15 @@ export default function EditItemModal() {
     tenureRoles,
     verifyImageUrl
   } = useAdminPortal();
-
-  return (
-    <div 
-      onClick={() => setEditingItem(null)}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.78)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        zIndex: 99999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '16px'
-      }}
-    >
-      <div 
-        onClick={(e) => e.stopPropagation()}
-        className="glass-panel modal-container modal-structured" 
-        style={{
-          maxWidth: editingItem.type === 'form' ? '680px' : '580px',
-          width: '100%',
-          maxHeight: 'min(90vh, 780px)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          padding: 0,
-          background: isDark ? '#0b1329' : '#ffffff',
-          border: isDark ? '1.5px solid var(--mandiri-gold)' : '1px solid #e2e8f0',
-          boxShadow: isDark ? '0 25px 65px rgba(0, 0, 0, 0.75)' : '0 20px 50px rgba(0, 61, 121, 0.12)',
-          borderRadius: 'var(--radius-lg)'
-        }}
-      >
-        {/* Pinned Sticky Header */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px 22px',
-          borderBottom: '1px solid var(--border-card)',
-          background: isDark ? 'var(--bg-card)' : '#ffffff',
-          flexShrink: 0
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Edit2 size={18} color="var(--mandiri-gold)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-              Edit {
-                editingItem.type === 'member' ? 'Data Personel' :
-                editingItem.type === 'role' ? 'Data Role & Struktur' :
-                editingItem.type === 'division' ? 'Data Divisi' :
-                editingItem.type === 'sub_division' ? 'Data Sub-Divisi' :
-                editingItem.type === 'gallery' ? 'Dokumentasi Galeri' :
-                editingItem.type === 'devotion' ? 'Renungan Harian' : editingItem.type === 'song' ? 'Lagu Rohani' :
-                editingItem.type === 'form' ? 'Formulir Pendaftaran' :
-                editingItem.type === 'event' ? 'Event' :
-                editingItem.type === 'brand_asset' ? 'Asset & Template' :
-                editingItem.type === 'faq' ? 'Pertanyaan FAQ' :
-                'Periode Kepengurusan'
-              }
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingItem(null);
-              setEditModalError('');
-            }}
-            style={{
-              background: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid var(--border-card)',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.15s ease'
-            }}
-            title="Tutup (ESC)"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Inline Error Alert if Required Validation Fails */}
-        {editModalError && (
-          <div style={{
-            margin: '14px 22px 0 22px',
-            padding: '10px 14px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'rgba(244, 63, 94, 0.15)',
-            border: '1px solid #f43f5e',
-            color: '#f43f5e',
-            fontSize: '0.82rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontWeight: 600
-          }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{editModalError}</span>
-          </div>
-        )}
-
-        {/* Scrollable Modal Content */}
-        <div style={{
-          padding: '20px 22px',
-          overflowY: 'auto',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '14px'
-        }}>
-
-        {/* Edit Member Form (Complete Fields) */}
-        {editingItem.type === 'member' && <MemberFields />}
-
-        {/* Edit Division Form (Complete Fields) */}
-        {editingItem.type === 'division' && <DivisionFields />}
-
-        {/* Edit Sub-Division Form */}
-        {editingItem.type === 'sub_division' && <SubDivisionFields />}
-
-        {/* Edit Gallery Form (Complete with Photos & DocLinks management) */}
-        {editingItem.type === 'gallery' && <GalleryFields />}
-
-        {/* Edit Tenure Form */}
-        {editingItem.type === 'tenure' && <TenureFields />}
-
-        {/* Edit Devotion Form */}
-        {editingItem.type === 'devotion' && <DevotionFields />}
-
-        {/* Edit Form Fields (With Custom Field Builder) */}
-        {editingItem.type === 'form' && <FormFields />}
-
-        {/* Edit Event Form */}
-        {editingItem.type === 'event' && <EventFields />}
-
-        {/* Edit Brand Asset Form */}
-        {editingItem.type === 'brand_asset' && <BrandAssetFields />}
-
-        {/* Edit FAQ Form */}
-        {editingItem.type === 'faq' && <FaqFields />}
-
-        {/* Edit Role Form */}
-        {editingItem.type === 'role' && <RoleFields />}
-
-        </div>
-
-        {/* Pinned Sticky Footer Buttons */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '14px 22px',
-          borderTop: '1px solid var(--border-card)',
-          background: isDark ? 'var(--bg-card)' : '#ffffff',
-          flexShrink: 0
-        }}>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingItem(null);
-              setEditModalError('');
-            }}
-            style={{
-              padding: '9px 18px',
-              borderRadius: 'var(--radius-full)',
-              background: 'transparent',
-              border: '1px solid var(--border-card)',
-              color: 'var(--text-muted)',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              cursor: 'pointer'
-            }}
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            disabled={isUploadingMedia}
-            onClick={async () => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const close = () => { setEditingItem(null); setEditModalError(''); };
+  useModalBehavior(panelRef, true, close);
+  const TITLES: Record<string, string> = {
+    member: 'Edit personel', role: 'Edit role & jabatan', division: 'Edit divisi', sub_division: 'Edit sub-divisi', gallery: 'Edit album galeri',
+    devotion: 'Edit renungan', song: 'Edit lagu', form: 'Edit formulir', event: 'Edit acara', brand_asset: 'Edit aset', faq: 'Edit pertanyaan FAQ'
+  };
+  const title = TITLES[editingItem.type] || 'Edit periode kepengurusan';
+  const save = async () => {
               setEditModalError('');
               const it = editingItem.item || {};
               const fieldError = editItemError(editingItem.type, it);
@@ -644,23 +468,40 @@ export default function EditItemModal() {
               setEditingItem(null);
               setEditModalError('');
               showToast('Perubahan data berhasil disimpan & disinkronkan ke Cloud!');
-            }}
-            style={{
-              padding: '9px 24px',
-              borderRadius: 'var(--radius-full)',
-              background: isUploadingMedia ? 'var(--input-bg)' : 'var(--mandiri-gold)',
-              border: 'none',
-              color: isUploadingMedia ? 'var(--text-muted)' : '#040914',
-              fontWeight: 800,
-              fontSize: '0.86rem',
-              cursor: isUploadingMedia ? 'not-allowed' : 'pointer',
-              boxShadow: isUploadingMedia ? 'none' : '0 4px 14px rgba(255, 184, 0, 0.35)'
-            }}
-          >
-            {isUploadingMedia ? 'Mengunggah & Menyimpan...' : 'Simpan Perubahan'}
-          </button>
+};
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100000] flex items-end justify-center bg-overlay p-0 sm:items-center sm:p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+      <div ref={panelRef} role="dialog" aria-modal="true" aria-labelledby="edit-item-title" tabIndex={-1}
+        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-t-xl border border-line bg-surface shadow-card outline-none sm:rounded-xl">
+        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 md:px-6">
+          <h2 id="edit-item-title" className="font-display text-[1.3rem] font-semibold text-ink">{title}</h2>
+          <button type="button" onClick={close} aria-label="Tutup" className="inline-flex size-9 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-muted hover:bg-subtle hover:text-ink"><X size={18} aria-hidden="true" /></button>
+        </header>
+        {editModalError && (
+          <p role="alert" className="mx-5 mt-4 flex items-start gap-2 rounded-md border border-danger-line bg-danger-tint px-3 py-2.5 text-[0.88rem] text-ink md:mx-6">
+            <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-danger" />{editModalError}
+          </p>
+        )}
+        <div className="admin-edit-body flex-1 overflow-y-auto px-5 py-5 md:px-6">
+          {editingItem.type === 'member' && <MemberFields />}
+          {editingItem.type === 'division' && <DivisionFields />}
+          {editingItem.type === 'sub_division' && <SubDivisionFields />}
+          {editingItem.type === 'gallery' && <GalleryFields />}
+          {editingItem.type === 'tenure' && <TenureFields />}
+          {editingItem.type === 'devotion' && <DevotionFields />}
+          {editingItem.type === 'form' && <FormFields />}
+          {editingItem.type === 'event' && <EventFields />}
+          {editingItem.type === 'brand_asset' && <BrandAssetFields />}
+          {editingItem.type === 'faq' && <FaqFields />}
+          {editingItem.type === 'role' && <RoleFields />}
         </div>
+        <footer className="flex flex-wrap justify-end gap-2 border-t border-line bg-subtle px-5 py-3 md:px-6">
+          <Button variant="secondary" onClick={close}>Batal</Button>
+          <Button loading={isUploadingMedia} onClick={save}>{isUploadingMedia ? 'Mengunggah & menyimpan…' : 'Simpan perubahan'}</Button>
+        </footer>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

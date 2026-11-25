@@ -1,7 +1,8 @@
 import { formatDeadlineWib, formatToIndonesianDate, toDatetimeLocalSecondsValue } from '../../../utils/dateUtils';
-import { ArrowDown, ArrowUp, Calendar, GripVertical, Layers, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, GripVertical, Layers, Plus, Trash2 } from 'lucide-react';
 import { useFeedback } from '../../../ui';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `form` items. */
 export default function FormFields() {
@@ -26,66 +27,40 @@ export default function FormFields() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Judul Formulir</label>
-        <input
+        <label htmlFor="ef-form-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Judul Formulir</label>
+        <Input id="ef-form-1"
           type="text"
           value={editingItem.item.title || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Kategori Formulir</label>
-          <select
+          <label htmlFor="ef-form-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Kategori Formulir</label>
+          <Select id="ef-form-2"
             value={editingItem.item.category || 'Kegiatan & Event'}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, category: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             <option value="Kegiatan & Event">Kegiatan & Event</option>
             <option value="Rekrutmen">Rekrutmen & Oprec</option>
             <option value="Ibadah & Kebaktian">Ibadah & Kebaktian</option>
             <option value="Pelayanan & Diakonia">Pelayanan & Diakonia</option>
             <option value="Workshop & Sharing">Workshop & Sharing</option>
-          </select>
+          </Select>
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            📅 Batas Akhir / Deadline (WIB)
+          <label htmlFor="ef-form-deadline" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+            Batas Akhir / Deadline (WIB)
           </label>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '100%' }}>
             <div style={{ position: 'relative', flex: 1, minWidth: 0, maxWidth: '100%' }}>
-              <input
+              <Input id="ef-form-deadline"
                 type="datetime-local"
                 step="1"
                 value={toDatetimeLocalSecondsValue(editingItem.item.deadline || '')}
                 onChange={(e) => {
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, deadline: e.target.value } });
                 }}
-                style={{
-                  width: '100%',
-                  maxWidth: '100%',
-                  minWidth: 0,
-                  boxSizing: 'border-box',
-                  padding: '9px 12px 9px 36px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.86rem',
-                  cursor: 'pointer'
-                }}
-              />
-              <Calendar 
-                size={16} 
-                style={{ 
-                  position: 'absolute', 
-                  left: '10px', 
-                  top: '50%', 
-                  transform: 'translateY(-50%)', 
-                  color: 'var(--mandiri-gold)',
-                  pointerEvents: 'none' 
-                }} 
               />
             </div>
             {editingItem.item.deadline && (
@@ -114,37 +89,35 @@ export default function FormFields() {
         </div>
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi Singkat / Subtitle</label>
-        <textarea
+        <label htmlFor="ef-form-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi Singkat / Subtitle</label>
+        <Textarea id="ef-form-3"
           rows={2}
           value={editingItem.item.subtitle || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, subtitle: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-          📝 Catatan / Pesan Pasca Pengisian (Opsional)
+        <label htmlFor="ef-form-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+          Catatan / Pesan Pasca Pengisian (Opsional)
         </label>
-        <textarea
+        <Textarea id="ef-form-4"
           rows={3}
           placeholder="Contoh: Terima kasih sudah mendaftar! Harap bergabung ke WhatsApp Group peserta melalui link berikut: https://chat.whatsapp.com/xxx"
           value={editingItem.item.notes || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, notes: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
         />
         <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '3px', display: 'block' }}>
-          💡 Catatan ini akan ditampilkan khusus kepada peserta sesaat setelah berhasil submit formulir (misal: link WhatsApp Group, arahan teknis, atau langkah selanjutnya). Tautan URL otomatis dapat diklik dan disalin oleh peserta.
+          Catatan ini akan ditampilkan khusus kepada peserta sesaat setelah berhasil submit formulir (misal: link WhatsApp Group, arahan teknis, atau langkah selanjutnya). Tautan URL otomatis dapat diklik dan disalin oleh peserta.
         </span>
       </div>
 
       {/* Option: Tenure Relation */}
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-          📅 Periode Kepengurusan (Tenure) <span style={{ color: '#f43f5e' }}>*</span>
+        <label htmlFor="ef-form-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+          Periode Kepengurusan (Tenure) <span style={{ color: '#f43f5e' }}>*</span>
         </label>
-        <select
+        <Select id="ef-form-5"
           value={editingItem.item.tenureId || activeTenure?.id || tenures[0]?.id || ''}
           onChange={(e) => {
             const newTenure = e.target.value;
@@ -165,14 +138,13 @@ export default function FormFields() {
               showToast('Periode form diubah. Tautan acara lama dilepas otomatis agar sesuai periode baru.', 'info');
             }
           }}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         >
           {tenures.map((t) => (
             <option key={t.id} value={t.id}>
               {t.title || `Kepengurusan Bapekkris ${t.code}`} {t.id === activeTenure?.id ? '(Aktif)' : ''}
             </option>
           ))}
-        </select>
+        </Select>
         <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', marginTop: '3px', display: 'block' }}>
           Opsi pertanyaan "Dropdown Divisi" pada formulir ini akan otomatis menampilkan divisi dari periode yang dipilih.
         </span>
@@ -221,7 +193,7 @@ export default function FormFields() {
               });
             }}
           />
-          <span>🎉 Tampilkan Papan Pengumuman Peserta Terpilih (Hall of Welcome) di Halaman Web</span>
+          <span>Tampilkan Papan Pengumuman Peserta Terpilih (Hall of Welcome) di Halaman Web</span>
         </label>
         <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginLeft: '24px' }}>
           {editingItem.item.showAnnouncement
@@ -248,7 +220,7 @@ export default function FormFields() {
               });
             }}
           />
-          <span>🔒 Batasi Kuota Responden / Pengisian Formulir</span>
+          <span>Batasi Kuota Responden / Pengisian Formulir</span>
         </label>
         <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginLeft: '24px' }}>
           {editingItem.item.isLimited
@@ -257,10 +229,10 @@ export default function FormFields() {
         </span>
         {editingItem.item.isLimited && (
           <div style={{ marginLeft: '24px', marginTop: '2px', maxWidth: '280px' }}>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+            <label htmlFor="ef-form-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
               Maksimal Kuota Responden <span style={{ color: '#f43f5e' }}>*</span>
             </label>
-            <input
+            <Input id="ef-form-6"
               type="number"
               min="1"
               placeholder="Contoh: 100"
@@ -275,7 +247,6 @@ export default function FormFields() {
                   }
                 });
               }}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.85rem' }}
             />
           </div>
         )}
@@ -299,7 +270,7 @@ export default function FormFields() {
               });
             }}
           />
-          <span>🎪 Hubungkan Formulir ini ke Acara / Event</span>
+          <span>Hubungkan Formulir ini ke Acara / Event</span>
         </label>
         <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginLeft: '24px' }}>
           {editingItem.item.isEventConnected
@@ -308,10 +279,10 @@ export default function FormFields() {
         </span>
         {editingItem.item.isEventConnected && (
           <div style={{ marginLeft: '24px', marginTop: '2px', maxWidth: '420px' }}>
-            <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+            <label htmlFor="ef-form-7" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
               Pilih Acara / Event Terhubung <span style={{ color: '#f43f5e' }}>*</span>
             </label>
-            <select
+            <Select id="ef-form-7"
               value={editingItem.item.eventId || ''}
               onChange={(e) => {
                 setEditingItem({
@@ -322,7 +293,6 @@ export default function FormFields() {
                   }
                 });
               }}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.85rem' }}
             >
               <option value="">-- Pilih Event yang Ada di Database --</option>
               {(() => {
@@ -345,12 +315,12 @@ export default function FormFields() {
                   return (
                     <option key={evt.id} value={evt.id}>
                       {evt.title} ({evt.startDate ? formatToIndonesianDate(evt.startDate.split('T')[0]) : (evt.date || 'Tanpa Tanggal')})
-                      {existingConnectedForm ? ` ⚠️ (Sedang terhubung ke: "${existingConnectedForm.title}")` : ''}
+                      {existingConnectedForm ? ` (Sedang terhubung ke: "${existingConnectedForm.title}")` : ''}
                     </option>
                   );
                 });
               })()}
-            </select>
+            </Select>
 
             {(() => {
               if (!editingItem.item.eventId) return null;
@@ -375,7 +345,7 @@ export default function FormFields() {
                   }}
                 >
                   <div style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px' }}>
-                    <span>⚠️ Pengalihan Koneksi Acara (Smart Takeover)</span>
+                    <span>Pengalihan Koneksi Acara (Smart Takeover)</span>
                   </div>
                   Acara ini saat ini sedang terhubung ke formulir <strong>"{conflictForm.title}"</strong>. Menyimpan perubahan ini akan <strong>mengalihkan koneksi acara secara otomatis</strong> ke formulir ini. Formulir <em>"{conflictForm.title}"</em> otomatis kembali menjadi formulir mandiri tanpa menghapus data pendaftar yang sudah ada.
                 </div>
@@ -398,7 +368,7 @@ export default function FormFields() {
                     });
                   }}
                 />
-                <span>🎁 Butuh Pengundian Doorprize (Lucky Draw)</span>
+                <span>Butuh Pengundian Doorprize (Lucky Draw)</span>
               </label>
               <span style={{ fontSize: '0.74rem', color: 'var(--text-dim)', marginLeft: '24px', display: 'block', marginTop: '3px' }}>
                 {editingItem.item.isLuckyDraw === true
@@ -559,23 +529,22 @@ export default function FormFields() {
                   </button>
                 </div>
 
-                <input
+                <Input className="min-w-0 flex-1"
                   type="text"
                   value={fld.label || ''}
-                  placeholder="Label pertanyaan"
+                  aria-label="Label pertanyaan" placeholder="Label pertanyaan"
                   onChange={(e) => {
                     const nextFields = editingItem.item.fields.map((item: any, i: any) =>
                       i === idx ? { ...item, label: e.target.value } : item
                     );
                     setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
                   }}
-                  style={{ flex: 1, minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', padding: '6px 10px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.8rem' }}
                 />
               </div>
 
               {/* Row 2: Type Dropdown, Toggles, and Delete Button */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', width: '100%', maxWidth: '100%' }}>
-                <select
+                <Select aria-label="Tipe jawaban" className="min-w-0 flex-1"
                   value={
                     fld.type === 'select' && fld.source === 'divisions'
                       ? 'select_division'
@@ -609,17 +578,16 @@ export default function FormFields() {
                     });
                     setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
                   }}
-                  style={{ flex: '1 1 160px', minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', padding: '6px 8px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.78rem' }}
                 >
                   <option value="text">Teks Singkat</option>
                   <option value="textarea">Paragraf</option>
                   <option value="radio">Pilihan Ganda (1 Jawaban)</option>
                   <option value="select">Dropdown Pilihan (Ketik Opsi Manual)</option>
-                  <option value="select_division">👥 Dropdown Divisi (Otomatis dari DB)</option>
+                  <option value="select_division">Dropdown Divisi (Otomatis dari DB)</option>
                   <option value="email">Email</option>
                   <option value="number">Angka</option>
                   <option value="file">Upload File</option>
-                </select>
+                </Select>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.74rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
@@ -720,7 +688,7 @@ export default function FormFields() {
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
                     }}
                   />
-                  <span>🛡️ Validasi Unique</span>
+                  <span>Validasi Unique</span>
                 </label>
 
                 {/* Field Delete Button with Confirmation if data exists */}
@@ -763,7 +731,7 @@ export default function FormFields() {
               {/* Option Editor for Custom Dropdown & Multiple Choice (Radio) */}
               {(fld.type === 'select' || fld.type === 'radio') && fld.source !== 'divisions' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px', paddingLeft: '24px' }}>
-                  <input
+                  <Input
                     type="text"
                     placeholder={fld.type === 'radio'
                       ? "Pilihan jawaban (pisahkan dengan koma, misal: Pilihan A, Pilihan B, Pilihan C)"
@@ -777,7 +745,6 @@ export default function FormFields() {
                       );
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
                     }}
-                    style={{ width: '100%', padding: '6px 10px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.78rem' }}
                   />
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.7rem', color: 'var(--text-dim)' }}>
                     {Array.isArray(fld.options) && fld.options.length > 0 ? (

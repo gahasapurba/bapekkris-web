@@ -1,6 +1,7 @@
 import { LEVEL_OPTIONS, getCategoryFromLevel, getTenureRoles } from '../../../utils/memberQuotaUtils';
 import { Upload } from 'lucide-react';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `member` items. */
 export default function MemberFields() {
@@ -22,17 +23,16 @@ export default function MemberFields() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nama Lengkap <span style={{ color: '#f43f5e' }}>*</span></label>
-          <input
+          <label htmlFor="ef-member-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Lengkap <span style={{ color: '#f43f5e' }}>*</span></label>
+          <Input id="ef-member-1"
             type="text"
             value={editingItem.item.name || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Periode Kepengurusan <span style={{ color: '#f43f5e' }}>*</span></label>
-          <select
+          <label htmlFor="ef-member-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Periode Kepengurusan <span style={{ color: '#f43f5e' }}>*</span></label>
+          <Select id="ef-member-2"
             value={editingItem.item.tenureId || activeTenure?.id || ''}
             onChange={(e) => {
               const newTenure = e.target.value;
@@ -47,12 +47,11 @@ export default function MemberFields() {
                 }
               });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             {tenures.map(t => (
               <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -69,10 +68,10 @@ export default function MemberFields() {
         return (
           <div className="mobile-two-col" style={{ gap: '10px' }}>
             <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+              <label htmlFor="ef-member-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
                 Jabatan / Role <span style={{ color: '#f43f5e' }}>*</span>
               </label>
-              <select
+              <Select id="ef-member-3"
                 value={selectedRole?.id || ''}
                 onChange={(e) => {
                   const rId = e.target.value;
@@ -91,7 +90,6 @@ export default function MemberFields() {
                     });
                   }
                 }}
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
               >
                 {availableRoles.length === 0 ? (
                   <option value="" disabled>-- Role kepengurusan masih kosong di periode ini. Silakan buat role baru di menu Kelola Role & Jabatan --</option>
@@ -110,38 +108,37 @@ export default function MemberFields() {
                     })}
                   </>
                 )}
-              </select>
+              </Select>
               {availableRoles.length === 0 && (
                 <div style={{ fontSize: '0.74rem', color: '#f59e0b', marginTop: '6px', lineHeight: 1.4 }}>
-                  ⚠️ <strong>Role kepengurusan masih kosong</strong> pada periode kepengurusan ini. Silakan buat role baru terlebih dahulu di menu <strong>Kelola Role & Jabatan</strong>.
+                  <strong>Role kepengurusan masih kosong</strong> pada periode kepengurusan ini. Silakan buat role baru terlebih dahulu di menu <strong>Kelola Role & Jabatan</strong>.
                 </div>
               )}
             </div>
 
             {requiresDiv ? (
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="ef-member-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
                   Divisi Penugasan <span style={{ color: '#f43f5e' }}>*</span>
                 </label>
-                <select
+                <Select id="ef-member-4"
                   value={editingItem.item.divisionId || ''}
                   onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, divisionId: e.target.value || undefined } })}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
                 >
                   <option value="">-- Pilih Divisi --</option>
                   {editMemberDivs.map(d => (
                     <option key={d.id} value={d.id}>{d.name}</option>
                   ))}
-                </select>
+                </Select>
                 {editMemberDivs.length === 0 && (
                   <span style={{ fontSize: '0.72rem', color: '#f59e0b', display: 'block', marginTop: '3px' }}>
-                    ⚠️ Periode ini belum memiliki divisi.
+                    Periode ini belum memiliki divisi.
                   </span>
                 )}
               </div>
             ) : (
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
                   Lingkup Tugas
                 </label>
                 <div style={{ padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-card)', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
@@ -153,7 +150,7 @@ export default function MemberFields() {
 
             {requiresDiv && selectedRole?.requiresSubDivision ? (
               <div>
-                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                <label htmlFor="ef-member-sub" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
                   Sub-Divisi Penugasan <span style={{ color: '#f43f5e' }}>*</span>
                 </label>
                 {(() => {
@@ -161,14 +158,13 @@ export default function MemberFields() {
                   const availableSubs = subDivisions.filter(sd => sd.divisionId === curDivId);
                   return (
                     <>
-                      <select
+                      <Select id="ef-member-sub"
                         value={editingItem.item.subDivisionId || ''}
                         onChange={(e) => setEditingItem({
                           ...editingItem,
                           item: { ...editingItem.item, subDivisionId: e.target.value || undefined }
                         })}
                         disabled={!curDivId}
-                        style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
                       >
                         {!curDivId ? (
                           <option value="" disabled>-- Pilih Divisi terlebih dahulu --</option>
@@ -182,10 +178,10 @@ export default function MemberFields() {
                             ))}
                           </>
                         )}
-                      </select>
+                      </Select>
                       {curDivId && availableSubs.length === 0 && (
                         <div style={{ fontSize: '0.72rem', color: '#f59e0b', marginTop: '4px' }}>
-                          ⚠️ Divisi ini belum memiliki sub-divisi. Buat terlebih dahulu di tab Kelola Divisi.
+                          Divisi ini belum memiliki sub-divisi. Buat terlebih dahulu di tab Kelola Divisi.
                         </div>
                       )}
                     </>
@@ -198,30 +194,28 @@ export default function MemberFields() {
 
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nomor WhatsApp (Opsional)</label>
-          <input
+          <label htmlFor="ef-member-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nomor WhatsApp (Opsional)</label>
+          <Input id="ef-member-5"
             type="text"
             placeholder="Contoh: 08123456789 atau 628123456789"
             value={editingItem.item.whatsapp || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, whatsapp: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Motto / Pesan Semangat (Opsional)</label>
-          <input
+          <label htmlFor="ef-member-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Motto / Pesan Semangat (Opsional)</label>
+          <Input id="ef-member-6"
             type="text"
             placeholder="Contoh: Siap melayani dengan integritas dan kasih sesama insan Mandiri"
             value={editingItem.item.motto || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, motto: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Tanggung Jawab Utama (1 baris per poin)</label>
-        <textarea
+        <label htmlFor="ef-member-7" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Tanggung Jawab Utama (1 baris per poin)</label>
+        <Textarea id="ef-member-7"
           rows={3}
           placeholder="Tulis tanggung jawab utama (satu poin per baris)..."
           value={editingItem.item.rawResponsibilities !== undefined ? editingItem.item.rawResponsibilities : (Array.isArray(editingItem.item.responsibilities) ? editingItem.item.responsibilities.join('\n') : '')}
@@ -236,12 +230,11 @@ export default function MemberFields() {
               }
             });
           }}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.84rem' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Foto Profil Personel (Cloud Storage)</label>
+        <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Foto Profil Personel (Cloud Storage)</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {editingItem.item.image && (
             <img
@@ -269,15 +262,14 @@ export default function MemberFields() {
             <span>{editingItem.pendingPhoto ? 'Ganti Foto Pilihan' : 'Pilih Foto Baru'}</span>
             <input type="file" accept="image/*" onChange={(e) => handleMemberPhotoUpload(e, true)} style={{ display: 'none' }} />
           </label>
-          <input
+          <Input className="min-w-0 flex-1"
             type="text"
-            placeholder="URL Foto (https://...)"
+            aria-label="URL Foto (https://...)" placeholder="URL Foto (https://...)"
             value={editingItem.item.image || ''}
             onChange={(e) => {
               setEditingItem({ ...editingItem, item: { ...editingItem.item, image: e.target.value } });
               if (editModalError) setEditModalError('');
             }}
-            style={{ flex: 1, minWidth: '150px', padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.8rem' }}
           />
         </div>
         {editingItem.pendingPhoto && (
@@ -293,7 +285,7 @@ export default function MemberFields() {
             fontSize: '0.75rem',
             color: 'var(--text-main)'
           }}>
-            <span>👤 Foto baru: <strong>{editingItem.pendingPhoto.name}</strong> &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
+            <span>Foto baru: <strong>{editingItem.pendingPhoto.name}</strong> &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
               onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingPhoto: null, item: { ...prev.item, image: '' } }) : null)}

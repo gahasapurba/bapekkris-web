@@ -2,6 +2,7 @@ import { buildFlexibleDate, formatWibDateTime, parseFlexibleDate } from '../../.
 import { Link2, Plus, Trash2, Upload } from 'lucide-react';
 import { soundFx } from '../../../utils/audio';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `gallery` items. */
 export default function GalleryFields() {
@@ -24,17 +25,16 @@ export default function GalleryFields() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Judul Acara</label>
-          <input
+          <label htmlFor="ef-gallery-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Judul Acara</label>
+          <Input id="ef-gallery-1"
             type="text"
             value={editingItem.item.title || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Periode Kepengurusan</label>
-          <select
+          <label htmlFor="ef-gallery-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Periode Kepengurusan</label>
+          <Select id="ef-gallery-2"
             value={editingItem.item.tenureId || activeTenure?.id || ''}
             onChange={(e) => {
               const newTenure = e.target.value;
@@ -51,12 +51,11 @@ export default function GalleryFields() {
                 }
               });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             {tenures.map(t => (
               <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
             ))}
-          </select>
+          </Select>
         </div>
       </div>
 
@@ -113,7 +112,7 @@ export default function GalleryFields() {
               <>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                    📅 Format & Waktu Pelaksanaan
+                    Format & Waktu Pelaksanaan
                   </label>
                   <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {[
@@ -147,11 +146,10 @@ export default function GalleryFields() {
                 </div>
 
                 {activeMode === 'date' && (
-                  <input
+                  <Input
                     type="date"
                     value={editingItem.item._dateVal !== undefined ? editingItem.item._dateVal : currentParsed.date}
                     onChange={(e) => updateField('date', e.target.value)}
-                    style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                   />
                 )}
 
@@ -165,7 +163,7 @@ export default function GalleryFields() {
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', minWidth: '65px', flexShrink: 0 }}>
                           Hari ke-{dIdx + 1}:
                         </span>
-                        <input
+                        <Input className="min-w-0 flex-1"
                           type="date"
                           value={dVal}
                           onChange={(e) => {
@@ -173,7 +171,6 @@ export default function GalleryFields() {
                             next[dIdx] = e.target.value;
                             updateField('dates', next);
                           }}
-                          style={{ flex: 1, minWidth: 0, maxWidth: '100%', boxSizing: 'border-box', padding: '8px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                         />
                         {activeDates.length > 1 && (
                           <button
@@ -222,48 +219,44 @@ export default function GalleryFields() {
                   <div className="mobile-two-col" style={{ gap: '10px' }}>
                     <div>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'block', marginBottom: '2px' }}>Tanggal Mulai</span>
-                      <input
+                      <Input
                         type="date"
                         value={editingItem.item._startDate !== undefined ? editingItem.item._startDate : currentParsed.startDate}
                         onChange={(e) => updateField('startDate', e.target.value)}
-                        style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                       />
                     </div>
                     <div>
                       <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)', display: 'block', marginBottom: '2px' }}>Tanggal Selesai</span>
-                      <input
+                      <Input
                         type="date"
                         value={editingItem.item._endDate !== undefined ? editingItem.item._endDate : currentParsed.endDate}
                         onChange={(e) => updateField('endDate', e.target.value)}
-                        style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                       />
                     </div>
                   </div>
                 )}
 
                 {activeMode === 'month' && (
-                  <input
+                  <Input
                     type="month"
                     value={editingItem.item._month !== undefined ? editingItem.item._month : currentParsed.month}
                     onChange={(e) => updateField('month', e.target.value)}
-                    style={{ width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                   />
                 )}
 
                 {activeMode === 'year' && (
-                  <input
+                  <Input
                     type="number"
                     min="2000"
                     max="2099"
-                    placeholder="Contoh: 2026"
+                    aria-label="2026" placeholder="Contoh: 2026"
                     value={editingItem.item._year !== undefined ? editingItem.item._year : currentParsed.year}
                     onChange={(e) => updateField('year', e.target.value)}
-                    style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--border-card)', color: 'var(--text-main)', fontSize: '0.85rem' }}
                   />
                 )}
 
                 <div style={{ fontSize: '0.75rem', color: isDark ? 'var(--neon-cyan)' : 'var(--mandiri-blue)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 700 }}>👁️ Tampilan di Web:</span>
+                  <span style={{ fontWeight: 700 }}>Tampilan di Web:</span>
                   <strong style={{
                     color: isDark ? '#ffffff' : 'var(--mandiri-blue)',
                     background: isDark ? 'rgba(56, 189, 248, 0.18)' : '#e0f2fe',
@@ -281,14 +274,14 @@ export default function GalleryFields() {
           })()}
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Divisi Penyelenggara</label>
+          <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Divisi Penyelenggara</label>
           {(() => {
             const editGalTenure = editingItem.item.tenureId || activeTenure?.id || '';
             const editGalDivs = divisions.filter(d => d.tenureId === editGalTenure);
             const currentDivId = editingItem.item.divisionId || editGalDivs.find(d => d.name === editingItem.item.division)?.id || '';
             return (
               <>
-                <select
+                <Select
                   value={currentDivId}
                   onChange={(e) => {
                     const selectedId = e.target.value;
@@ -303,7 +296,6 @@ export default function GalleryFields() {
                       }
                     });
                   }}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
                 >
                   {editGalDivs.length === 0 ? (
                     <option value="" disabled>-- Divisi masih kosong di periode ini --</option>
@@ -315,10 +307,10 @@ export default function GalleryFields() {
                       ))}
                     </>
                   )}
-                </select>
+                </Select>
                 {editGalDivs.length === 0 && (
                   <span style={{ fontSize: '0.72rem', color: '#f59e0b', display: 'block', marginTop: '3px' }}>
-                    ⚠️ Periode ini belum memiliki divisi. Silakan buat divisi baru di tab Divisi.
+                    Periode ini belum memiliki divisi. Silakan buat divisi baru di tab Divisi.
                   </span>
                 )}
               </>
@@ -327,14 +319,14 @@ export default function GalleryFields() {
         </div>
 
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            🔗 Hubungkan ke Program / Acara (Opsional)
+          <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+            Hubungkan ke Program / Acara (Opsional)
           </label>
           {(() => {
             const editGalTenure = editingItem.item.tenureId || activeTenure?.id || '';
             const availableEvents = (events || []).filter(ev => !editGalTenure || ev.tenureId === editGalTenure);
             return (
-              <select
+              <Select
                 value={editingItem.item.eventId || ''}
                 onChange={(e) => {
                   setEditingItem({
@@ -345,7 +337,6 @@ export default function GalleryFields() {
                     }
                   });
                 }}
-                style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
               >
                 <option value="">-- Tidak Terhubung ke Acara Tertentu --</option>
                 {availableEvents.map(ev => (
@@ -353,19 +344,18 @@ export default function GalleryFields() {
                     {ev.title} ({ev.date || 'Tanpa Tanggal'})
                   </option>
                 ))}
-              </select>
+              </Select>
             );
           })()}
         </div>
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi Kegiatan</label>
-        <textarea
+        <label htmlFor="ef-gallery-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi Kegiatan</label>
+        <Textarea id="ef-gallery-3"
           rows={3}
           value={editingItem.item.description || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
 
@@ -487,21 +477,11 @@ export default function GalleryFields() {
             <span>Atau Tambah Foto via Link URL Web:</span>
           </label>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-            <textarea
+            <Textarea className="min-w-0 flex-1"
               rows={2}
-              placeholder="https://...link-foto-1.jpg&#10;https://...link-foto-2.png"
+              aria-label="https://...link-foto-1.jpg&#10;https://...link-foto-2.png" placeholder="https://...link-foto-1.jpg&#10;https://...link-foto-2.png"
               value={editingItem.photoUrlInput || ''}
               onChange={(e) => setEditingItem({ ...editingItem, photoUrlInput: e.target.value })}
-              style={{
-                flex: 1,
-                padding: '7px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--input-bg)',
-                border: '1px solid var(--input-border)',
-                color: 'var(--text-main)',
-                fontSize: '0.8rem',
-                fontFamily: 'monospace'
-              }}
             />
             <button
               type="button"
@@ -566,25 +546,23 @@ export default function GalleryFields() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {(editingItem.item.docLinks || []).map((lnk: any, lIdx: any) => (
             <div key={lIdx} style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <input
+              <Input className="min-w-0 flex-1"
                 type="text"
-                placeholder="Label tombol"
+                aria-label="Label tombol" placeholder="Label tombol"
                 value={lnk.text || ''}
                 onChange={(e) => {
                   const nextLinks = (editingItem.item.docLinks || []).map((item: any, i: any) => i === lIdx ? { ...item, text: e.target.value } : item);
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, docLinks: nextLinks } });
                 }}
-                style={{ flex: '1 1 130px', padding: '6px 10px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.78rem' }}
               />
-              <input
+              <Input className="min-w-0 flex-1"
                 type="url"
-                placeholder="https://drive.google.com/..."
+                aria-label="https://drive.google.com/" placeholder="https://drive.google.com/..."
                 value={lnk.url || ''}
                 onChange={(e) => {
                   const nextLinks = (editingItem.item.docLinks || []).map((item: any, i: any) => i === lIdx ? { ...item, url: e.target.value } : item);
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, docLinks: nextLinks } });
                 }}
-                style={{ flex: '1.4 1 160px', padding: '6px 10px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.78rem' }}
               />
               <button
                 type="button"

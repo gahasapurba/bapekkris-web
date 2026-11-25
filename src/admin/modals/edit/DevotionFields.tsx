@@ -1,4 +1,5 @@
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `devotion` items. */
 export default function DevotionFields() {
@@ -10,30 +11,27 @@ export default function DevotionFields() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Judul Renungan</label>
-        <input
+        <label htmlFor="ef-devotion-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Judul Renungan</label>
+        <Input id="ef-devotion-1"
           type="text"
           value={editingItem.item.title || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Referensi Nats</label>
-        <input
+        <label htmlFor="ef-devotion-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Referensi Nats</label>
+        <Input id="ef-devotion-2"
           type="text"
           value={editingItem.item.scriptureRef || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, scriptureRef: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Isi Renungan</label>
-        <textarea
+        <label htmlFor="ef-devotion-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Isi Renungan</label>
+        <Textarea id="ef-devotion-3"
           rows={5}
           value={editingItem.item.body || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, body: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
         />
       </div>
     </div>

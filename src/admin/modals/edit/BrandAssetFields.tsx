@@ -1,5 +1,6 @@
 import { Image as ImageIcon, Upload } from 'lucide-react';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `brand_asset` items. */
 export default function BrandAssetFields() {
@@ -12,60 +13,55 @@ export default function BrandAssetFields() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Judul Asset / Template</label>
-        <input
+        <label htmlFor="ef-brandasset-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Judul Asset / Template</label>
+        <Input id="ef-brandasset-1"
           type="text"
           value={editingItem.item.title || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Kategori</label>
-          <select
+          <label htmlFor="ef-brandasset-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Kategori</label>
+          <Select id="ef-brandasset-2"
             value={editingItem.item.category || 'Logo & Brand'}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, category: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             <option value="Logo & Brand">Logo & Brand</option>
             <option value="Template Presentasi">Template Presentasi (PPT)</option>
             <option value="Virtual Background">Virtual Background (Teams / Zoom)</option>
             <option value="Media & Publikasi">Media, Twibbon & Publikasi</option>
-          </select>
+          </Select>
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Label Kategori Tambahan / Tag</label>
-          <input
+          <label htmlFor="ef-brandasset-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Label Kategori Tambahan / Tag</label>
+          <Input id="ef-brandasset-3"
             type="text"
             value={editingItem.item.badge || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, badge: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Format File</label>
-          <input
+          <label htmlFor="ef-brandasset-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Format File</label>
+          <Input id="ef-brandasset-4"
             type="text"
             value={editingItem.item.fileType || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, fileType: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Ukuran File</label>
-          <input
+          <label htmlFor="ef-brandasset-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Ukuran File</label>
+          <Input id="ef-brandasset-5"
             type="text"
             value={editingItem.item.fileSize || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, fileSize: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>File Asset / Template (Cloud Storage)</label>
+        <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">File Asset / Template (Cloud Storage)</label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <label style={{
             display: 'inline-flex',
@@ -89,12 +85,11 @@ export default function BrandAssetFields() {
               style={{ display: 'none' }}
             />
           </label>
-          <input
+          <Input className="min-w-0 flex-1"
             type="text"
-            placeholder="Atau tempel URL file langsung"
+            aria-label="Atau tempel URL file langsung" placeholder="Atau tempel URL file langsung"
             value={editingItem.item.fileUrl || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, fileUrl: e.target.value } })}
-            style={{ flex: 1, minWidth: '180px', padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.82rem' }}
           />
         </div>
         {editingItem.pendingFile && (
@@ -110,7 +105,7 @@ export default function BrandAssetFields() {
             fontSize: '0.75rem',
             color: 'var(--text-main)'
           }}>
-            <span>📦 File baru: <strong>{editingItem.pendingFile.name}</strong> ({editingItem.item.fileSize}) &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
+            <span>File baru: <strong>{editingItem.pendingFile.name}</strong> ({editingItem.item.fileSize}) &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
               onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingFile: null, item: { ...prev.item, fileUrl: prev.originalFileUrl || '' } }) : null)}
@@ -122,7 +117,7 @@ export default function BrandAssetFields() {
         )}
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Preview Thumbnail Gambar (Opsional)</label>
+        <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Preview Thumbnail Gambar (Opsional)</label>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {editingItem.item.previewUrl && (
             <img src={editingItem.item.previewUrl} alt="" style={{ width: '36px', height: '36px', borderRadius: '4px', objectFit: 'cover', border: '1px solid var(--border-card)' }} />
@@ -144,12 +139,11 @@ export default function BrandAssetFields() {
             <span>{editingItem.pendingPreviewFile ? 'Ganti Preview' : 'Pilih Gambar'}</span>
             <input type="file" accept="image/*" onChange={(e) => handleBrandAssetUpload(e, 'previewUrl', true)} style={{ display: 'none' }} />
           </label>
-          <input
+          <Input className="min-w-0 flex-1"
             type="text"
-            placeholder="URL Gambar Thumbnail..."
+            aria-label="URL Gambar Thumbnail" placeholder="URL Gambar Thumbnail..."
             value={editingItem.item.previewUrl || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, previewUrl: e.target.value } })}
-            style={{ flex: 1, minWidth: '180px', padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.82rem' }}
           />
         </div>
         {editingItem.pendingPreviewFile && (
@@ -165,7 +159,7 @@ export default function BrandAssetFields() {
             fontSize: '0.75rem',
             color: 'var(--text-main)'
           }}>
-            <span>🖼️ Preview baru: <strong>{editingItem.pendingPreviewFile.name}</strong> &bull; <span style={{ color: 'var(--mandiri-gold)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
+            <span>Preview baru: <strong>{editingItem.pendingPreviewFile.name}</strong> &bull; <span style={{ color: 'var(--mandiri-gold)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
               onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingPreviewFile: null, item: { ...prev.item, previewUrl: '' } }) : null)}
@@ -177,12 +171,11 @@ export default function BrandAssetFields() {
         )}
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi</label>
-        <textarea
+        <label htmlFor="ef-brandasset-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi</label>
+        <Textarea id="ef-brandasset-6"
           rows={3}
           value={editingItem.item.description || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
     </div>

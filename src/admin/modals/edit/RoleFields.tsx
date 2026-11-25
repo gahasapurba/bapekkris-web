@@ -1,5 +1,6 @@
 import { LEVEL_OPTIONS, formatLevelOptionLabel } from '../../../utils/memberQuotaUtils';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select } from '../../../ui';
 
 /** Fields of the edit dialog for `role` items. */
 export default function RoleFields() {
@@ -14,55 +15,52 @@ export default function RoleFields() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+        <label htmlFor="ef-role-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
           Nama Jabatan / Role <span style={{ color: '#f43f5e' }}>*</span>
         </label>
-        <input
+        <Input id="ef-role-1"
           type="text"
           value={editingItem.item.name || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
           placeholder="Contoh: Sekretaris Jenderal"
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+        <label htmlFor="ef-role-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
           Periode Kepengurusan
         </label>
-        <select
+        <Select id="ef-role-2"
           value={editingItem.item.tenureId || activeTenure?.id || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, tenureId: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         >
           {tenures.map(t => (
             <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+        <label htmlFor="ef-role-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
           Tingkatan di Bagan Organigram
         </label>
-        <select
+        <Select id="ef-role-3"
           value={editingItem.item.level ?? 5}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, level: Number(e.target.value) } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         >
           {LEVEL_OPTIONS.map(lvl => (
             <option key={lvl.level} value={lvl.level}>
               {formatLevelOptionLabel(lvl, tenureRoles, editingItem.item.tenureId || activeTenure?.id || tenures[0]?.id)}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+        <label htmlFor="ef-role-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
           Batas Maksimal Kuota Personel (0 = Tanpa Batas / Unlimited)
         </label>
-        <input
+        <Input id="ef-role-4"
           type="number"
           min="0"
           max="100"
@@ -71,7 +69,6 @@ export default function RoleFields() {
             const val = parseInt(e.target.value) || 0;
             setEditingItem({ ...editingItem, item: { ...editingItem.item, max: val, maxQuota: val } });
           }}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
 

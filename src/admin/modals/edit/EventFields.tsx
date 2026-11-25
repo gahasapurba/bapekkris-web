@@ -1,5 +1,6 @@
 import { formatWibEventRange, toDatetimeLocalValue } from '../../../utils/dateUtils';
 import { useAdminPortal } from '../../AdminPortalContext';
+import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `event` items. */
 export default function EventFields() {
@@ -15,20 +16,19 @@ export default function EventFields() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Nama Event</label>
-        <input
+        <label htmlFor="ef-event-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Event</label>
+        <Input id="ef-event-1"
           type="text"
           value={editingItem.item.title || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
         />
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            📅 Tanggal & Jam Mulai (WIB) <span style={{ color: '#f43f5e' }}>*</span>
+          <label htmlFor="ef-event-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+            Tanggal & Jam Mulai (WIB) <span style={{ color: '#f43f5e' }}>*</span>
           </label>
-          <input
+          <Input id="ef-event-2"
             type="datetime-local"
             value={toDatetimeLocalValue(editingItem.item.startDate)}
             max={editingItem.item.endDate ? toDatetimeLocalValue(editingItem.item.endDate) : undefined}
@@ -52,30 +52,18 @@ export default function EventFields() {
                 }
               });
             }}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              minWidth: 0,
-              boxSizing: 'border-box',
-              padding: '9px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              border: `1px solid ${(editingItem.item.startDate && editingItem.item.endDate && toDatetimeLocalValue(editingItem.item.startDate) > toDatetimeLocalValue(editingItem.item.endDate)) ? '#f43f5e' : 'var(--input-border)'}`,
-              color: 'var(--text-main)',
-              fontSize: '0.86rem'
-            }}
           />
           {editingItem.item.startDate && editingItem.item.endDate && toDatetimeLocalValue(editingItem.item.startDate) > toDatetimeLocalValue(editingItem.item.endDate) && (
             <div style={{ fontSize: '0.72rem', color: '#f43f5e', marginTop: '4px', fontWeight: 600 }}>
-              ⚠️ Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir
+              Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir
             </div>
           )}
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            📅 Tanggal & Jam Berakhir (WIB) <span style={{ color: '#f43f5e' }}>*</span>
+          <label htmlFor="ef-event-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+            Tanggal & Jam Berakhir (WIB) <span style={{ color: '#f43f5e' }}>*</span>
           </label>
-          <input
+          <Input id="ef-event-3"
             type="datetime-local"
             value={toDatetimeLocalValue(editingItem.item.endDate)}
             min={editingItem.item.startDate ? toDatetimeLocalValue(editingItem.item.startDate) : undefined}
@@ -99,22 +87,10 @@ export default function EventFields() {
                 }
               });
             }}
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              minWidth: 0,
-              boxSizing: 'border-box',
-              padding: '9px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--input-bg)',
-              border: `1px solid ${(editingItem.item.startDate && editingItem.item.endDate && toDatetimeLocalValue(editingItem.item.endDate) < toDatetimeLocalValue(editingItem.item.startDate)) ? '#f43f5e' : 'var(--input-border)'}`,
-              color: 'var(--text-main)',
-              fontSize: '0.86rem'
-            }}
           />
           {editingItem.item.startDate && editingItem.item.endDate && toDatetimeLocalValue(editingItem.item.endDate) < toDatetimeLocalValue(editingItem.item.startDate) && (
             <div style={{ fontSize: '0.72rem', color: '#f43f5e', marginTop: '4px', fontWeight: 600 }}>
-              ⚠️ Tanggal & Jam Berakhir tidak boleh kurang dari Tanggal & Jam Mulai
+              Tanggal & Jam Berakhir tidak boleh kurang dari Tanggal & Jam Mulai
             </div>
           )}
         </div>
@@ -127,8 +103,8 @@ export default function EventFields() {
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Periode Kepengurusan</label>
-          <select
+          <label htmlFor="ef-event-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Periode Kepengurusan</label>
+          <Select id="ef-event-4"
             value={editingItem.item.tenureId || activeTenure?.id || ''}
             onChange={(e) => {
               const newTenure = e.target.value;
@@ -144,21 +120,20 @@ export default function EventFields() {
                 }
               });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             {tenures.map(t => (
               <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Divisi Penyelenggara</label>
+          <label htmlFor="ef-event-div" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Divisi Penyelenggara</label>
           {(() => {
             const editEventTenure = editingItem.item.tenureId || activeTenure?.id || '';
             const editEventDivs = divisions.filter(d => d.tenureId === editEventTenure);
             return (
               <>
-                <select
+                <Select id="ef-event-div"
                   value={editingItem.item.divisionId || ''}
                   onChange={(e) => {
                     const selDiv = editEventDivs.find(d => d.id === e.target.value);
@@ -171,7 +146,6 @@ export default function EventFields() {
                       }
                     });
                   }}
-                  style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
                 >
                   {editEventDivs.length === 0 ? (
                     <option value="" disabled>-- Divisi masih kosong di periode ini --</option>
@@ -183,10 +157,10 @@ export default function EventFields() {
                       ))}
                     </>
                   )}
-                </select>
+                </Select>
                 {editEventDivs.length === 0 && (
                   <span style={{ fontSize: '0.72rem', color: '#f59e0b', display: 'block', marginTop: '3px' }}>
-                    ⚠️ Periode ini belum memiliki divisi. Silakan buat divisi baru di tab Divisi.
+                    Periode ini belum memiliki divisi. Silakan buat divisi baru di tab Divisi.
                   </span>
                 )}
               </>
@@ -196,22 +170,21 @@ export default function EventFields() {
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Status Pelaksanaan</label>
-          <select
+          <label htmlFor="ef-event-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Status Pelaksanaan</label>
+          <Select id="ef-event-5"
             value={editingItem.item.status || 'Upcoming'}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, status: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           >
             <option value="Upcoming">Upcoming (Akan Datang)</option>
             <option value="Ongoing">Ongoing (Sedang Berjalan)</option>
             <option value="Completed">Completed (Selesai)</option>
-          </select>
+          </Select>
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-            💰 Estimasi Total RAB (Rp) <span style={{ color: '#f43f5e' }}>*</span>
+          <label htmlFor="ef-event-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+            Estimasi Total RAB (Rp) <span style={{ color: '#f43f5e' }}>*</span>
           </label>
-          <input
+          <Input id="ef-event-6"
             type="number"
             placeholder="Contoh: 15000000 (wajib diisi)"
             value={editingItem.item.totalRab !== undefined && editingItem.item.totalRab !== null ? editingItem.item.totalRab : ''}
@@ -219,23 +192,21 @@ export default function EventFields() {
               const v = e.target.value;
               setEditingItem({ ...editingItem, item: { ...editingItem.item, totalRab: v === '' ? '' : Number(v) } });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
       </div>
       <div className="mobile-two-col" style={{ gap: '10px' }}>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Lokasi Kegiatan</label>
-          <input
+          <label htmlFor="ef-event-7" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Lokasi Kegiatan</label>
+          <Input id="ef-event-7"
             type="text"
             value={editingItem.item.location || ''}
             onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, location: e.target.value } })}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
         <div>
-          <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Peserta</label>
-          <input
+          <label htmlFor="ef-event-8" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Peserta</label>
+          <Input id="ef-event-8"
             type="text"
             placeholder="Contoh: 150+ Jemaat Mandirian"
             value={editingItem.item.peserta !== undefined ? editingItem.item.peserta : (editingItem.item.kpi || '')}
@@ -250,13 +221,12 @@ export default function EventFields() {
                 }
               });
             }}
-            style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
           />
         </div>
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
-          🏷️ Kategori Program / Kegiatan <span style={{ color: '#f43f5e' }}>*</span>
+        <label htmlFor="ef-event-cat" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
+          Kategori Program / Kegiatan <span style={{ color: '#f43f5e' }}>*</span>
         </label>
         {(() => {
           const currentCat = editingItem.item.kategori || editingItem.item.category || editingItem.item.badge || '';
@@ -271,7 +241,7 @@ export default function EventFields() {
           ];
           const hasCustomCat = currentCat && !standardCats.includes(currentCat);
           return (
-            <select
+            <Select id="ef-event-cat"
               value={currentCat}
               onChange={(e) => {
                 const val = e.target.value;
@@ -285,7 +255,6 @@ export default function EventFields() {
                   }
                 });
               }}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem' }}
             >
               <option value="">-- Pilih Kategori Kegiatan * --</option>
               {standardCats.map(cat => (
@@ -294,17 +263,16 @@ export default function EventFields() {
               {hasCustomCat && (
                 <option value={currentCat}>{currentCat}</option>
               )}
-            </select>
+            </Select>
           );
         })()}
       </div>
       <div>
-        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Deskripsi Kegiatan</label>
-        <textarea
+        <label htmlFor="ef-event-9" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi Kegiatan</label>
+        <Textarea id="ef-event-9"
           rows={3}
           value={editingItem.item.description || ''}
           onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
-          style={{ width: '100%', padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-main)', fontSize: '0.86rem', resize: 'vertical' }}
         />
       </div>
 
@@ -331,7 +299,7 @@ export default function EventFields() {
             style={{ accentColor: 'var(--mandiri-gold)', width: '16px', height: '16px', cursor: 'pointer' }}
           />
           <span style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            🔒 Batasi Kuota Pendaftaran RSVP untuk Event Ini?
+            Batasi Kuota Pendaftaran RSVP untuk Event Ini?
           </span>
         </label>
 
@@ -340,10 +308,10 @@ export default function EventFields() {
             <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               Batas Maksimal Kuota Peserta (Orang) <span style={{ color: '#f43f5e' }}>*</span>
             </label>
-            <input
+            <Input
               type="number"
               min="1"
-              placeholder="Contoh: 100"
+              aria-label="100" placeholder="Contoh: 100"
               value={editingItem.item.maxQuota !== undefined && editingItem.item.maxQuota !== null ? editingItem.item.maxQuota : ''}
               onChange={(e) => {
                 const v = e.target.value;
@@ -354,15 +322,6 @@ export default function EventFields() {
                     maxQuota: v === '' ? '' : Number(v)
                   }
                 });
-              }}
-              style={{
-                maxWidth: '220px',
-                padding: '8px 12px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--input-bg)',
-                border: '1px solid var(--input-border)',
-                color: 'var(--text-main)',
-                fontSize: '0.84rem'
               }}
             />
             <span style={{ fontSize: '0.72rem', color: 'var(--text-dim)' }}>
@@ -385,7 +344,7 @@ export default function EventFields() {
       }}>
         <div>
           <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>🌐 Status Publikasi di Web Publik</span>
+            <span>Status Publikasi di Web Publik</span>
           </div>
           <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
             Jika <strong>Draft / Privat</strong>, event hanya tampil di Admin Portal dan tidak terlihat oleh pengguna umum di web.
