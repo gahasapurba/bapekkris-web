@@ -22,7 +22,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
-import { BIBLE_BOOKS } from './BibleSection';
+import { BIBLE_BOOKS } from './bible/useBible';
 import { BIBLE_SONG_COLLECTION } from '../data/hymnalLibrary';
 
 // Helper to break song lyrics into distinct slide stanzas
