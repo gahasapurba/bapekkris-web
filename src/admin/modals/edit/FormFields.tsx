@@ -1,5 +1,6 @@
 import { formatDeadlineWib, formatToIndonesianDate, toDatetimeLocalSecondsValue } from '../../../utils/dateUtils';
 import { ArrowDown, ArrowUp, Calendar, GripVertical, Layers, Plus, Trash2 } from 'lucide-react';
+import { useFeedback } from '../../../ui';
 import { useAdminPortal } from '../../AdminPortalContext';
 
 /** Fields of the edit dialog for `form` items. */
@@ -20,6 +21,7 @@ export default function FormFields() {
     submissions,
     tenures
   } = useAdminPortal();
+  const { toast, confirm } = useFeedback();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -702,11 +704,12 @@ export default function FormFields() {
                         const duplicates = Object.entries(valCounts).filter(([_, count]) => count > 1);
                         if (duplicates.length > 0) {
                           const dupListStr = duplicates.map(([val, count]) => `• "${val}" (${count} responden)`).join('\n');
-                          alert(
-                            `⚠️ Tidak dapat mengaktifkan "Validasi Unique" pada field "${fld.label}"!\n\n` +
+                          toast(
+                            `Tidak dapat mengaktifkan "Validasi Unique" pada field "${fld.label}".\n\n` +
                             `Ditemukan ${duplicates.length} data duplikat pada pengisian responden sebelumnya:\n` +
                             dupListStr +
-                            `\n\nUntuk menerapkan validasi unik, silakan buka tab Responden lalu hapus data duplikat hingga setiap nilai hanya tersisa 1 responden saja.`
+                            `\n\nUntuk menerapkan validasi unik, silakan buka tab Responden lalu hapus data duplikat hingga setiap nilai hanya tersisa 1 responden saja.`,
+                            'error'
                           );
                           return;
                         }
@@ -727,13 +730,14 @@ export default function FormFields() {
                   return (
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
                         if (subCount > 0) {
-                          const ok = window.confirm(
-                            `Formulir ini sudah memiliki ${subCount} berkas pendaftar.\n\n` +
-                            `Menghapus field "${fld.label}" TIDAK AKAN MENGHAPUS data pendaftar yang sudah ada di database, namun pertanyaan ini tidak akan muncul lagi bagi pendaftar baru.\n\n` +
-                            `Lanjutkan menghapus pertanyaan ini?`
-                          );
+                          const ok = await confirm({
+                            title: `Hapus pertanyaan "${fld.label}"?`,
+                            message: `Formulir ini sudah memiliki ${subCount} berkas pendaftar. Data pendaftar yang sudah ada tidak ikut terhapus, tetapi pertanyaan ini tidak akan muncul lagi bagi pendaftar baru.`,
+                            confirmLabel: 'Hapus pertanyaan',
+                            danger: true
+                          });
                           if (!ok) return;
                         }
 

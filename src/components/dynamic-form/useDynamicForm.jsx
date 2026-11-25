@@ -1,3 +1,4 @@
+import { useFeedback } from '../../ui';
 import { Check, ExternalLink, MessageCircle, Share2 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import confetti from 'canvas-confetti';
@@ -22,6 +23,9 @@ export function useDynamicForm({
   activeTenure = null,
   tenures = []
 }) {
+  const { toast } = useFeedback();
+  const notifyError = (message) => toast(message, 'error');
+
   const navigateTo = useAppNavigate();
   const isDark = theme === 'dark';
 
@@ -190,7 +194,7 @@ export function useDynamicForm({
       }
     } catch (err) {
       console.error('Failed to generate QR poster:', err);
-      alert('Gagal membuat poster QR: ' + (err.message || 'Error'));
+      notifyError('Gagal membuat poster QR: ' + (err.message || 'Error'));
     } finally {
       setGeneratingPoster(false);
     }
@@ -427,12 +431,12 @@ export function useDynamicForm({
     }
     const dl = getDeadlineStatus(currentForm?.deadline);
     if (dl.isExpired) {
-      alert('Batas waktu pendaftaran formulir ini telah berakhir.');
+      notifyError('Batas waktu pendaftaran formulir ini telah berakhir.');
       return;
     }
     const formQuota = getUnifiedFormQuota(currentForm, events, registrationCounts);
     if (formQuota.isFull) {
-      alert(`Maaf, pendaftaran formulir ini telah ditutup karena kuota ${formQuota.isConnected ? 'acara (' + formQuota.connectedEvent?.title + ')' : 'pendaftaran'} telah terpenuhi (${formQuota.count}/${formQuota.maxQuota} peserta).`);
+      notifyError(`Maaf, pendaftaran formulir ini telah ditutup karena kuota ${formQuota.isConnected ? 'acara (' + formQuota.connectedEvent?.title + ')' : 'pendaftaran'} telah terpenuhi (${formQuota.count}/${formQuota.maxQuota} peserta).`);
       return;
     }
     if (!validate()) return;
@@ -444,7 +448,7 @@ export function useDynamicForm({
     const formQuota = getUnifiedFormQuota(currentForm, events, registrationCounts);
     if (formQuota.isFull) {
       setIsConfirmOpen(false);
-      alert(`Maaf, pendaftaran formulir ini telah ditutup karena kuota ${formQuota.isConnected ? 'acara (' + formQuota.connectedEvent?.title + ')' : 'pendaftaran'} telah terpenuhi (${formQuota.count}/${formQuota.maxQuota} peserta).`);
+      notifyError(`Maaf, pendaftaran formulir ini telah ditutup karena kuota ${formQuota.isConnected ? 'acara (' + formQuota.connectedEvent?.title + ')' : 'pendaftaran'} telah terpenuhi (${formQuota.count}/${formQuota.maxQuota} peserta).`);
       return;
     }
 
@@ -468,7 +472,7 @@ export function useDynamicForm({
       console.error(err);
       setIsSubmitting(false);
       setUploadingFieldId(null);
-      alert('Gagal mengunggah berkas lampiran ke Cloud Storage. Silakan periksa koneksi dan coba lagi: ' + (err.message || 'Error'));
+      notifyError('Gagal mengunggah berkas lampiran ke Cloud Storage. Silakan periksa koneksi dan coba lagi: ' + (err.message || 'Error'));
       return;
     }
     setUploadingFieldId(null);
@@ -487,7 +491,7 @@ export function useDynamicForm({
           setErrors(prev => ({ ...prev, [field.id]: duplicateMessage(field, formData[field.id]) }));
         }
       }
-      alert(err.code
+      notifyError(err.code
         ? `Pendaftaran ditolak: ${err.message}`
         : 'Pendaftaran gagal dikirim ke server. Data Anda belum tersimpan, silakan periksa koneksi lalu coba lagi.');
       return;

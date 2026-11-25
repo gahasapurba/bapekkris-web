@@ -147,8 +147,14 @@ const sortTenuresDesc = (list = []) => {
   });
 };
 
+// Development-only component showcase (/#ui-kit); removed from production builds.
+const UiKitPreview = import.meta.env.DEV ? lazy(() => import('./ui/UiKitPreview')) : null;
+
 export default function App() {
   const location = useLocation();
+  if (UiKitPreview && location.hash === '#ui-kit') {
+    return <Suspense fallback={null}><UiKitPreview /></Suspense>;
+  }
   const isProjectorMode = location.hash === '#projector' || new URLSearchParams(location.search).get('mode') === 'projector';
   if (isProjectorMode) {
     return (

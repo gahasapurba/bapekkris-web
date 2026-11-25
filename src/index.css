@@ -14,7 +14,8 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 /* Utilities map onto our tokens (and only those — Tailwind's oklch palette is switched off,
-   html2canvas cannot read it). `inline` makes utilities reference the token variables directly.
+   html2canvas cannot read it). Avoid opacity modifiers such as bg-navy/10: they compile to
+   color-mix(); use the explicit *-tint / *-line colors instead. `inline` makes utilities reference the token variables directly.
    --font-sans, --font-display and --radius-* need no mapping: tokens.css is unlayered, so its
    values override Tailwind's defaults of the same name. */
 @theme inline {
@@ -40,6 +41,20 @@
   --color-danger: var(--neon-rose);
   --color-field: var(--input-bg);
   --color-field-line: var(--input-border);
+  --color-navy-ink: var(--navy-ink);
+  --color-navy-tint: var(--navy-tint);
+  --color-navy-line: var(--navy-line);
+  --color-gold-tint: var(--gold-tint);
+  --color-gold-line: var(--gold-line);
+  --color-info-tint: var(--info-tint);
+  --color-info-line: var(--info-line);
+  --color-success-tint: var(--success-tint);
+  --color-success-line: var(--success-line);
+  --color-danger-tint: var(--danger-tint);
+  --color-danger-line: var(--danger-line);
+  --color-overlay: var(--overlay);
+  --color-action: var(--action-bg);
+  --color-on-action: var(--action-fg);
 
   --shadow-card: var(--shadow-card);
 }

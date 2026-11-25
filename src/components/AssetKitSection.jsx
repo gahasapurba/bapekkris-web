@@ -1,3 +1,4 @@
+import { useFeedback } from '../ui';
 import React, { useState } from 'react';
 import { 
   Download, 
@@ -8,6 +9,7 @@ import {
 import { formatLastUpdatedWib } from '../utils/dateUtils';
 
 export default function AssetKitSection({ theme, brandAssets = [] }) {
+  const { toast } = useFeedback();
   const isDark = theme === 'dark';
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -254,7 +256,7 @@ export default function AssetKitSection({ theme, brandAssets = [] }) {
                         const target = getAssetDownloadUrl(item);
                         if (!target || target === '#') {
                           e.preventDefault();
-                          alert('Tautan berkas download untuk asset ini belum tersedia.');
+                          toast('Tautan berkas download untuk asset ini belum tersedia.', 'error');
                         }
                       }}
                       style={{

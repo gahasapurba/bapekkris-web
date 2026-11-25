@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { ShieldCheck, Trash2, UserPlus, Loader2 } from 'lucide-react';
 import { listAdminProfiles, assignAdminRole, revokeAdminRole, type AdminProfile, type AppItem } from '../lib/supabase';
 import { adminAccountSchema, type AdminAccountValues } from './validation/schemas';
+import { useFeedback } from '../ui';
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin: 'Super Admin',
@@ -31,6 +32,7 @@ interface AdminAccountsPanelProps {
 }
 
 export default function AdminAccountsPanel({ divisions = [], currentUserId, showToast }: AdminAccountsPanelProps) {
+  const { confirm } = useFeedback();
   const [admins, setAdmins] = useState<AdminProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   // Server-side failure (validation messages come from the form below).
@@ -84,7 +86,13 @@ export default function AdminAccountsPanel({ divisions = [], currentUserId, show
   );
 
   const handleRevoke = async (admin: AdminProfile) => {
-    if (!window.confirm(`Cabut akses admin untuk ${admin.email}?`)) return;
+    const ok = await confirm({
+      title: `Cabut akses admin untuk ${admin.email}?`,
+      message: 'Akun tetap ada di Supabase Authentication, tetapi tidak bisa lagi membuka Admin Portal.',
+      confirmLabel: 'Cabut akses',
+      danger: true
+    });
+    if (!ok) return;
     try {
       await revokeAdminRole(admin.userId);
       showToast?.(`Akses admin ${admin.email} dicabut`);

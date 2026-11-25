@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { useFeedback } from '../../ui';
 import { useAdminPortal } from '../AdminPortalContext';
 
 export default function DevotionsTab() {
@@ -24,6 +25,7 @@ export default function DevotionsTab() {
     setDevotionTitle,
     showToast
   } = useAdminPortal();
+  const { confirm } = useFeedback();
 
   return (
     <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -206,8 +208,8 @@ export default function DevotionsTab() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm(`Hapus renungan "${dev.title}"?`)) {
+                  onClick={async () => {
+                    if (await confirm({ title: `Hapus renungan "${dev.title}"?`, message: 'Tindakan ini tidak dapat dibatalkan.', confirmLabel: 'Hapus', danger: true })) {
                       if (onDeleteDevotion) onDeleteDevotion(dev.id);
                       showToast('Renungan berhasil dihapus.');
                     }

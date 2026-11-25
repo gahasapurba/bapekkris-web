@@ -1,4 +1,5 @@
 import { Trash2 } from 'lucide-react';
+import { useFeedback } from '../../ui';
 import { useAdminPortal } from '../AdminPortalContext';
 
 export default function EasyWorshipTab() {
@@ -8,6 +9,7 @@ export default function EasyWorshipTab() {
     onDeleteEasyWorshipSchedule,
     showToast
   } = useAdminPortal();
+  const { confirm } = useFeedback();
 
   return (
     <div className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -51,8 +53,8 @@ export default function EasyWorshipTab() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (window.confirm(`Hapus jadwal EasyWorship "${sch.title}"?`)) {
+                  onClick={async () => {
+                    if (await confirm({ title: `Hapus jadwal EasyWorship "${sch.title}"?`, message: 'Tindakan ini tidak dapat dibatalkan.', confirmLabel: 'Hapus', danger: true })) {
                       if (onDeleteEasyWorshipSchedule) onDeleteEasyWorshipSchedule(sch.id);
                       showToast('Jadwal berhasil dihapus.');
                     }
