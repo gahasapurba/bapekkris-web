@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Lock, 
   KeyRound, 
@@ -2284,7 +2285,8 @@ export default function AdminPortal({
               justifyContent: 'space-between',
               gap: '10px',
               borderRadius: 'var(--radius-md)',
-              position: 'relative'
+              position: 'relative',
+              zIndex: 10
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 700 }}>
@@ -2319,59 +2321,137 @@ export default function AdminPortal({
                 {isAdminMobileMenuOpen ? <X size={15} /> : <Menu size={15} />}
                 <span>Menu Admin</span>
               </button>
+            </div>
 
-              {/* Mobile Admin Navigation Dropdown */}
-              {isAdminMobileMenuOpen && (
-                <div style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 8px)',
-                  left: 0,
-                  right: 0,
-                  zIndex: 9999,
-                  background: 'var(--bg-page)',
-                  border: '1px solid var(--border-card)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
-                  padding: '8px',
+            {/* Mobile Admin Navigation Drawer / Bottom Sheet (Rendered to document.body to prevent clipping / behind card issues) */}
+            {isAdminMobileMenuOpen && typeof document !== 'undefined' && createPortal(
+              <div 
+                onClick={() => setIsAdminMobileMenuOpen(false)}
+                style={{
+                  position: 'fixed',
+                  inset: 0,
+                  zIndex: 99999999,
+                  background: 'rgba(0, 0, 0, 0.75)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '4px',
-                  maxHeight: '70vh',
-                  overflowY: 'auto'
-                }}>
-                  {adminTabList.map((tab) => {
-                    const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setActiveTab(tab.id);
-                          setIsAdminMobileMenuOpen(false);
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '10px 14px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: isActive ? 'var(--mandiri-gold)' : 'transparent',
-                          color: isActive ? '#040914' : 'var(--text-main)',
-                          border: 'none',
-                          fontWeight: isActive ? 800 : 600,
-                          fontSize: '0.86rem',
-                          textAlign: 'left',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        <Icon size={16} />
-                        <span>{tab.label}</span>
-                      </button>
-                    );
-                  })}
+                  justifyContent: 'flex-end',
+                  padding: 0
+                }}
+              >
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    background: isDark ? '#0b1329' : '#ffffff',
+                    borderTop: '1.5px solid var(--border-card)',
+                    borderTopLeftRadius: '20px',
+                    borderTopRightRadius: '20px',
+                    padding: '20px 16px 28px',
+                    maxHeight: '85vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 -15px 40px rgba(0,0,0,0.6)'
+                  }}
+                >
+                  {/* Header Modal */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '14px',
+                    paddingBottom: '12px',
+                    borderBottom: '1px solid var(--border-card)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Settings size={18} color="var(--mandiri-gold)" />
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
+                          Pilih Menu Admin
+                        </h3>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                          Beralih ke tab pengelolaan data Bapekkris
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsAdminMobileMenuOpen(false)}
+                      aria-label="Tutup Menu"
+                      style={{
+                        background: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                        border: 'none',
+                        borderRadius: 'var(--radius-full)',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--text-main)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+
+                  {/* Tabs List */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    overflowY: 'auto',
+                    paddingRight: '2px',
+                    WebkitOverflowScrolling: 'touch'
+                  }}>
+                    {adminTabList.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            setIsAdminMobileMenuOpen(false);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            padding: '12px 14px',
+                            borderRadius: 'var(--radius-md)',
+                            background: isActive ? 'var(--mandiri-gold)' : (isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)'),
+                            color: isActive ? '#040914' : 'var(--text-main)',
+                            border: isActive ? 'none' : '1px solid var(--border-card)',
+                            fontWeight: isActive ? 800 : 600,
+                            fontSize: '0.88rem',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Icon size={18} />
+                          <span style={{ flex: 1 }}>{tab.label}</span>
+                          {isActive && (
+                            <span style={{
+                              fontSize: '0.72rem',
+                              background: '#040914',
+                              color: 'var(--mandiri-gold)',
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              fontWeight: 800
+                            }}>
+                              Aktif
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>,
+              document.body
+            )}
 
             {/* Desktop Tabs */}
             <div className="admin-desktop-tabs glass-panel" style={{
