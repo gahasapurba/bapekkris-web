@@ -1,3 +1,7 @@
+import { useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Button, cn } from '../../ui';
+import { useModalBehavior } from '../../ui/useModalBehavior';
 import { AlertCircle, AlertTriangle, CalendarDays, Camera, ClipboardList, FileCheck2, FileText, Image as ImageIcon, Layers, RefreshCw, Sparkles, Users } from 'lucide-react';
 import { useAdminPortal } from '../AdminPortalContext';
 
@@ -23,68 +27,79 @@ export default function DeleteConfirmModal() {
     setEditingItem,
     showToast
   } = useAdminPortal();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const close = () => setDeleteConfirm(null);
+  useModalBehavior(panelRef, true, close);
+  const isReset = deleteConfirm.type === 'reset_all';
+  const blocked = Boolean(deleteConfirm.isBlocked);
+  const confirmLabel = (() => { const labelMap: Record<string, string> = {
+                    reset_all: 'Ya, Sync Data',
+                    gallery_photo: 'Hapus Foto',
+                    tenure: 'Ya, Hapus Periode',
+                    division: 'Ya, Hapus Divisi',
+                    sub_division: 'Ya, Hapus Sub-Divisi',
+                    member: 'Ya, Hapus Personel',
+                    role: 'Ya, Hapus Role',
+                    event: 'Ya, Hapus Event',
+                    form: 'Ya, Hapus Formulir',
+                    submission: 'Ya, Hapus Berkas'
+                  };
+                  return labelMap[deleteConfirm.type] || 'Ya, Hapus Data'; })();
+  const runDelete = () => {
+                  if (deleteConfirm.type === 'member' && onDeleteMember) onDeleteMember(deleteConfirm.id);
+                  if (deleteConfirm.type === 'division' && onDeleteDivision) onDeleteDivision(deleteConfirm.id);
+                  if (deleteConfirm.type === 'sub_division' && onDeleteSubDivision) onDeleteSubDivision(deleteConfirm.id);
+                  if (deleteConfirm.type === 'role' && onDeleteTenureRole) onDeleteTenureRole(deleteConfirm.id);
+                  if (deleteConfirm.type === 'gallery' && onDeleteGallery) onDeleteGallery(deleteConfirm.id);
+                  if (deleteConfirm.type === 'tenure' && onDeleteTenure) onDeleteTenure(deleteConfirm.id);
+                  if (deleteConfirm.type === 'event_rsvp' && onDeleteEventRsvp) onDeleteEventRsvp(deleteConfirm.id);
+                  if (deleteConfirm.type === 'form' && onDeleteForm) onDeleteForm(deleteConfirm.id, true);
+                  if (deleteConfirm.type === 'event' && onDeleteEvent) onDeleteEvent(deleteConfirm.id);
+                  if (deleteConfirm.type === 'submission' && onDeleteSubmission) onDeleteSubmission(deleteConfirm.id);
+                  if (deleteConfirm.type === 'brand_asset' && onDeleteBrandAsset) onDeleteBrandAsset(deleteConfirm.id);
+                  if (deleteConfirm.type === 'faq' && onDeleteFaq) onDeleteFaq(deleteConfirm.id);
+                  if (deleteConfirm.type === 'reset_all' && onResetDefault) onResetDefault();
+                  if (deleteConfirm.type === 'gallery_photo') {
+                    if (editingItem && editingItem.item) {
+                      const nextPhotos = (editingItem.item.photos || []).filter((_: any, i: any) => i !== deleteConfirm.photoIdx);
+                      setEditingItem({ ...editingItem, item: { ...editingItem.item, photos: nextPhotos } });
+                    }
+                  }
 
-  return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0, 0, 0, 0.8)',
-      backdropFilter: 'blur(8px)',
-      zIndex: 100005,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div className="glass-panel modal-container" style={{
-        maxWidth: (deleteConfirm.type === 'tenure' || deleteConfirm.type === 'division') && deleteConfirm.totalDependentCount > 0 ? '480px' : '440px',
-        width: '100%',
-        maxHeight: '92vh',
-        overflowY: 'auto',
-        padding: '24px',
-        background: isDark ? '#0e1937' : '#ffffff',
-        border: deleteConfirm.type === 'reset_all' 
-          ? '1.5px solid rgba(56, 189, 248, 0.55)' 
-          : (deleteConfirm.isBlocked
-              ? '1.5px solid rgba(255, 184, 0, 0.55)'
-              : '1.5px solid #f43f5e'),
-        boxShadow: deleteConfirm.type === 'reset_all' 
-          ? '0 10px 40px rgba(56, 189, 248, 0.25)' 
-          : (deleteConfirm.isBlocked
-              ? '0 10px 40px rgba(255, 184, 0, 0.25)'
-              : '0 10px 40px rgba(244, 63, 94, 0.3)'),
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-        textAlign: 'center'
-      }}>
-        <div style={{
-          width: '54px',
-          height: '54px',
-          borderRadius: '50%',
-          background: deleteConfirm.type === 'reset_all' 
-            ? 'rgba(56, 189, 248, 0.15)' 
-            : (deleteConfirm.isBlocked
-                ? 'rgba(255, 184, 0, 0.15)'
-                : 'rgba(244, 63, 94, 0.15)'),
-          color: deleteConfirm.type === 'reset_all' 
-            ? 'var(--neon-cyan)' 
-            : (deleteConfirm.isBlocked
-                ? 'var(--mandiri-gold)'
-                : '#f43f5e'),
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          margin: '0 auto'
-        }}>
-          {deleteConfirm.type === 'reset_all' ? <RefreshCw size={26} /> : (deleteConfirm.isBlocked ? <AlertCircle size={28} /> : <AlertTriangle size={28} />)}
-        </div>
+                  let toastMsg = 'Data berhasil dihapus & disinkronkan!';
+                  if (deleteConfirm.type === 'reset_all') {
+                    toastMsg = 'Cache berhasil dibersihkan & data berhasil dimuat ulang!';
+                  } else if (deleteConfirm.type === 'gallery_photo') {
+                    toastMsg = `${deleteConfirm.name} berhasil dihapus dari daftar!`;
+                  } else if (deleteConfirm.type === 'tenure') {
+                    toastMsg = `Periode "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'division') {
+                    toastMsg = `Divisi "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'sub_division') {
+                    toastMsg = `Sub-divisi "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'member') {
+                    toastMsg = `Personel "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'role') {
+                    toastMsg = `Role "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'event') {
+                    toastMsg = `Event "${deleteConfirm.name}" berhasil dihapus!`;
+                  } else if (deleteConfirm.type === 'form') {
+                    toastMsg = `Formulir "${deleteConfirm.name}" berhasil dihapus!`;
+                  }
 
-        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-          {(() => {
+                  setDeleteConfirm(null);
+                  showToast(toastMsg);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100005] flex items-center justify-center bg-overlay p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+      <div ref={panelRef} role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title" tabIndex={-1}
+        className={cn('flex max-h-[92vh] w-full flex-col gap-4 overflow-y-auto rounded-xl border bg-surface p-6 text-left shadow-card outline-none', deleteConfirm.totalDependentCount > 0 ? 'max-w-[520px]' : 'max-w-[460px]', isReset ? 'border-info-line' : blocked ? 'border-gold-line' : 'border-danger-line')}>
+        <div className="flex items-start gap-3">
+          <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-full', isReset ? 'bg-info-tint text-info' : blocked ? 'bg-gold-tint text-gold-ink' : 'bg-danger-tint text-danger')}>
+            {isReset ? <RefreshCw size={22} aria-hidden="true" /> : blocked ? <AlertCircle size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
+          </span>
+          <h2 id="delete-confirm-title" className="pt-1.5 font-display text-[1.3rem] font-semibold leading-snug text-ink">{(() => {
             if (deleteConfirm.type === 'reset_all') return 'Konfirmasi Sync Data';
             if (deleteConfirm.isBlocked) {
               if (deleteConfirm.type === 'tenure') {
@@ -112,8 +127,9 @@ export default function DeleteConfirmModal() {
               submission: 'Konfirmasi Hapus Berkas'
             };
             return titles[deleteConfirm.type] || 'Konfirmasi Penghapusan Data';
-          })()}
-        </h3>
+          })()}</h2>
+        </div>
+        <div className="admin-delete-body flex flex-col gap-3 text-[0.9rem] leading-relaxed">
 
         {/* TENURE BODY */}
         {deleteConfirm.type === 'tenure' && (
@@ -974,124 +990,19 @@ export default function DeleteConfirmModal() {
           </p>
         )}
 
-        {/* ACTION BUTTONS */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
-          {deleteConfirm.isBlocked ? (
-            <button
-              type="button"
-              onClick={() => setDeleteConfirm(null)}
-              style={{
-                padding: '9px 24px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--mandiri-blue)',
-                border: 'none',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(0, 82, 155, 0.35)'
-              }}
-            >
-              Mengerti & Tutup
-            </button>
+</div>
+        <div className="mt-1 flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+          {blocked ? (
+            <Button onClick={close}>Mengerti</Button>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={() => setDeleteConfirm(null)}
-                style={{
-                  padding: '9px 18px',
-                  borderRadius: 'var(--radius-full)',
-                  background: 'transparent',
-                  border: '1px solid var(--border-card)',
-                  color: 'var(--text-muted)',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
-                }}
-              >
-                Batalkan
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (deleteConfirm.type === 'member' && onDeleteMember) onDeleteMember(deleteConfirm.id);
-                  if (deleteConfirm.type === 'division' && onDeleteDivision) onDeleteDivision(deleteConfirm.id);
-                  if (deleteConfirm.type === 'sub_division' && onDeleteSubDivision) onDeleteSubDivision(deleteConfirm.id);
-                  if (deleteConfirm.type === 'role' && onDeleteTenureRole) onDeleteTenureRole(deleteConfirm.id);
-                  if (deleteConfirm.type === 'gallery' && onDeleteGallery) onDeleteGallery(deleteConfirm.id);
-                  if (deleteConfirm.type === 'tenure' && onDeleteTenure) onDeleteTenure(deleteConfirm.id);
-                  if (deleteConfirm.type === 'event_rsvp' && onDeleteEventRsvp) onDeleteEventRsvp(deleteConfirm.id);
-                  if (deleteConfirm.type === 'form' && onDeleteForm) onDeleteForm(deleteConfirm.id, true);
-                  if (deleteConfirm.type === 'event' && onDeleteEvent) onDeleteEvent(deleteConfirm.id);
-                  if (deleteConfirm.type === 'submission' && onDeleteSubmission) onDeleteSubmission(deleteConfirm.id);
-                  if (deleteConfirm.type === 'brand_asset' && onDeleteBrandAsset) onDeleteBrandAsset(deleteConfirm.id);
-                  if (deleteConfirm.type === 'faq' && onDeleteFaq) onDeleteFaq(deleteConfirm.id);
-                  if (deleteConfirm.type === 'reset_all' && onResetDefault) onResetDefault();
-                  if (deleteConfirm.type === 'gallery_photo') {
-                    if (editingItem && editingItem.item) {
-                      const nextPhotos = (editingItem.item.photos || []).filter((_: any, i: any) => i !== deleteConfirm.photoIdx);
-                      setEditingItem({ ...editingItem, item: { ...editingItem.item, photos: nextPhotos } });
-                    }
-                  }
-
-                  let toastMsg = 'Data berhasil dihapus & disinkronkan!';
-                  if (deleteConfirm.type === 'reset_all') {
-                    toastMsg = 'Cache berhasil dibersihkan & data berhasil dimuat ulang!';
-                  } else if (deleteConfirm.type === 'gallery_photo') {
-                    toastMsg = `${deleteConfirm.name} berhasil dihapus dari daftar!`;
-                  } else if (deleteConfirm.type === 'tenure') {
-                    toastMsg = `Periode "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'division') {
-                    toastMsg = `Divisi "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'sub_division') {
-                    toastMsg = `Sub-divisi "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'member') {
-                    toastMsg = `Personel "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'role') {
-                    toastMsg = `Role "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'event') {
-                    toastMsg = `Event "${deleteConfirm.name}" berhasil dihapus!`;
-                  } else if (deleteConfirm.type === 'form') {
-                    toastMsg = `Formulir "${deleteConfirm.name}" berhasil dihapus!`;
-                  }
-
-                  setDeleteConfirm(null);
-                  showToast(toastMsg);
-                }}
-                style={{
-                  padding: '9px 20px',
-                  borderRadius: 'var(--radius-full)',
-                  background: deleteConfirm.type === 'reset_all' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : '#f43f5e',
-                  border: deleteConfirm.type === 'reset_all' ? '1px solid rgba(56, 189, 248, 0.45)' : 'none',
-                  color: '#ffffff',
-                  fontWeight: 800,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  boxShadow: deleteConfirm.type === 'reset_all' ? '0 4px 14px rgba(2, 132, 199, 0.35)' : 'none'
-                }}
-              >
-                {(() => {
-                  const labelMap: Record<string, string> = {
-                    reset_all: 'Ya, Sync Data',
-                    gallery_photo: 'Hapus Foto',
-                    tenure: 'Ya, Hapus Periode',
-                    division: 'Ya, Hapus Divisi',
-                    sub_division: 'Ya, Hapus Sub-Divisi',
-                    member: 'Ya, Hapus Personel',
-                    role: 'Ya, Hapus Role',
-                    event: 'Ya, Hapus Event',
-                    form: 'Ya, Hapus Formulir',
-                    submission: 'Ya, Hapus Berkas'
-                  };
-                  return labelMap[deleteConfirm.type] || 'Ya, Hapus Data';
-                })()}
-              </button>
+              <Button variant="secondary" onClick={close}>Batal</Button>
+              <Button variant={isReset ? 'primary' : 'danger'} onClick={runDelete}>{confirmLabel}</Button>
             </>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

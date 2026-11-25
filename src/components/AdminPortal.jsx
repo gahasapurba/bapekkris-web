@@ -586,9 +586,8 @@ export default function AdminPortal({
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         // The edit dialog handles Escape itself (useModalBehavior, stack-aware).
-        if (editingItem) return;
-        if (deleteConfirm) setDeleteConfirm(null);
-        else if (showExecutiveReportModal) setShowExecutiveReportModal(false);
+        if (editingItem || deleteConfirm) return;
+        if (showExecutiveReportModal) setShowExecutiveReportModal(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);

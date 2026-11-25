@@ -107,7 +107,7 @@ export default function DivisionsTab() {
                       <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{d.name}{d.tenureId && <Badge>{tenures.find((t: any) => t.id === d.tenureId)?.code || d.tenureId}</Badge>}</p>
                       <p className="mt-0.5 text-[0.86rem] text-muted">
                         {leaders.length > 0
-                          ? leaders.map((l: any, i: number) => <span key={l.id || i} className="mr-3">{l.role}: <strong className="text-ink">{l.name}</strong></span>)
+                          ? leaders.map((l: any, i: number) => <span key={l.id || i} className="mr-3">{l.role ? `${l.role}: ` : ''}<strong className="text-ink">{l.name}</strong></span>)
                           : lead?.name ? <>{lead.roleName || 'Pimpinan'}: <strong className="text-ink">{lead.name}</strong></> : 'Belum ada pimpinan'}
                       </p>
                       {d.updatedAt && <p className="mt-0.5 text-[0.76rem] text-dim">{formatLastUpdatedWib(d.updatedAt)}</p>}
