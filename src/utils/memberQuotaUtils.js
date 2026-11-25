@@ -133,31 +133,34 @@ export function findMatchingRole(member, tenureRoles = []) {
 
   // 1. Cocokkan by roleId langsung
   if (roleId) {
-    const found = tenureRoles.find(r => r.id === roleId);
+    const found = (tenureRoles || []).find(r => r && r.id === roleId);
     if (found) return found;
   }
 
   // 2. Cocokkan by nama eksak
-  const exact = tenureRoles.find(r => r.name.toLowerCase().trim() === roleName);
+  const exact = (tenureRoles || []).find(r => String(r?.name || '').toLowerCase().trim() === roleName);
   if (exact) return exact;
 
   // 3. Cocokkan parsial (prioritaskan nama role yang lebih panjang/spesifik terlebih dahulu)
-  const sortedRoles = [...tenureRoles].sort((a, b) => (b.name || '').length - (a.name || '').length);
-  const byPrefix = sortedRoles.find(r => roleName.startsWith(r.name.toLowerCase().trim()));
+  const sortedRoles = [...(tenureRoles || [])].filter(Boolean).sort((a, b) => String(b?.name || '').length - String(a?.name || '').length);
+  const byPrefix = sortedRoles.find(r => {
+    const rLower = String(r?.name || '').toLowerCase().trim();
+    return rLower && roleName.startsWith(rLower);
+  });
   if (byPrefix) return byPrefix;
 
   const partial = sortedRoles.find(r => {
-    const rLower = r.name.toLowerCase().trim();
-    return roleName.includes(rLower) || rLower.includes(roleName);
+    const rLower = String(r?.name || '').toLowerCase().trim();
+    return rLower && (roleName.includes(rLower) || rLower.includes(roleName));
   });
   if (partial) return partial;
 
   // 4. Fallback by category
-  if (category === 'penasehat') return tenureRoles.find(r => r.level === 0) || null;
-  if (category === 'pembina') return tenureRoles.find(r => r.level === 1) || null;
-  if (category === 'pimpro') return tenureRoles.find(r => r.level === 4) || null;
-  if (category === 'anggota') return tenureRoles.find(r => r.level === 5) || null;
-  if (category === 'inti') return tenureRoles.find(r => r.level === 2 || r.level === 3) || null;
+  if (category === 'penasehat') return (tenureRoles || []).find(r => r && r.level === 0) || null;
+  if (category === 'pembina') return (tenureRoles || []).find(r => r && r.level === 1) || null;
+  if (category === 'pimpro') return (tenureRoles || []).find(r => r && r.level === 4) || null;
+  if (category === 'anggota') return (tenureRoles || []).find(r => r && r.level === 5) || null;
+  if (category === 'inti') return (tenureRoles || []).find(r => r && (r.level === 2 || r.level === 3)) || null;
 
   return null;
 }
@@ -227,11 +230,13 @@ export function validateMemberQuota(
   const resolvedRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
 
   // Cari role yang dimaksud
-  const roleObj = resolvedRoles.find(r => 
-    (roleId && r.id === roleId) ||
-    (role && r.name.toLowerCase().trim() === role.toLowerCase().trim()) ||
-    (role && (r.name.toLowerCase().startsWith(role.toLowerCase()) || role.toLowerCase().startsWith(r.name.toLowerCase())))
-  );
+  const roleObj = resolvedRoles.find(r => {
+    const rName = String(r?.name || '').toLowerCase().trim();
+    const targetRole = String(role || '').toLowerCase().trim();
+    return (roleId && r?.id === roleId) ||
+      (targetRole && rName === targetRole) ||
+      (targetRole && (rName.startsWith(targetRole) || targetRole.startsWith(rName)));
+  });
 
   if (!roleObj) {
     return {
@@ -280,7 +285,7 @@ export function validateMemberQuota(
       // Kuota per divisi
       const existingInDiv = targetMembers.filter(m => {
         const matchesThisRole = (m.roleId === roleObj.id) || 
-          String(m.role || '').toLowerCase().startsWith(roleObj.name.toLowerCase());
+          String(m.role || '').toLowerCase().startsWith(String(roleObj.name || '').toLowerCase());
         return matchesThisRole && m.divisionId === divisionId;
       });
 
@@ -298,7 +303,7 @@ export function validateMemberQuota(
       // Kuota global periode
       const existingGlobal = targetMembers.filter(m => {
         return (m.roleId === roleObj.id) ||
-          String(m.role || '').toLowerCase().trim() === roleObj.name.toLowerCase().trim();
+          String(m.role || '').toLowerCase().trim() === String(roleObj.name || '').toLowerCase().trim();
       });
 
       if (existingGlobal.length >= maxQuota) {
@@ -326,8 +331,8 @@ export function getTenureQuotaSummary(tenureId, members = [], divisions = [], ro
   const roleSummaries = roles.map(role => {
     const matched = targetMembers.filter(m => {
       if (m.roleId && m.roleId === role.id) return true;
-      const mRole = String(m.role || '').toLowerCase().trim();
-      const rName = role.name.toLowerCase().trim();
+      const mRole = String(m?.role || '').toLowerCase().trim();
+      const rName = String(role?.name || '').toLowerCase().trim();
       return mRole === rName || (role.requiresDivision && mRole.startsWith(rName));
     });
 

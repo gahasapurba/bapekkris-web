@@ -866,7 +866,7 @@ export default function AdminPortal({
       errs.memRole = 'Role kepengurusan masih kosong pada periode ini. Silakan buat role baru terlebih dahulu di menu Kelola Role & Jabatan.';
     }
     const selectedRole = availableRoles.find(r => r.id === memRoleId) || 
-      availableRoles.find(r => r.name.toLowerCase() === (memRole || '').toLowerCase()) ||
+      availableRoles.find(r => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) ||
       null;
 
     if (!selectedRole && availableRoles.length > 0) {
@@ -948,7 +948,7 @@ export default function AdminPortal({
     }
 
     const divObj = selectedRole?.requiresDivision ? divisions.find(d => d.id === memDivisionId) : null;
-    const finalRoleName = selectedRole?.requiresDivision && selectedRole?.name.toLowerCase() === 'pimpro' && divObj
+    const finalRoleName = selectedRole?.requiresDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj
       ? `Pimpro ${divObj.name}`
       : (selectedRole?.name || memRole || 'Anggota Divisi');
     const finalCategory = getCategoryFromLevel(selectedRole?.level ?? 5);
@@ -1108,7 +1108,7 @@ export default function AdminPortal({
     }
     const targetTenureId = newRoleTenureId || activeTenure?.id || tenures[0]?.id || '';
     const isDuplicate = (tenureRoles || []).some(
-      (r) => r.tenureId === targetTenureId && r.name.toLowerCase().trim() === newRoleName.toLowerCase().trim()
+      (r) => r.tenureId === targetTenureId && String(r?.name || '').toLowerCase().trim() === newRoleName.toLowerCase().trim()
     );
     if (isDuplicate) {
       setFormErrors((prev) => ({ ...prev, newRoleName: 'Role dengan nama ini sudah terdaftar pada periode tersebut' }));
@@ -2139,7 +2139,7 @@ export default function AdminPortal({
             const matchedMembers = scopedMembers.filter(m => {
               if (m.roleId && m.roleId === r.id) return true;
               const matched = findMatchingRole(m, currentTenureRoles);
-              return matched ? matched.id === r.id : (m.role || '').toLowerCase().trim() === r.name.toLowerCase().trim();
+              return matched ? matched.id === r.id : (m.role || '').toLowerCase().trim() === String(r?.name || '').toLowerCase().trim();
             });
             matchedMembers.forEach(m => accountedMemberIds.add(m.id));
             roleCounts.push({ name: r.name, count: matchedMembers.length });
@@ -2948,7 +2948,7 @@ export default function AdminPortal({
                 const currentTenureId = memTenureId || activeTenure?.id || '';
                 const availableRoles = getTenureRoles(currentTenureId, roleQuotas, tenureRoles);
                 const currentRoleObj = availableRoles.find(r => r.id === memRoleId) || 
-                  availableRoles.find(r => r.name.toLowerCase() === (memRole || '').toLowerCase()) ||
+                  availableRoles.find(r => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) ||
                   null;
 
                 return (
@@ -3016,7 +3016,7 @@ export default function AdminPortal({
               const currentTenureId = memTenureId || activeTenure?.id || '';
               const availableRoles = getTenureRoles(currentTenureId, roleQuotas, tenureRoles);
               const currentRoleObj = availableRoles.find(r => r.id === memRoleId) || 
-                availableRoles.find(r => r.name.toLowerCase() === (memRole || '').toLowerCase()) ||
+                availableRoles.find(r => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) ||
                 null;
 
               if (!currentRoleObj || !currentRoleObj.requiresDivision) {
@@ -3075,7 +3075,7 @@ export default function AdminPortal({
               const currentTenureId = memTenureId || activeTenure?.id || '';
               const availableRoles = getTenureRoles(currentTenureId, roleQuotas, tenureRoles);
               const currentRoleObj = availableRoles.find(r => r.id === memRoleId) || 
-                availableRoles.find(r => r.name.toLowerCase() === (memRole || '').toLowerCase()) ||
+                availableRoles.find(r => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) ||
                 null;
 
               if (!currentRoleObj || !currentRoleObj.requiresDivision || !currentRoleObj.requiresSubDivision) {
@@ -3168,11 +3168,11 @@ export default function AdminPortal({
                       const matched = targetMembers.filter(m => {
                         if (m.roleId && m.roleId === role.id) return true;
                         const mRole = String(m.role || '').toLowerCase().trim();
-                        const rName = role.name.toLowerCase().trim();
-                        return mRole === rName || (role.requiresDivision && mRole.startsWith(rName));
+                        const rName = String(role?.name || '').toLowerCase().trim();
+                        return mRole === rName || (role?.requiresDivision && rName && mRole.startsWith(rName));
                       });
                       const count = matched.length;
-                      const isFull = role.max > 0 && count >= role.max;
+                      const isFull = role?.max > 0 && count >= role.max;
                       const occNames = matched.map(m => m.name).join(', ');
 
                       return (
@@ -3337,7 +3337,7 @@ export default function AdminPortal({
                 const matched = findMatchingRole(m, getTenureRoles(m.tenureId, roleQuotas, tenureRoles));
                 return matched
                   ? matched.id === targetRole.id
-                  : (m.role || '').toLowerCase().trim() === targetRole.name.toLowerCase().trim();
+                  : (m.role || '').toLowerCase().trim() === String(targetRole.name || '').toLowerCase().trim();
               })();
               const matchesDiv = adminMemDivFilter === 'all' || m.divisionId === adminMemDivFilter;
               return matchesSearch && matchesTenure && matchesCat && matchesDiv;
@@ -3512,7 +3512,7 @@ export default function AdminPortal({
                               const roleObj = findMatchingRole(m, tenureRoles);
                               const roleName = roleObj?.name || m.role || 'Anggota';
                               const divObj = (divisions || []).find(d => d.id === m.divisionId);
-                              if (divObj && !roleName.toLowerCase().includes(divObj.name.toLowerCase())) {
+                              if (divObj && divObj.name && !roleName.toLowerCase().includes(divObj.name.toLowerCase())) {
                                 return `${roleName} • ${divObj.name}`;
                               }
                               return roleName;
@@ -4019,7 +4019,7 @@ export default function AdminPortal({
                       const matched = targetMembers.filter(m => {
                         if (m.roleId && m.roleId === role.id) return true;
                         const mRole = String(m.role || '').toLowerCase().trim();
-                        const rName = role.name.toLowerCase().trim();
+                        const rName = String(role?.name || '').toLowerCase().trim();
                         return mRole === rName || (role.requiresDivision && mRole.startsWith(rName));
                       });
                       const count = matched.length;
@@ -10907,7 +10907,7 @@ export default function AdminPortal({
                   const editMemberTenureId = editingItem.item.tenureId || activeTenure?.id || '';
                   const availableRoles = getTenureRoles(editMemberTenureId, roleQuotas, tenureRoles);
                   const selectedRole = availableRoles.find(r => r.id === editingItem.item.roleId) ||
-                    availableRoles.find(r => r.name.toLowerCase() === (editingItem.item.role || '').toLowerCase()) ||
+                    availableRoles.find(r => String(r?.name || '').toLowerCase() === String(editingItem.item.role || '').toLowerCase()) ||
                     null;
                   const requiresDiv = selectedRole ? selectedRole.requiresDivision : (editingItem.item.category === 'anggota' || editingItem.item.category === 'pimpro');
                   const editMemberDivs = divisions.filter(d => d.tenureId === editMemberTenureId);
@@ -13664,7 +13664,7 @@ export default function AdminPortal({
                       return;
                     }
                     const selectedRole = availableRoles.find(r => r.id === editingItem.item.roleId) ||
-                      availableRoles.find(r => r.name.toLowerCase() === (editingItem.item.role || '').toLowerCase()) ||
+                      availableRoles.find(r => String(r?.name || '').toLowerCase() === String(editingItem.item.role || '').toLowerCase()) ||
                       null;
 
                     if (!selectedRole) {
@@ -13676,6 +13676,8 @@ export default function AdminPortal({
                     if (selectedRole?.requiresDivision && !editingItem.item.divisionId) {
                       setEditModalError(`Divisi wajib dipilih untuk jabatan "${selectedRole.name}"`);
                       showToast(`Divisi wajib dipilih untuk jabatan "${selectedRole.name}"`, 'error');
+                      return;
+                    }
 
                     if (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) {
                       const divSubs = subDivisions.filter(sd => sd.divisionId === editingItem.item.divisionId);
@@ -13689,7 +13691,6 @@ export default function AdminPortal({
                         showToast(`Sub-divisi wajib dipilih untuk jabatan "${selectedRole.name}"`, 'error');
                         return;
                       }
-                    }                      return;
                     }
 
                     // Validasi Ketat Kuota Kepengurusan saat edit
@@ -13747,7 +13748,7 @@ export default function AdminPortal({
                     const { rawResponsibilities, ...cleanItem } = editingItem.item;
                     const finalCat = getCategoryFromLevel(selectedRole?.level ?? 5);
                     const divObj = selectedRole?.requiresDivision ? divisions.find(d => d.id === cleanItem.divisionId) : null;
-                    const finalRoleName = selectedRole?.requiresDivision && selectedRole?.name.toLowerCase() === 'pimpro' && divObj
+                    const finalRoleName = selectedRole?.requiresDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj
                       ? `Pimpro ${divObj.name}`
                       : (selectedRole?.name || cleanItem.role || '');
 
@@ -14209,7 +14210,7 @@ export default function AdminPortal({
                           const matched = tenureMembers.filter(m => {
                             if (m.roleId && m.roleId === role.id) return true;
                             const mRole = String(m.role || '').toLowerCase().trim();
-                            const rName = role.name.toLowerCase().trim();
+                            const rName = String(role?.name || '').toLowerCase().trim();
                             return mRole === rName || (role.requiresDivision && mRole.startsWith(rName));
                           });
                           const isFull = role.max > 0 && matched.length >= role.max;
@@ -14417,7 +14418,7 @@ export default function AdminPortal({
               <input
                 type="text"
                 placeholder="Contoh: Sekretaris, Bendahara, Ketua Divisi, Dewan Pembina"
-                value={roleModal.role.name}
+                value={roleModal?.role?.name || ''}
                 onChange={(e) => setRoleModal({ ...roleModal, role: { ...roleModal.role, name: e.target.value } })}
                 style={{
                   width: '100%',
@@ -14436,7 +14437,7 @@ export default function AdminPortal({
                 Tingkatan di Bagan Organigram *
               </label>
               <select
-                value={roleModal.role.level ?? 5}
+                value={roleModal?.role?.level ?? 5}
                 onChange={(e) => setRoleModal({ ...roleModal, role: { ...roleModal.role, level: Number(e.target.value) } })}
                 style={{
                   width: '100%',
@@ -14450,7 +14451,7 @@ export default function AdminPortal({
               >
                 {LEVEL_OPTIONS.map((lvl) => (
                   <option key={lvl.level} value={lvl.level}>
-                    {formatLevelOptionLabel(lvl, tenureRoles, roleModal.tenureId || selectedOrgTenureId || activeTenure?.id || tenures[0]?.id)}
+                    {formatLevelOptionLabel(lvl, tenureRoles, roleModal?.tenureId || selectedOrgTenureId || activeTenure?.id || tenures[0]?.id)}
                   </option>
                 ))}
               </select>
@@ -14466,7 +14467,7 @@ export default function AdminPortal({
                   min="0"
                   max="100"
                   placeholder="0 = Unlimited"
-                  value={roleModal.role.max ?? 0}
+                  value={roleModal?.role?.max ?? 0}
                   onChange={(e) => setRoleModal({ ...roleModal, role: { ...roleModal.role, max: parseInt(e.target.value) || 0 } })}
                   style={{
                     width: '100px',
@@ -14481,7 +14482,7 @@ export default function AdminPortal({
                   }}
                 />
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  {Number(roleModal.role.max) > 0 ? 'orang (dibatasi)' : 'orang (Tanpa Batas / Unlimited)'}
+                  {Number(roleModal?.role?.max || 0) > 0 ? 'orang (dibatasi)' : 'orang (Tanpa Batas / Unlimited)'}
                 </span>
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
@@ -14501,7 +14502,7 @@ export default function AdminPortal({
               <input
                 type="checkbox"
                 id="modalRequireDiv"
-                checked={Boolean(roleModal.role.requiresDivision)}
+                checked={Boolean(roleModal?.role?.requiresDivision)}
                 onChange={(e) => setRoleModal({ ...roleModal, role: { ...roleModal.role, requiresDivision: e.target.checked } })}
                 style={{ width: '16px', height: '16px', cursor: 'pointer' }}
               />
@@ -14514,12 +14515,12 @@ export default function AdminPortal({
 
               </div>
 
-              {Boolean(roleModal.role.requiresDivision) && (
+              {Boolean(roleModal?.role?.requiresDivision) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '24px', paddingTop: '6px', borderTop: '1px dashed var(--border-card)' }}>
                   <input
                     type="checkbox"
                     id="modalRequireSubDiv"
-                    checked={Boolean(roleModal.role.requiresSubDivision)}
+                    checked={Boolean(roleModal?.role?.requiresSubDivision)}
                     onChange={(e) => setRoleModal({
                       ...roleModal,
                       role: { ...roleModal.role, requiresSubDivision: e.target.checked }
@@ -14619,7 +14620,7 @@ export default function AdminPortal({
                   Tidak Dapat Menghapus Role
                 </h4>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Role "{roleDeleteWarning.role.name}" masih memiliki ketergantungan personel
+                  Role "{roleDeleteWarning?.role?.name || ''}" masih memiliki ketergantungan personel
                 </div>
               </div>
             </div>

@@ -64,6 +64,26 @@ export default class ErrorBoundary extends React.Component {
             Sistem mendeteksi kendala saat merender komponen. Silakan muat ulang halaman atau kembali ke beranda utama.
           </p>
 
+          {this.state.error && (
+            <div style={{
+              maxWidth: '560px',
+              width: '100%',
+              textAlign: 'left',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: 'rgba(244, 63, 94, 0.08)',
+              border: '1px solid rgba(244, 63, 94, 0.3)',
+              color: '#f43f5e',
+              fontSize: '0.8rem',
+              fontFamily: 'monospace',
+              wordBreak: 'break-word',
+              maxHeight: '180px',
+              overflowY: 'auto'
+            }}>
+              <strong>Error Info:</strong> {this.state.error.toString()}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button
               type="button"

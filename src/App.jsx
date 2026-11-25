@@ -1669,85 +1669,87 @@ export default function App() {
           )}
 
           {effectiveTab === 'admin' && (
-            <AdminPortal
-              onBack={() => {
-                if ((window.location.pathname || '').replace(/\/+$/, '') === '/admin') {
-                  window.history.pushState(null, '', '/');
-                }
-                setCurrentTab(visiblePublicPages[0] || 'home');
-              }}
-              tenures={tenures}
-              activeTenure={activeTenure}
-              roleQuotas={roleQuotas}
-              onUpdateRoleQuotas={handleUpdateRoleQuotas}
-              tenureRoles={tenureRoles}
-              onAddTenureRole={handleAddTenureRole}
-              onUpdateTenureRole={handleUpdateTenureRole}
-              onDeleteTenureRole={handleDeleteTenureRole}
-              onSelectTenure={handleSelectTenure}
-              onAddTenure={handleAddTenure}
-              onUpdateTenure={handleUpdateTenure}
-              onDeleteTenure={handleDeleteTenure}
-              divisions={divisions}
-              onAddDivision={handleAddDivision}
-              onUpdateDivision={handleUpdateDivision}
-              onDeleteDivision={handleDeleteDivision}
-              forms={forms}
-              onAddForm={handleAddForm}
-              onUpdateForm={handleUpdateForm}
-              onDeleteForm={handleDeleteForm}
-              submissions={submissions}
-              onUpdateSubmission={handleUpdateSubmission}
-              onDeleteSubmission={handleDeleteSubmission}
-              galleries={galleries}
-              onAddGallery={handleAddGallery}
-              onUpdateGallery={handleUpdateGallery}
-              onDeleteGallery={handleUpdateGallery ? handleDeleteGallery : undefined}
-              members={members}
-              onAddMember={handleAddMember}
-              onUpdateMember={handleUpdateMember}
-              onDeleteMember={handleDeleteMember}
-              events={events}
-              onAddEvent={handleAddEvent}
-              onUpdateEvent={handleAddEvent ? handleUpdateEvent : undefined}
-              onDeleteEvent={handleDeleteEvent}
-              subDivisions={subDivisions}
-              onAddSubDivision={handleAddSubDivision}
-              onUpdateSubDivision={handleUpdateSubDivision}
-              onDeleteSubDivision={handleDeleteSubDivision}
-              devotions={devotions}
-              onAddDevotion={handleAddDevotion}
-              onUpdateDevotion={handleUpdateDevotion}
-              onDeleteDevotion={handleDeleteDevotion}
-              worshipSongs={worshipSongs}
-              onAddWorshipSong={handleAddWorshipSong}
-              onUpdateWorshipSong={handleUpdateWorshipSong}
-              onDeleteWorshipSong={handleDeleteWorshipSong}
-              easyWorshipSchedules={easyWorshipSchedules}
-              onAddEasyWorshipSchedule={handleAddEasyWorshipSchedule}
-              onUpdateEasyWorshipSchedule={handleUpdateEasyWorshipSchedule}
-              onDeleteEasyWorshipSchedule={handleDeleteEasyWorshipSchedule}
-              brandAssets={brandAssets}
-              onAddBrandAsset={handleAddBrandAsset}
-              onUpdateBrandAsset={handleUpdateBrandAsset}
-              onDeleteBrandAsset={handleDeleteBrandAsset}
-              eventRsvps={eventRsvps}
-              onDeleteEventRsvp={handleDeleteEventRsvp}
-              faqs={faqs}
-              onAddFaq={handleAddFaq}
-              onUpdateFaq={handleUpdateFaq}
-              onDeleteFaq={handleDeleteFaq}
-              announcementBar={announcementBar}
-              onUpdateAnnouncementBar={handleUpdateAnnouncementBar}
-              pageVisibility={pageVisibility}
-              onUpdatePageVisibility={setPageVisibility}
-              syncStatus={syncStatus}
-              onForceSync={syncFromCloud}
-              onResetDefault={handleResetDefault}
-              onRestoreBackup={handleRestoreBackup}
-              theme={theme}
-              luckyDraws={luckyDraws}
-            />
+            <ErrorBoundary onResetTab={() => setCurrentTab('home')}>
+              <AdminPortal
+                onBack={() => {
+                  if ((window.location.pathname || '').replace(/\/+$/, '') === '/admin') {
+                    window.history.pushState(null, '', '/');
+                  }
+                  setCurrentTab(visiblePublicPages[0] || 'home');
+                }}
+                tenures={tenures}
+                activeTenure={activeTenure}
+                roleQuotas={roleQuotas}
+                onUpdateRoleQuotas={handleUpdateRoleQuotas}
+                tenureRoles={tenureRoles}
+                onAddTenureRole={handleAddTenureRole}
+                onUpdateTenureRole={handleUpdateTenureRole}
+                onDeleteTenureRole={handleDeleteTenureRole}
+                onSelectTenure={handleSelectTenure}
+                onAddTenure={handleAddTenure}
+                onUpdateTenure={handleUpdateTenure}
+                onDeleteTenure={handleDeleteTenure}
+                divisions={divisions}
+                onAddDivision={handleAddDivision}
+                onUpdateDivision={handleUpdateDivision}
+                onDeleteDivision={handleDeleteDivision}
+                forms={forms}
+                onAddForm={handleAddForm}
+                onUpdateForm={handleUpdateForm}
+                onDeleteForm={handleDeleteForm}
+                submissions={submissions}
+                onUpdateSubmission={handleUpdateSubmission}
+                onDeleteSubmission={handleDeleteSubmission}
+                galleries={galleries}
+                onAddGallery={handleAddGallery}
+                onUpdateGallery={handleUpdateGallery}
+                onDeleteGallery={handleUpdateGallery ? handleDeleteGallery : undefined}
+                members={members}
+                onAddMember={handleAddMember}
+                onUpdateMember={handleUpdateMember}
+                onDeleteMember={handleDeleteMember}
+                events={events}
+                onAddEvent={handleAddEvent}
+                onUpdateEvent={handleAddEvent ? handleUpdateEvent : undefined}
+                onDeleteEvent={handleDeleteEvent}
+                subDivisions={subDivisions}
+                onAddSubDivision={handleAddSubDivision}
+                onUpdateSubDivision={handleUpdateSubDivision}
+                onDeleteSubDivision={handleDeleteSubDivision}
+                devotions={devotions}
+                onAddDevotion={handleAddDevotion}
+                onUpdateDevotion={handleUpdateDevotion}
+                onDeleteDevotion={handleDeleteDevotion}
+                worshipSongs={worshipSongs}
+                onAddWorshipSong={handleAddWorshipSong}
+                onUpdateWorshipSong={handleUpdateWorshipSong}
+                onDeleteWorshipSong={handleDeleteWorshipSong}
+                easyWorshipSchedules={easyWorshipSchedules}
+                onAddEasyWorshipSchedule={handleAddEasyWorshipSchedule}
+                onUpdateEasyWorshipSchedule={handleUpdateEasyWorshipSchedule}
+                onDeleteEasyWorshipSchedule={handleDeleteEasyWorshipSchedule}
+                brandAssets={brandAssets}
+                onAddBrandAsset={handleAddBrandAsset}
+                onUpdateBrandAsset={handleUpdateBrandAsset}
+                onDeleteBrandAsset={handleDeleteBrandAsset}
+                eventRsvps={eventRsvps}
+                onDeleteEventRsvp={handleDeleteEventRsvp}
+                faqs={faqs}
+                onAddFaq={handleAddFaq}
+                onUpdateFaq={handleUpdateFaq}
+                onDeleteFaq={handleDeleteFaq}
+                announcementBar={announcementBar}
+                onUpdateAnnouncementBar={handleUpdateAnnouncementBar}
+                pageVisibility={pageVisibility}
+                onUpdatePageVisibility={setPageVisibility}
+                syncStatus={syncStatus}
+                onForceSync={syncFromCloud}
+                onResetDefault={handleResetDefault}
+                onRestoreBackup={handleRestoreBackup}
+                theme={theme}
+                luckyDraws={luckyDraws}
+              />
+            </ErrorBoundary>
           )}
           </ErrorBoundary>
         </Suspense>
@@ -1938,10 +1940,10 @@ export default function App() {
                               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                 {(() => {
                                   const roleObj = (tenureRoles || []).find(r => r.id === m.roleId) ||
-                                    (tenureRoles || []).find(r => String(r.name || '').toLowerCase().trim() === String(m.role || '').toLowerCase().trim());
+                                    (tenureRoles || []).find(r => String(r?.name || '').toLowerCase().trim() === String(m?.role || '').toLowerCase().trim());
                                   const roleName = roleObj?.name || m.role || 'Anggota';
                                   const divObj = (divisions || []).find(d => d.id === m.divisionId);
-                                  if (divObj && !roleName.toLowerCase().includes(divObj.name.toLowerCase())) {
+                                  if (divObj && divObj.name && !String(roleName).toLowerCase().includes(String(divObj.name).toLowerCase())) {
                                     return `${roleName} • ${divObj.name}`;
                                   }
                                   return roleName;
