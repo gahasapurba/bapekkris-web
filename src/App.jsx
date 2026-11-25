@@ -67,7 +67,7 @@ import { deriveRegistrationCounts } from './utils/quotaUtils';
 const EMPTY_ROLE_QUOTAS = {};
 
 // Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
-const FULL_BLEED_TABS = new Set(['home', 'event']);
+const FULL_BLEED_TABS = new Set(['home', 'event', 'form']);
 
 // Parents are restored before children so foreign keys always resolve.
 const RESTORE_ORDER = [
