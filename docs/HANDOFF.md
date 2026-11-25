@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 1 — TypeScript `src/lib` & `src/utils` selesai).
+Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 2 — React Router selesai).
 
 ---
 
@@ -86,8 +86,14 @@ Terakhir diperbarui: 25 November 2026 (Fase 2 langkah 1 — TypeScript `src/lib`
      ```
    - ✅ `src/lib/supabase.ts` bertipe (client `Database`, mapper `fromDb` per tabel, RPC bertipe). `AppItem` sengaja masih longgar sampai state ditipekan di langkah TanStack Query.
    - ✅ Seluruh `src/utils/*` sudah `.ts` (`dateUtils`, `quotaUtils`, `urlUtils`, `memberQuotaUtils`, `audio`, `exportPdf`, `qrPosterGenerator`). Output lama vs baru dibandingkan: 914 pemanggilan contoh (3 zona waktu), 0 perbedaan.
-   - ⏭️ Berikutnya: langkah 2 (React Router). Komponen `.jsx` dimigrasi ke `.tsx` saat dipecah di langkah 4, bukan terpisah.
+   - Komponen `.jsx` dimigrasi ke `.tsx` saat dipecah di langkah 4, bukan terpisah.
 2. **React Router**: ganti routing hash manual di `App.jsx` (`parseLocationRoute`, `setCurrentTab` yang selalu `replaceState`) agar tombol Back berfungsi; pertahankan format link share `/?event=…`, `/?form=…`, `/?gallery=…`, `/?stats=…`, `/admin`.
+   - ✅ `react-router` v7 (`BrowserRouter` di `main.jsx`). Tab & ID detail kini diturunkan dari URL; logikanya di `src/lib/appNavigation.tsx` (`parseLocationRoute`, `buildTabUrl`, `useQueuedNavigation`). Format URL tidak berubah.
+   - Setiap pindah halaman = entri riwayat baru (Back/Forward berfungsi). Beberapa navigasi dalam satu klik digabung (yang terakhir menang), dan menutup detail kembali satu langkah bila entri sebelumnya memang halaman itu — Back tidak membuka ulang modal yang baru ditutup.
+   - Komponen anak memakai `useAppNavigate()` (bukan `window.location.href`, yang memuat ulang seluruh halaman).
+   - Bonus perbaikan: link `?galeri=` lama kini membuka galeri yang benar; pindah tab tidak lagi meninggalkan query lama (`/?form=X#home`); pencarian/filter galeri tidak di-reset tiap refresh data.
+   - Diuji Playwright ke `localhost`: 37/37 skenario (navbar, Back/Forward, modal acara, deep link, galeri dengan data tiruan, `/admin`, projector).
+   - ⏭️ Berikutnya: langkah 3 (TanStack Query).
 3. **TanStack Query** sebagai lapisan data (menggantikan `fetchAllCloudState` + polling 60 dtk + state besar di `App.jsx`), invalidasi per tabel dari realtime.
 4. **Pecah komponen raksasa**: `AdminPortal.jsx` (~16 ribu baris, 180+ useState) per tab ke `src/admin/tabs/*`; `EventRegistrationStats.jsx`, `DynamicFormSection.jsx` ke komponen + hooks.
 5. Validasi form admin dengan zod + react-hook-form.
