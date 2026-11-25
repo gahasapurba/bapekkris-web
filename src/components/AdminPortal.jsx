@@ -55,6 +55,7 @@ import {
   MonitorPlay
 } from 'lucide-react';
 import EventCalendarView from './EventCalendarView';
+import AdminAccountsPanel from './AdminAccountsPanel';
 import { uploadMediaToCloud } from '../lib/supabase';
 import { soundFx } from '../utils/audio';
 import { getPublicBaseUrl } from '../utils/urlUtils';
@@ -102,17 +103,8 @@ const SYNC_BADGE = {
   error: { label: 'Sebagian data gagal dimuat dari Cloud', color: '#dc2626', background: 'rgba(220, 38, 38, 0.12)' }
 };
 
-// Client-side SHA-256 hash helper using Web Crypto API
-async function sha256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Stored SHA-256 hashes (Single secure admin credential, zero plaintext in code/repository)
-const ADMIN_USER_HASH = '95e63f93f3149a27fb636d3cb5a14ed71fa1810bb64f4afda8fe729b2536710d';
-const ADMIN_PASS_HASH = '2b713d6cdc4cd249c3aa758850da2e155b88ba4661489c023764bc70413af018';
+// Tabs a division admin may open; super admins see every tab plus account management.
+const DIVISION_ADMIN_TABS = ['members', 'events', 'forms', 'submissions', 'gallery'];
 
 export default function AdminPortal({ 
   onBack, 
@@ -209,17 +201,17 @@ export default function AdminPortal({
   onResetDefault,
   onRestoreBackup,
   theme = 'dark',
-  luckyDraws = []
+  luckyDraws = [],
+  registrationCounts,
+  adminSession = { status: 'loading', profile: null },
+  onAdminLogin,
+  onAdminLogout
 }) {
   const isDark = theme === 'dark';
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      return sessionStorage.getItem('bapekkris_admin_auth_session') === 'authenticated_v2';
-    } catch (e) {
-      return false;
-    }
-  });
-  const [username, setUsername] = useState('');
+  const isAuthenticated = adminSession.status === 'admin';
+  const adminProfile = adminSession.profile;
+  const isSuperAdmin = adminProfile?.role === 'super_admin';
+  const [loginEmail, setLoginEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
@@ -270,6 +262,13 @@ export default function AdminPortal({
       sessionStorage.setItem('bapekkris_admin_active_tab', tabId);
     } catch (e) {}
   };
+
+  // Division admins are kept on the tabs their role can manage.
+  useEffect(() => {
+    if (isAuthenticated && !isSuperAdmin && !DIVISION_ADMIN_TABS.includes(activeTab)) {
+      setActiveTab(DIVISION_ADMIN_TABS[0]);
+    }
+  }, [isAuthenticated, isSuperAdmin, activeTab]);
 
   // Dynamic Role & Organization Management States
   const [isOrgRolesOpen, setIsOrgRolesOpen] = useState(false);
@@ -804,12 +803,12 @@ export default function AdminPortal({
     showToast(`Event "${savedTitle}" berhasil ditambahkan & disinkronkan!`);
   };
 
-  // Secure SHA-256 Authentication (Zero plaintext in code)
+  // Supabase Auth sign-in; access is granted only to accounts listed in admin_profiles
   const handleLogin = async (e) => {
     e.preventDefault();
     if (isLoggingIn) return;
     const errs = {};
-    if (!username.trim()) errs.loginUsername = 'Username wajib diisi';
+    if (!/\S+@\S+\.\S+/.test(loginEmail.trim())) errs.loginEmail = 'Email admin wajib diisi dengan format yang valid';
     if (!password) errs.loginPassword = 'Password wajib diisi';
     if (Object.keys(errs).length > 0) {
       setFormErrors((prev) => ({ ...prev, ...errs }));
@@ -818,27 +817,13 @@ export default function AdminPortal({
     setLoginError('');
     setIsLoggingIn(true);
     try {
-      // Natural verification pause so the user perceives credential verification
-      await new Promise((resolve) => setTimeout(resolve, 850));
-
-      const uHash = await sha256(username.trim().toLowerCase());
-      const pHash = await sha256(password);
-
-      if (uHash === ADMIN_USER_HASH && pHash === ADMIN_PASS_HASH) {
-        setIsAuthenticated(true);
-        try {
-          sessionStorage.setItem('bapekkris_admin_auth_session', 'authenticated_v2');
-        } catch (e) {}
-        setLoginError('');
-        setFormErrors({});
-        showToast('Berhasil masuk! Selamat datang di Admin Portal', 'success');
-      } else {
-        setLoginError('Username atau password salah');
-        showToast('Verifikasi gagal: Username atau password salah', 'error');
-      }
+      await onAdminLogin(loginEmail, password);
+      setPassword('');
+      setFormErrors({});
+      showToast('Berhasil masuk! Selamat datang di Admin Portal', 'success');
     } catch (err) {
-      setLoginError('Gagal memverifikasi kredensial');
-      showToast('Gagal memverifikasi kredensial', 'error');
+      setLoginError(err.message || 'Gagal memverifikasi kredensial');
+      showToast(err.message || 'Gagal memverifikasi kredensial', 'error');
     } finally {
       setIsLoggingIn(false);
     }
@@ -1730,30 +1715,31 @@ export default function AdminPortal({
           <form onSubmit={handleLogin} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
-                Username <span style={{ color: '#f43f5e' }}>*</span>
+                Email Admin <span style={{ color: '#f43f5e' }}>*</span>
               </label>
               <input
-                type="text"
-                placeholder="Masukkan Username"
-                value={username}
+                type="email"
+                autoComplete="username"
+                placeholder="nama@bankmandiri.co.id"
+                value={loginEmail}
                 disabled={isLoggingIn}
                 onChange={(e) => {
-                  setUsername(e.target.value);
-                  clearFieldError('loginUsername');
+                  setLoginEmail(e.target.value);
+                  clearFieldError('loginEmail');
                 }}
                 style={{
                   width: '100%',
                   padding: '11px 14px',
                   borderRadius: 'var(--radius-md)',
                   background: 'var(--input-bg)',
-                  border: `1.5px solid ${formErrors.loginUsername ? '#f43f5e' : 'var(--border-card)'}`,
+                  border: `1.5px solid ${formErrors.loginEmail ? '#f43f5e' : 'var(--border-card)'}`,
                   color: 'var(--text-main)',
                   outline: 'none',
                   fontSize: '0.9rem',
                   opacity: isLoggingIn ? 0.7 : 1
                 }}
               />
-              {renderFieldError('loginUsername')}
+              {renderFieldError('loginEmail')}
             </div>
 
             <div>
@@ -1977,6 +1963,9 @@ export default function AdminPortal({
                 submissions,
                 brandAssets,
                 eventRsvps,
+                luckyDraws,
+                tenureRoles,
+                roleQuotas,
                 faqs,
                 pageVisibility,
                 announcementBar
@@ -2085,11 +2074,12 @@ export default function AdminPortal({
           )}
 
           <button
-            onClick={() => {
+            onClick={async () => {
               try {
-                sessionStorage.removeItem('bapekkris_admin_auth_session');
-              } catch (e) {}
-              setIsAuthenticated(false);
+                await onAdminLogout();
+              } catch (err) {
+                showToast(err.message || 'Gagal keluar dari sesi admin', 'error');
+              }
             }}
             style={{
               display: 'flex',
@@ -2279,7 +2269,8 @@ export default function AdminPortal({
           { id: 'faqs', label: `Panduan & FAQ (${faqs.length})`, icon: MessageSquare },
           { id: 'tenure', label: `Periode Kepengurusan (${tenures.length})`, icon: Calendar },
           { id: 'visibility', label: 'Visibilitas Menu Website', icon: Eye },
-        ];
+          { id: 'admins', label: 'Kelola Admin', icon: Shield },
+        ].filter(tab => (isSuperAdmin ? true : DIVISION_ADMIN_TABS.includes(tab.id)));
         const activeTabObj = adminTabList.find(t => t.id === activeTab) || adminTabList[0];
         const ActiveTabIcon = activeTabObj.icon;
 
@@ -2500,6 +2491,10 @@ export default function AdminPortal({
       })()}
 
       {/* TAB CONTENT: VISIBILITAS HALAMAN & NAVBAR (VIEW / HIDE) */}
+      {activeTab === 'admins' && isSuperAdmin && (
+        <AdminAccountsPanel divisions={divisions} currentUserId={adminProfile?.userId} showToast={showToast} />
+      )}
+
       {activeTab === 'visibility' && (() => {
         const pageItems = [
           { id: 'home', label: 'Beranda Utama', desc: 'Halaman depan (Hero Banner, Statistik, Visi & Misi, Pimpinan, dan Komisi Pelayanan)' },
@@ -5028,8 +5023,7 @@ export default function AdminPortal({
                       events={filteredAdminEvents}
                       divisions={divisions}
                       forms={forms}
-                      eventRsvps={eventRsvps}
-                      submissions={submissions}
+                      registrationCounts={registrationCounts}
                       theme={theme}
                       activeTenure={eventTenureFilter !== 'all' ? tenures.find(t => t.id === eventTenureFilter) : activeTenure}
                       onSelectEvent={(evt) => setEditingItem({ type: 'event', item: { ...evt } })}
@@ -5063,7 +5057,7 @@ export default function AdminPortal({
                     {paginatedAdminEvents.map((evt) => {
                       const divObj = divisions.find(d => d.id === evt.divisionId);
                       const divColor = divObj?.color || 'var(--mandiri-gold)';
-                      const attendeeInfo = getUnifiedEventAttendees(evt, forms, eventRsvps, submissions);
+                      const attendeeInfo = getUnifiedEventAttendees(evt, forms, registrationCounts);
                       const isDraft = evt.isPublic !== true;
 
                       return (

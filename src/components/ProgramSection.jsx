@@ -32,6 +32,7 @@ import {
 import { formatWibEventRange, isEventPassed, formatDeadlineWib, getDeadlineStatus } from '../utils/dateUtils';
 import { getPublicBaseUrl } from '../utils/urlUtils';
 import { getUnifiedEventAttendees } from '../utils/quotaUtils';
+import { fetchEventAttendees } from '../lib/supabase';
 import EventCalendarView from './EventCalendarView';
 
 // Helper to determine optimal high-contrast text color (black vs white) on dynamic colored badges
@@ -68,7 +69,7 @@ export default function ProgramSection({
   events = [],
   divisions = [],
   activeTenure = null,
-  eventRsvps = [],
+  registrationCounts,
   onAddEventRsvp,
   theme,
   onNavigateOprec,
@@ -79,8 +80,7 @@ export default function ProgramSection({
   onNavigateForm,
   onNavigateEventStats,
   galleries = [],
-  onNavigateGallery,
-  submissions = []
+  onNavigateGallery
 }) {
   const isDark = theme === 'dark';
   const publicEvents = (events || []).filter((evt) => evt.isPublic === true);
@@ -91,6 +91,18 @@ export default function ProgramSection({
   const [eventPage, setEventPage] = useState(1);
   const [calendarEventPage, setCalendarEventPage] = useState(1);
   const [rsvpModalEvent, setRsvpModalEvent] = useState(null);
+  const [modalAttendees, setModalAttendees] = useState([]);
+
+  // Attendee names for the open RSVP modal come from a public RPC (names and attendance mode only).
+  useEffect(() => {
+    setModalAttendees([]);
+    if (!rsvpModalEvent?.id) return undefined;
+    let cancelled = false;
+    fetchEventAttendees(rsvpModalEvent.id)
+      .then((list) => { if (!cancelled) setModalAttendees(list); })
+      .catch((err) => console.error(err));
+    return () => { cancelled = true; };
+  }, [rsvpModalEvent?.id]);
   const [sameDayModalEvents, setSameDayModalEvents] = useState([]);
   const [copiedEventId, setCopiedEventId] = useState(null);
   const [currentYear, setCurrentYear] = useState(() => {
@@ -270,26 +282,19 @@ export default function ProgramSection({
     if (!rsvpModalEvent || isSubmittingRsvp) return;
     setConfirmRsvpOpen(false);
     setIsSubmittingRsvp(true);
-    const now = new Date();
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-    const ts = `${days[now.getDay()]}, ${String(now.getDate()).padStart(2, '0')} ${months[now.getMonth()]} ${now.getFullYear()} • ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} WIB`;
-
     if (onAddEventRsvp) {
       try {
-        await onAddEventRsvp({
-          id: 'rsvp-' + (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`),
+        const stored = await onAddEventRsvp({
           eventId: rsvpModalEvent.id,
-          eventTitle: rsvpModalEvent.title,
           attendeeName: rsvpName.trim(),
           attendanceMode: rsvpMode,
-          notes: rsvpNotes.trim(),
-          submittedAt: ts
+          notes: rsvpNotes.trim()
         });
+        setModalAttendees(prev => [stored, ...prev]);
       } catch (err) {
         console.error(err);
         setIsSubmittingRsvp(false);
-        setRsvpErrors({ rsvpName: 'Konfirmasi kehadiran gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
+        setRsvpErrors({ rsvpName: err.code ? err.message : 'Konfirmasi kehadiran gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
         return;
       }
     }
@@ -890,7 +895,7 @@ export default function ProgramSection({
                           <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Peserta: {evt.peserta || evt.kpi}</span>
                         </div>
                         {(() => {
-                          const attendeeInfo = getUnifiedEventAttendees(evt, forms, eventRsvps, submissions);
+                          const attendeeInfo = getUnifiedEventAttendees(evt, forms, registrationCounts);
                           const isLimited = attendeeInfo.isLimited;
                           const maxQ = attendeeInfo.maxQuota;
                           const count = attendeeInfo.count;
@@ -1121,8 +1126,7 @@ export default function ProgramSection({
           events={calendarEvents}
           divisions={divisions}
           forms={forms}
-          eventRsvps={eventRsvps}
-          submissions={submissions}
+          registrationCounts={registrationCounts}
           theme={theme}
           activeTenure={activeTenure}
           onSelectEvent={(evt, sameDayEvents) => handleOpenEventModal(evt, sameDayEvents)}
@@ -1132,7 +1136,7 @@ export default function ProgramSection({
 
       {/* SLEEK PROFESSIONAL RSVP MODAL WITH LIVE ATTENDANCE CONFIRMATION */}
       {rsvpModalEvent && (() => {
-        const currentEventRsvps = eventRsvps.filter(r => r.eventId === rsvpModalEvent.id);
+        const rsvpCount = Number(registrationCounts?.events?.[rsvpModalEvent.id] || 0);
 
         return (
           <div style={{
@@ -1281,7 +1285,7 @@ export default function ProgramSection({
                   <strong>Peserta:</strong> <span>{rsvpModalEvent.peserta || rsvpModalEvent.kpi}</span>
                 </div>
                 {(() => {
-                  const attendeeInfo = getUnifiedEventAttendees(rsvpModalEvent, forms, eventRsvps, submissions);
+                  const attendeeInfo = getUnifiedEventAttendees(rsvpModalEvent, forms, registrationCounts);
                   if (attendeeInfo.isLimited && attendeeInfo.maxQuota > 0) {
                     const maxQ = attendeeInfo.maxQuota;
                     const isFull = attendeeInfo.isFull;
@@ -1318,7 +1322,7 @@ export default function ProgramSection({
                 });
 
                 if (connectedForm) {
-                  const attendeeInfo = getUnifiedEventAttendees(rsvpModalEvent, forms, eventRsvps, submissions);
+                  const attendeeInfo = getUnifiedEventAttendees(rsvpModalEvent, forms, registrationCounts);
                   const isQuotaFull = attendeeInfo.isFull;
                   const isFormClosed = connectedForm.isOpen === false ||
                     Boolean(connectedForm.isClosed) ||
@@ -1533,7 +1537,7 @@ export default function ProgramSection({
                       const isPassed = isEventPassed(rsvpModalEvent.startDate, rsvpModalEvent.endDate) || rsvpModalEvent.status === 'Completed';
                       const isLimited = Boolean(rsvpModalEvent.isLimited);
                       const maxQ = Number(rsvpModalEvent.maxQuota || 0);
-                      const isQuotaFull = isLimited && maxQ > 0 && currentEventRsvps.length >= maxQ;
+                      const isQuotaFull = isLimited && maxQ > 0 && rsvpCount >= maxQ;
 
                       if (isPassed) {
                         return (
@@ -1573,7 +1577,7 @@ export default function ProgramSection({
                               <span>Pendaftaran RSVP Telah Ditutup (Kuota Penuh)</span>
                             </div>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
-                              Mohon maaf, kuota pendaftaran untuk kegiatan ini telah mencapai batas maksimal ({currentEventRsvps.length}/{maxQ} peserta). Pendaftaran RSVP baru telah resmi ditutup.
+                              Mohon maaf, kuota pendaftaran untuk kegiatan ini telah mencapai batas maksimal ({rsvpCount}/{maxQ} peserta). Pendaftaran RSVP baru telah resmi ditutup.
                             </p>
                           </div>
                         );
@@ -1586,7 +1590,7 @@ export default function ProgramSection({
                               ✋ Konfirmasi Kehadiran Instan (RSVP)
                             </div>
                             <span className="badge-cyan" style={{ fontSize: '0.68rem' }}>
-                              {currentEventRsvps.length}{isLimited && maxQ > 0 ? ` / ${maxQ}` : ''} Terdaftar Hadir
+                              {rsvpCount}{isLimited && maxQ > 0 ? ` / ${maxQ}` : ''} Terdaftar Hadir
                             </span>
                           </div>
 
@@ -1699,13 +1703,13 @@ export default function ProgramSection({
                       );
                     })()}
 
-                    {currentEventRsvps.length > 0 && (
+                    {modalAttendees.length > 0 && (
                       <div style={{ borderTop: '1px solid var(--border-card)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-dim)' }}>
                           Rekan yang sudah konfirmasi hadir:
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxHeight: '85px', overflowY: 'auto' }}>
-                          {currentEventRsvps.slice(0, 12).map((r) => (
+                          {modalAttendees.slice(0, 12).map((r) => (
                             <span
                               key={r.id}
                               style={{

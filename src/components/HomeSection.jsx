@@ -40,8 +40,7 @@ export default function HomeSection({
   setCurrentTab,
   recruitmentInfo,
   forms = [],
-  eventRsvps = [],
-  submissions = [],
+  registrationCounts,
   devotions = [],
   faqs = [],
   onSubmitFaqQuestion,
@@ -1011,7 +1010,7 @@ export default function HomeSection({
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(275px, 1fr))', gap: '18px' }}>
                 {activeEvents.slice(0, 3).map((evt) => {
-                  const attendeeInfo = getUnifiedEventAttendees(evt, forms, eventRsvps, submissions);
+                  const attendeeInfo = getUnifiedEventAttendees(evt, forms, registrationCounts);
                   const attendeeCount = attendeeInfo.count;
                   const attendeeLabel = attendeeInfo.isConnected ? `${attendeeCount} Peserta Terdaftar` : `${attendeeCount} Peserta RSVP`;
                   const statusColor = evt.status === 'Ongoing' ? '#10b981' : evt.status === 'Completed' ? '#64748b' : 'var(--mandiri-gold)';

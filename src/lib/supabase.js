@@ -278,7 +278,7 @@ export const rowMappers = {
       fields: Array.isArray(item.fields) ? item.fields : [],
       is_open: Boolean(item.isOpen !== false),
       requires_tracking: Boolean(item.requiresTracking !== false),
-      is_show_accepted: Boolean(item.isShowAccepted),
+      is_show_accepted: Boolean(item.showAnnouncement),
       is_limited: Boolean(item.isLimited),
       max_quota: Number(item.maxQuota || 0),
       is_event_connected: Boolean(item.isEventConnected),
@@ -299,7 +299,7 @@ export const rowMappers = {
       fields: Array.isArray(row.fields) ? row.fields : [],
       isOpen: Boolean(row.is_open !== false),
       requiresTracking: Boolean(row.requires_tracking !== false),
-      isShowAccepted: Boolean(row.is_show_accepted),
+      showAnnouncement: Boolean(row.is_show_accepted),
       isLimited: Boolean(row.is_limited),
       maxQuota: Number(row.max_quota || 0),
       isEventConnected: Boolean(row.is_event_connected),
@@ -544,9 +544,10 @@ export const rowMappers = {
 // DATA FETCHING
 // ============================================================================
 
-// Tables holding personal data of registrants are never persisted in the browser cache.
-const UNCACHED_KEYS = ['submissions', 'eventRsvps', 'luckyDraws'];
-UNCACHED_KEYS.forEach((key) => {
+// Tables holding personal data of registrants: readable by authorized admins only and
+// never persisted in the browser cache.
+const PRIVATE_KEYS = ['submissions', 'eventRsvps', 'luckyDraws'];
+PRIVATE_KEYS.forEach((key) => {
   try { localStorage.removeItem(LOCAL_PREFIX + key); } catch (e) { /* storage unavailable */ }
 });
 
@@ -578,13 +579,15 @@ const SETTING_KEYS = {
 };
 
 /**
- * Loads every table. Only tables that were fetched successfully are present in the result,
- * so callers never mistake a failed request for an empty table.
+ * Loads all public tables, plus the private ones when an admin is signed in. Visitors receive
+ * aggregated registration counts instead. Only data that was fetched successfully is present
+ * in the result, so callers never mistake a failed request for an empty table.
  */
-export async function fetchAllCloudState() {
-  const keys = Object.keys(FETCH_ORDER);
-  const [settingsRes, ...tableResults] = await Promise.all([
+export async function fetchAllCloudState({ includePrivate = false } = {}) {
+  const keys = Object.keys(FETCH_ORDER).filter((key) => includePrivate || !PRIVATE_KEYS.includes(key));
+  const [settingsRes, countsRes, ...tableResults] = await Promise.all([
     supabase.from('page_settings').select('*'),
+    includePrivate ? Promise.resolve(null) : supabase.rpc('get_registration_counts'),
     ...keys.map((key) => {
       const column = FETCH_ORDER[key];
       return supabase.from(TABLE_MAP[key]).select('*').order(column, { ascending: !DESCENDING_ORDER.has(column) });
@@ -601,8 +604,21 @@ export async function fetchAllCloudState() {
       return;
     }
     result[key] = res.data.map(rowMappers[key].fromDb);
-    if (!UNCACHED_KEYS.includes(key)) saveLocalCache(key, result[key]);
+    if (!PRIVATE_KEYS.includes(key)) saveLocalCache(key, result[key]);
   });
+
+  if (countsRes) {
+    if (countsRes.error || !Array.isArray(countsRes.data)) {
+      failed.push('registrationCounts');
+    } else {
+      const counts = { forms: {}, events: {} };
+      countsRes.data.forEach(({ kind, ref_id: refId, total }) => {
+        if (kind === 'form') counts.forms[refId] = total;
+        if (kind === 'event') counts.events[refId] = total;
+      });
+      result.registrationCounts = counts;
+    }
+  }
 
   if (settingsRes.error || !Array.isArray(settingsRes.data)) {
     failed.push('pageSettings');
@@ -720,6 +736,159 @@ export async function saveSetting(key, value) {
     `Gagal menyimpan pengaturan ${settingKey}`
   );
   saveLocalCache(key, value);
+}
+
+// ============================================================================
+// PUBLIC RPC (registrations go through database functions that enforce
+// deadline, quota and uniqueness atomically and expose only what is needed)
+// ============================================================================
+
+const RPC_ERROR_MESSAGES = {
+  FORM_NOT_FOUND: 'Formulir tidak ditemukan atau sudah dihapus.',
+  FORM_CLOSED: 'Formulir ini sedang ditutup.',
+  FORM_DEADLINE_PASSED: 'Batas waktu pendaftaran formulir ini telah berakhir.',
+  FORM_QUOTA_FULL: 'Maaf, kuota pendaftaran formulir ini telah terpenuhi.',
+  FORM_DUPLICATE: 'Data pada field unik sudah pernah didaftarkan sebelumnya.',
+  EVENT_NOT_FOUND: 'Acara tidak ditemukan atau tidak dibuka untuk umum.',
+  RSVP_QUOTA_FULL: 'Maaf, kuota kehadiran acara ini telah terpenuhi.',
+  INVALID_PAYLOAD: 'Data yang dikirim tidak valid.',
+  PAYLOAD_TOO_LARGE: 'Data yang dikirim terlalu besar.',
+  NOT_AUTHORIZED: 'Anda tidak memiliki izin untuk tindakan ini.',
+  USER_NOT_FOUND: 'Email belum terdaftar di Supabase Authentication. Buat akunnya terlebih dahulu.',
+  CANNOT_DEMOTE_SELF: 'Anda tidak dapat menurunkan peran akun Anda sendiri.',
+  CANNOT_REVOKE_SELF: 'Anda tidak dapat mencabut akses akun Anda sendiri.'
+};
+
+/** Error raised by an RPC, carrying the machine-readable code and a user-facing message. */
+export class RpcError extends Error {
+  constructor(code, detail, rawMessage) {
+    const isKnown = Object.prototype.hasOwnProperty.call(RPC_ERROR_MESSAGES, code);
+    super(isKnown ? RPC_ERROR_MESSAGES[code] : (rawMessage || 'Terjadi kesalahan pada server.'));
+    // Only business-rule rejections carry a code; network or permission failures do not.
+    this.code = isKnown ? code : null;
+    this.detail = detail;
+  }
+}
+
+async function callRpc(name, params) {
+  const { data, error } = await supabase.rpc(name, params);
+  if (error) {
+    const [code, detail] = String(error.message || '').split(':');
+    throw new RpcError(code, detail, error.message);
+  }
+  return data;
+}
+
+/** Submits a public form. Returns the registration id generated by the database. */
+export function submitFormRegistration(formId, data, files = {}) {
+  return callRpc('submit_form', { p_form_id: formId, p_data: data, p_files: files });
+}
+
+/** Submits a public RSVP. Returns the RSVP id generated by the database. */
+export function submitEventRsvp(eventId, attendeeName, attendanceMode, notes = '') {
+  return callRpc('submit_rsvp', {
+    p_event_id: eventId,
+    p_attendee_name: attendeeName,
+    p_attendance_mode: attendanceMode,
+    p_notes: notes
+  });
+}
+
+export async function fetchEventAttendees(eventId) {
+  const rows = await callRpc('get_event_attendees', { p_event_id: eventId });
+  return (rows || []).map((row) => ({
+    id: row.id,
+    eventId,
+    attendeeName: row.attendee_name,
+    attendanceMode: row.attendance_mode,
+    createdAt: row.created_at
+  }));
+}
+
+export function isSubmissionValueTaken(formId, fieldId, value) {
+  return callRpc('is_submission_value_taken', { p_form_id: formId, p_field_id: fieldId, p_value: value });
+}
+
+export async function trackSubmissions(query) {
+  const rows = await callRpc('track_submissions', { p_query: query });
+  return (rows || []).map((row) => ({
+    id: row.id,
+    formId: row.form_id,
+    status: row.status,
+    adminNotes: row.admin_notes || '',
+    data: row.data || {},
+    createdAt: row.created_at
+  }));
+}
+
+export async function fetchAcceptedSubmissions(formId) {
+  const rows = await callRpc('get_accepted_submissions', { p_form_id: formId });
+  return (rows || []).map((row) => ({
+    id: row.id,
+    formId: row.form_id,
+    createdAt: row.created_at,
+    adminNotes: row.admin_notes || '',
+    participantName: row.participant_name,
+    participantDetail: row.participant_detail
+  }));
+}
+
+// ============================================================================
+// ADMIN AUTHENTICATION (Supabase Auth + admin_profiles roles)
+// ============================================================================
+
+function mapAdminProfile(row) {
+  return {
+    userId: row.user_id,
+    email: row.email,
+    displayName: row.display_name || '',
+    role: row.role,
+    divisionId: row.division_id || null
+  };
+}
+
+/** Returns the admin profile of the signed-in user, or null when the user is not an admin. */
+export async function fetchAdminProfile(userId) {
+  const { data, error } = await supabase.from('admin_profiles').select('*').eq('user_id', userId).maybeSingle();
+  if (error) throw new Error(`Gagal memuat profil admin: ${error.message}`);
+  return data ? mapAdminProfile(data) : null;
+}
+
+export async function signInAdmin(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) {
+    throw new Error(error.message === 'Invalid login credentials' ? 'Email atau password salah' : error.message);
+  }
+  const profile = await fetchAdminProfile(data.user.id);
+  if (!profile) {
+    await supabase.auth.signOut();
+    throw new Error('Akun ini belum memiliki akses admin. Hubungi super admin.');
+  }
+  return profile;
+}
+
+export async function signOutAdmin() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw new Error(error.message);
+}
+
+export async function listAdminProfiles() {
+  const { data, error } = await supabase.from('admin_profiles').select('*').order('created_at', { ascending: true });
+  if (error) throw new Error(`Gagal memuat daftar admin: ${error.message}`);
+  return data.map(mapAdminProfile);
+}
+
+export function assignAdminRole(email, role, divisionId, displayName = '') {
+  return callRpc('assign_admin_role', {
+    p_email: email,
+    p_role: role,
+    p_division_id: divisionId || null,
+    p_display_name: displayName
+  });
+}
+
+export function revokeAdminRole(userId) {
+  return callRpc('revoke_admin_role', { p_user_id: userId });
 }
 
 // ============================================================================

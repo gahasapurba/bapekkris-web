@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import { EyeOff, Sun, Moon, Search, X, Users, Calendar, ClipboardList, Download, ChevronRight } from 'lucide-react';
 import StarfieldBackground from './components/StarfieldBackground';
 import Navbar from './components/Navbar';
 import HomeSection from './components/HomeSection';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
+import AdminOnlyNotice from './components/AdminOnlyNotice';
 
 const OrganizationSection = lazy(() => import('./components/OrganizationSection'));
 const ProgramSection = lazy(() => import('./components/ProgramSection'));
@@ -32,6 +33,11 @@ import {
   fetchAllCloudState,
   insertRow,
   insertRows,
+  submitFormRegistration,
+  submitEventRsvp,
+  fetchAdminProfile,
+  signInAdmin,
+  signOutAdmin,
   saveRow,
   saveRows,
   deleteRow,
@@ -41,6 +47,7 @@ import {
 } from './lib/supabase';
 import { formatDeadlineWib, isEventPassed } from './utils/dateUtils';
 import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
+import { deriveRegistrationCounts, EMPTY_REGISTRATION_COUNTS } from './utils/quotaUtils';
 
 const CLOUD_POLL_INTERVAL_MS = 60000;
 const REALTIME_DEBOUNCE_MS = 1000;
@@ -321,6 +328,10 @@ export default function App() {
   const [roleQuotas, setRoleQuotas] = useState(() => loadLocalCache('roleQuotas', {}));
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [syncStatus, setSyncStatus] = useState('synced');
+  // Supabase Auth session of an admin: 'loading' | 'signedOut' | 'admin'
+  const [adminSession, setAdminSession] = useState({ status: 'loading', profile: null });
+  const isAdmin = adminSession.status === 'admin';
+  const [publicRegistrationCounts, setPublicRegistrationCounts] = useState(EMPTY_REGISTRATION_COUNTS);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
 
@@ -344,12 +355,14 @@ export default function App() {
   const latestStateRef = useRef({ members, divisions, tenureRoles });
   latestStateRef.current = { members, divisions, tenureRoles };
   const syncSeqRef = useRef(0);
+  const isAdminRef = useRef(isAdmin);
+  isAdminRef.current = isAdmin;
 
   // Pull & Reconcile Cloud State across devices. Never writes back to the database.
   const syncFromCloud = useCallback(async () => {
     const seq = ++syncSeqRef.current;
     setSyncStatus('syncing');
-    const cloud = await fetchAllCloudState();
+    const cloud = await fetchAllCloudState({ includePrivate: isAdminRef.current });
     // A newer sync started meanwhile; its response supersedes this one.
     if (seq !== syncSeqRef.current) return;
 
@@ -422,6 +435,7 @@ export default function App() {
     if (cloud.roleQuotas && typeof cloud.roleQuotas === 'object') {
       setRoleQuotas(cloud.roleQuotas);
     }
+    if (cloud.registrationCounts) setPublicRegistrationCounts(cloud.registrationCounts);
     setSyncStatus(cloud.failed.length > 0 ? 'error' : 'synced');
   }, []);
 
@@ -439,14 +453,72 @@ export default function App() {
     }
   }, [syncFromCloud]);
 
+  // Track the Supabase Auth session and the admin role attached to it.
+  useEffect(() => {
+    let cancelled = false;
+    const resolveSession = async (session) => {
+      if (!session) {
+        if (!cancelled) setAdminSession({ status: 'signedOut', profile: null });
+        return;
+      }
+      try {
+        const profile = await fetchAdminProfile(session.user.id);
+        if (!cancelled) setAdminSession(profile ? { status: 'admin', profile } : { status: 'signedOut', profile: null });
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setAdminSession({ status: 'signedOut', profile: null });
+      }
+    };
+    supabase.auth.getSession().then(({ data }) => resolveSession(data.session));
+    // Deferred: Supabase must not be queried synchronously inside the auth callback.
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => resolveSession(session), 0);
+    });
+    return () => {
+      cancelled = true;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Private data is loaded only for admins and dropped as soon as the admin signs out.
+  useEffect(() => {
+    if (adminSession.status === 'loading') return;
+    if (!isAdmin) {
+      setSubmissions([]);
+      setEventRsvps([]);
+      setLuckyDraws([]);
+    }
+    syncFromCloud();
+  }, [isAdmin, adminSession.status, syncFromCloud]);
+
+  const registrationCounts = useMemo(
+    () => (isAdmin ? deriveRegistrationCounts(submissions, eventRsvps) : publicRegistrationCounts),
+    [isAdmin, submissions, eventRsvps, publicRegistrationCounts]
+  );
+
+  const handleAdminLogin = async (email, password) => {
+    const profile = await signInAdmin(email, password);
+    setAdminSession({ status: 'admin', profile });
+    return profile;
+  };
+  const handleAdminLogout = async () => {
+    await signOutAdmin();
+    setAdminSession({ status: 'signedOut', profile: null });
+  };
+
+  const bumpPublicCount = (kind, id) => {
+    setPublicRegistrationCounts(prev => ({
+      ...prev,
+      [kind]: { ...prev[kind], [id]: (prev[kind][id] || 0) + 1 }
+    }));
+  };
+
   const handleUpdateRoleQuotas = async (updatedQuotas) => {
     setRoleQuotas(updatedQuotas);
     await persist('Kuota jabatan', () => saveSetting('roleQuotas', updatedQuotas));
   };
 
   useEffect(() => {
-    syncFromCloud();
-
     const onFocus = () => syncFromCloud();
     window.addEventListener('focus', onFocus);
 
@@ -759,11 +831,20 @@ export default function App() {
     }
   };
 
-  // Submissions. Public submissions are inserted as single rows and only shown as successful once stored.
-  const handleSubmitSubmission = async (newSub) => {
-    const withStatus = { status: 'Submitted', adminNotes: '', ...newSub };
-    await insertRow('submissions', withStatus);
-    setSubmissions(prev => [withStatus, ...prev.filter(s => s.id !== withStatus.id)]);
+  // Submissions. Public registrations go through the submit_form RPC, which enforces deadline, quota
+  // and unique fields atomically. Returns the registration id generated by the database.
+  const handleSubmitSubmission = async ({ formId, data, files }) => {
+    const id = await submitFormRegistration(formId, data, files);
+    if (isAdmin) {
+      const now = new Date().toISOString();
+      setSubmissions(prev => [
+        { id, formId, data, files, status: 'Submitted', adminNotes: '', createdAt: now, updatedAt: now },
+        ...prev
+      ]);
+    } else {
+      bumpPublicCount('forms', formId);
+    }
+    return id;
   };
   const handleUpdateSubmission = async (updatedSub) => {
     const oldUrls = getSubmissionFileUrls(submissions.find(s => s.id === updatedSub.id)?.files);
@@ -885,10 +966,17 @@ export default function App() {
     await persist('Penghapusan jadwal EasyWorship', () => deleteRow('easyWorshipSchedules', schId));
   };
 
-  // Event RSVP. Public RSVPs are inserted as single rows and only shown once stored.
-  const handleAddEventRsvp = async (newRsvp) => {
-    await insertRow('eventRsvps', newRsvp);
-    setEventRsvps(prev => [newRsvp, ...prev.filter(r => r.id !== newRsvp.id)]);
+  // Event RSVP via the submit_rsvp RPC (event quota enforced in the database). Returns the stored RSVP.
+  const handleAddEventRsvp = async ({ eventId, attendeeName, attendanceMode, notes }) => {
+    const id = await submitEventRsvp(eventId, attendeeName, attendanceMode, notes);
+    const now = new Date().toISOString();
+    const stored = { id, eventId, attendeeName, attendanceMode, notes, createdAt: now, updatedAt: now };
+    if (isAdmin) {
+      setEventRsvps(prev => [stored, ...prev]);
+    } else {
+      bumpPublicCount('events', eventId);
+    }
+    return stored;
   };
   const handleDeleteEventRsvp = (rsvpId) => {
     setEventRsvps(prev => prev.filter(r => r.id !== rsvpId));
@@ -1244,8 +1332,7 @@ export default function App() {
               members={members}
               setCurrentTab={setCurrentTab}
               forms={forms}
-              eventRsvps={eventRsvps}
-              submissions={submissions}
+              registrationCounts={registrationCounts}
               devotions={devotions}
               faqs={faqs}
               onSubmitFaqQuestion={handleSubmitPublicFaq}
@@ -1289,7 +1376,7 @@ export default function App() {
               tenures={tenures}
               theme={theme}
               onNavigateOprec={isPageVisible('form') ? () => setCurrentTab('form') : undefined}
-              eventRsvps={eventRsvps}
+              registrationCounts={registrationCounts}
               onAddEventRsvp={handleAddEventRsvp}
               initialEventId={activeEventIdFromUrl}
               onSelectEventUrl={(eId) => setCurrentTab('event', null, eId, false)}
@@ -1298,11 +1385,18 @@ export default function App() {
               onNavigateEventStats={(eId) => setCurrentTab('event-stats', null, eId)}
               galleries={galleries}
               onNavigateGallery={(gId) => setCurrentTab('galeri', null, null, true, gId)}
-              submissions={submissions}
             />
           )}
 
-          {effectiveTab === 'event-stats' && (
+          {effectiveTab === 'event-stats' && !isAdmin && (
+            <AdminOnlyNotice
+              isLoading={adminSession.status === 'loading'}
+              onLogin={() => setCurrentTab('admin')}
+              onBack={() => setCurrentTab('event')}
+            />
+          )}
+
+          {effectiveTab === 'event-stats' && isAdmin && (
             <EventRegistrationStats
               eventId={activeEventIdFromUrl}
               events={events}
@@ -1376,8 +1470,7 @@ export default function App() {
               forms={forms}
               divisions={divisions}
               events={events}
-              eventRsvps={eventRsvps}
-              submissions={submissions}
+              registrationCounts={registrationCounts}
               onSubmitSubmission={handleSubmitSubmission}
               theme={theme}
               initialFormId={activeFormIdFromUrl}
@@ -1467,6 +1560,10 @@ export default function App() {
                 onRestoreBackup={handleRestoreBackup}
                 theme={theme}
                 luckyDraws={luckyDraws}
+                registrationCounts={registrationCounts}
+                adminSession={adminSession}
+                onAdminLogin={handleAdminLogin}
+                onAdminLogout={handleAdminLogout}
               />
             </ErrorBoundary>
           )}
