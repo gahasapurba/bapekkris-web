@@ -7,14 +7,13 @@ const selectClass = 'h-10 max-w-full cursor-pointer rounded-full border border-l
 
 export default function StatsView() {
   const {
-    choiceFields, connectedForm, copySuccess, currentPage, diagramData, dropdownFields, dropdownFilters, event, activeDiagramFieldId,
+    choiceFields, connectedForm, formFields, copySuccess, currentPage, diagramData, dropdownFields, dropdownFilters, event, activeDiagramFieldId,
     filteredSubmissions, formSubmissions, getDropdownOptions, handleCopyLink, handleExportCsv, handleGeneratePoster, handleHeaderSort,
     handleResetFilters, hasActiveFilters, isFormClosed, isGeneratingPoster, isLuckyDrawEnabled, pageSize, paginatedSubmissions,
     qrCodeDataUrl, searchPlaceholder, searchQuery, setActiveDiagramFieldId, setCurrentPage, setDropdownFilters, setPageSize,
     setSearchQuery, setWinnerFilter, sortConfig, totalFiltered, totalPages, winnerFilter, wonIdsSet
   } = useRegistrationStats();
 
-  const fields: any[] = connectedForm?.fields || [];
   const sortIcon = (key: string) => sortConfig.key === key
     ? (sortConfig.direction === 'asc' ? <ChevronUp size={14} aria-hidden="true" className="text-gold-ink" /> : <ChevronDown size={14} aria-hidden="true" className="text-gold-ink" />)
     : <ChevronsUpDown size={13} aria-hidden="true" className="text-dim" />;
@@ -68,7 +67,7 @@ export default function StatsView() {
 
           {choiceFields.length > 1 && (
             <div role="group" aria-label="Pilih pertanyaan" className="flex flex-wrap gap-1.5">
-              {choiceFields.map((cf: any) => (
+              {choiceFields.map((cf) => (
                 <button key={cf.id} type="button" aria-pressed={activeDiagramFieldId === cf.id} onClick={() => setActiveDiagramFieldId(cf.id)}
                   className={cn('inline-flex h-8 cursor-pointer items-center rounded-full border px-3 text-[0.8rem] font-semibold',
                     activeDiagramFieldId === cf.id ? 'border-action bg-action text-on-action' : 'border-line bg-transparent text-muted hover:text-ink')}>
@@ -80,7 +79,7 @@ export default function StatsView() {
 
           {diagramData.items.length > 0 ? (
             <ul className="grid list-none gap-x-6 gap-y-3 sm:grid-cols-2">
-              {diagramData.items.map((item: any, idx: number) => (
+              {diagramData.items.map((item, idx) => (
                 <li key={idx} className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between gap-2 text-[0.84rem]">
                     <span className="flex min-w-0 items-center gap-2">
@@ -115,10 +114,10 @@ export default function StatsView() {
             <Search size={15} aria-hidden="true" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-dim" />
             <Input type="search" aria-label="Cari pendaftar" placeholder={searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full rounded-full pl-10" />
           </div>
-          {dropdownFields.map((df: any) => (
-            <select key={df.id} aria-label={`Saring ${df.label}`} value={dropdownFilters[df.id] || 'ALL'} onChange={(e) => setDropdownFilters((prev: any) => ({ ...prev, [df.id]: e.target.value }))} className={selectClass}>
+          {dropdownFields.map((df) => (
+            <select key={df.id} aria-label={`Saring ${df.label}`} value={dropdownFilters[df.id] || 'ALL'} onChange={(e) => setDropdownFilters((prev) => ({ ...prev, [df.id]: e.target.value }))} className={selectClass}>
               <option value="ALL">Semua {df.label}</option>
-              {getDropdownOptions(df).map((opt: any, i: number) => <option key={i} value={opt}>{opt}</option>)}
+              {getDropdownOptions(df).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
             </select>
           ))}
           {isLuckyDrawEnabled && (
@@ -136,12 +135,12 @@ export default function StatsView() {
             <thead>
               <tr className="border-b border-line text-[0.78rem] uppercase tracking-wide text-dim">
                 <th scope="col" className="w-12 px-3 py-3 font-semibold">No</th>
-                {fields.map((f) => sortHeader(f.id, f.label))}
+                {formFields.map((f) => sortHeader(f.id, f.label))}
                 {sortHeader('createdAt', 'Waktu daftar')}
               </tr>
             </thead>
             <tbody>
-              {paginatedSubmissions.length > 0 ? paginatedSubmissions.map((sub: any, idx: number) => {
+              {paginatedSubmissions.length > 0 ? paginatedSubmissions.map((sub, idx) => {
                 const isWinner = isLuckyDrawEnabled && wonIdsSet.has(sub.id);
                 const rowIndex = pageSize === 'all' ? idx + 1 : (currentPage - 1) * pageSize + idx + 1;
                 const raw = sub.createdAt || sub.created_at || sub.submittedAt;
@@ -149,7 +148,7 @@ export default function StatsView() {
                 return (
                   <tr key={sub.id} className={cn('border-b border-line last:border-b-0', isWinner && 'bg-gold-tint')}>
                     <td className="px-3 py-2.5 tabular-nums text-dim">{rowIndex}</td>
-                    {fields.map((f, colIdx) => (
+                    {formFields.map((f, colIdx) => (
                       <td key={f.id} className={cn('px-3 py-2.5 text-ink', colIdx === 0 && 'font-semibold')}>
                         <span className="inline-flex flex-wrap items-center gap-2">
                           {String(sub.data?.[f.label] ?? sub.data?.[f.id] ?? '-')}
@@ -162,7 +161,7 @@ export default function StatsView() {
                 );
               }) : (
                 <tr>
-                  <td colSpan={2 + fields.length} className="px-3 py-10 text-center text-muted">
+                  <td colSpan={2 + formFields.length} className="px-3 py-10 text-center text-muted">
                     {hasActiveFilters ? 'Tidak ada pendaftar yang cocok dengan filter.' : 'Belum ada yang mendaftar melalui formulir ini.'}
                   </td>
                 </tr>

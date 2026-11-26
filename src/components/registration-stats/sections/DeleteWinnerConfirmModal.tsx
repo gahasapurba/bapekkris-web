@@ -3,6 +3,7 @@ import { useRegistrationStats } from '../RegistrationStatsContext';
 
 export default function DeleteWinnerConfirmModal() {
   const { getWinnerDisplayName, onDeleteLuckyDraw, setWinnerToDelete, winnerToDelete } = useRegistrationStats();
+  if (!winnerToDelete) return null;
   const close = () => setWinnerToDelete(null);
   return (
     <Dialog open onClose={close} size="sm" title="Hapus pemenang ini?"

@@ -5,7 +5,50 @@ import { generateFormQrPoster } from '../../utils/qrPosterGenerator';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
 import { useAppNavigate } from '../../lib/appNavigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { AppItem } from '../../lib/supabase';
+import type { FormField } from '../../types/content';
+import { getFormFields } from '../../utils/formMeta';
 import { DIAGRAM_COLORS } from './constants';
+import { fieldValue, participantInfo, participantName, winnerNameFrom, type SubmissionData } from './participantInfo';
+
+export interface UseEventRegistrationStatsProps {
+  eventId: string | null;
+  events?: AppItem[];
+  forms?: AppItem[];
+  submissions?: AppItem[];
+  eventRsvps?: AppItem[];
+  luckyDraws?: AppItem[];
+  onAddLuckyDraw?: (draws: AppItem[]) => void;
+  onDeleteLuckyDraw?: (drawId: string) => void;
+  onResetLuckyDraw?: (eventId: string) => void;
+  onBack?: () => void;
+  onNavigateForm?: (formId: string) => void;
+}
+
+export type RegistrationStatsState = ReturnType<typeof useEventRegistrationStats>;
+
+type PageSize = number | 'all';
+interface SortConfig { key: string; direction: 'asc' | 'desc' }
+interface DiagramItem { label: string; count: number; percentage: number; color: string }
+interface DrawCandidate { id: string; submissionId: string; name: string; department: string; identifier: string; source: string; raw: AppItem }
+
+const CHOICE_TYPES = ['select', 'radio', 'dropdown', 'choice'];
+const optionText = (opt: unknown) => (opt && typeof opt === 'object'
+  ? String((opt as { value?: string; label?: string }).value || (opt as { label?: string }).label || '')
+  : String(opt ?? '')).trim();
+const csvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
+function downloadCsv(filename: string, headers: string[], rows: string[]) {
+  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
+  const link = document.createElement('a');
+  link.setAttribute('href', encodeURI(csvContent));
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+const slug = (title?: string) => (title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event');
 
 /** State, data and handlers of EventRegistrationStats; the markup lives in EventRegistrationStats.tsx and ./sections. */
 export function useEventRegistrationStats({
@@ -15,24 +58,22 @@ export function useEventRegistrationStats({
   submissions = [],
   eventRsvps = [],
   luckyDraws = [],
-  divisions = [],
   onAddLuckyDraw,
   onDeleteLuckyDraw,
   onResetLuckyDraw,
   onBack,
-  onNavigateForm,
-  theme = 'dark'
-}) {
+  onNavigateForm
+}: UseEventRegistrationStatsProps) {
   const navigateTo = useAppNavigate();
-  const isDark = theme === 'dark';
 
   // 1. Target Event & Connected Form
   const event = useMemo(() => events.find(e => e.id === eventId), [events, eventId]);
-  const connectedForm = useMemo(() => {
+  const connectedForm = useMemo<AppItem | null>(() => {
     if (!eventId) return null;
     return forms.find(f => f.isEventConnected && f.eventId === eventId) ||
-      forms.find(f => f.eventId === eventId);
+      forms.find(f => f.eventId === eventId) || null;
   }, [forms, eventId]);
+  const formFields = useMemo(() => getFormFields(connectedForm), [connectedForm]);
 
   const isLuckyDrawEnabled = connectedForm ? Boolean(connectedForm.isLuckyDraw) : false;
 
@@ -44,7 +85,7 @@ export function useEventRegistrationStats({
   }, [connectedForm]);
 
   // View state: 'stats' | 'checkin' | 'luckydraw'
-  const [activeView, setActiveView] = useState('stats');
+  const [activeView, setActiveView] = useState<'stats' | 'checkin' | 'luckydraw'>('stats');
 
   // Submissions strictly from the connected form
   const formSubmissions = useMemo(() => {
@@ -53,47 +94,16 @@ export function useEventRegistrationStats({
   }, [submissions, connectedForm]);
 
   // Realtime Welcome Alert Queue state
-  const seenSubIdsRef = useRef(new Set());
+  const seenSubIdsRef = useRef(new Set<string>());
   const isFirstLoadRef = useRef(true);
-  const [welcomeQueue, setWelcomeQueue] = useState([]);
-  const [activeAlert, setActiveAlert] = useState(null);
+  const [welcomeQueue, setWelcomeQueue] = useState<{ id: string; name: string }[]>([]);
+  const [activeAlert, setActiveAlert] = useState<{ id: string; name: string } | null>(null);
 
-  // Helper to safely extract participant name for the toast alert
-  const extractParticipantName = useCallback((sub) => {
-    if (!sub) return 'Peserta Baru';
-    const d = sub.data || {};
-
-    // 1. Direct standard candidate keys
-    const directCandidate = d['f-fullName'] || d['f-name'] || d['fullName'] || d['namaLengkap'] || d['nama'] || d['name'] || sub.name || sub.fullName;
-    if (directCandidate && typeof directCandidate === 'string' && directCandidate.trim()) {
-      return directCandidate.trim();
-    }
-
-    // 2. Check connectedForm field definitions for label/id containing 'nama' or 'name'
-    if (connectedForm && Array.isArray(connectedForm.fields)) {
-      for (const f of connectedForm.fields) {
-        const idLower = (f.id || '').toLowerCase();
-        const lblLower = (f.label || '').toLowerCase();
-        if (lblLower.includes('nama') || lblLower.includes('name') || idLower.includes('nama') || idLower.includes('name')) {
-          const val = d[f.id] ?? d[`f-${f.id}`];
-          if (val && typeof val === 'string' && val.trim()) {
-            return val.trim();
-          }
-        }
-      }
-    }
-
-    // 3. Fallback: scan any key in data whose key name includes 'nama' or 'name'
-    for (const [key, val] of Object.entries(d)) {
-      const kLower = key.toLowerCase();
-      if ((kLower.includes('nama') || kLower.includes('name')) && val && typeof val === 'string' && val.trim()) {
-        return val.trim();
-      }
-    }
-
-    // 4. Default graceful fallback when no name field exists or was left empty
-    return 'Peserta Baru';
-  }, [connectedForm]);
+  // Participant name for the welcome alert and the check-in list
+  const extractParticipantName = useCallback(
+    (sub: AppItem | null) => participantName(sub?.data, formFields) || 'Peserta Baru',
+    [formFields]
+  );
 
   // Realtime submission detector
   useEffect(() => {
@@ -209,7 +219,7 @@ export function useEventRegistrationStats({
 
   // Poster modal state
   const [isGeneratingPoster, setIsGeneratingPoster] = useState(false);
-  const [posterModal, setPosterModal] = useState(null);
+  const [posterModal, setPosterModal] = useState<Awaited<ReturnType<typeof generateFormQrPoster>> | null>(null);
 
   const handleGeneratePoster = async () => {
     if (!connectedForm) return;
@@ -235,7 +245,7 @@ export function useEventRegistrationStats({
             return;
           }
         } catch (shareErr) {
-          if (shareErr && shareErr.name === 'AbortError') {
+          if ((shareErr as Error)?.name === 'AbortError') {
             setIsGeneratingPoster(false);
             return;
           }
@@ -248,6 +258,7 @@ export function useEventRegistrationStats({
         return;
       }
 
+      if (!result.blob) throw new Error('Poster PNG gagal dibuat');
       const blobUrl = URL.createObjectURL(result.blob);
       const a = document.createElement('a');
       a.href = blobUrl;
@@ -264,48 +275,13 @@ export function useEventRegistrationStats({
     setIsGeneratingPoster(false);
   };
 
-  // Helper to extract clean applicant info from a submission
-  const getSubmissionInfo = (sub) => {
-    const d = sub.data || {};
-    let name = '';
-    let dept = '';
-    let emailOrPhone = '';
-
-    for (const [key, val] of Object.entries(d)) {
-      const k = key.toLowerCase();
-      const strVal = String(val || '').trim();
-      if (!name && (k.includes('nama') || k.includes('peserta') || k.includes('name'))) {
-        name = strVal;
-      }
-      if (!dept && (k.includes('departemen') || k.includes('divisi') || k.includes('unit') || k.includes('dept'))) {
-        dept = strVal;
-      }
-      if (!emailOrPhone && (k.includes('email') || k.includes('whatsapp') || k.includes('hp') || k.includes('telepon') || k.includes('nip'))) {
-        emailOrPhone = strVal;
-      }
-    }
-
-    return {
-      id: sub.id,
-      name: name || sub.name || `Pendaftar #${sub.id.slice(-4)}`,
-      department: dept || sub.department || 'Bank Mandiri',
-      identifier: emailOrPhone || sub.email || sub.phone || sub.nip || '-',
-      submittedAt: sub.createdAt || sub.created_at || '',
-      source: 'Form Pendaftaran'
-    };
-  };
-
   // =========================================================================
   // DYNAMIC DIAGRAM LOGIC (Choice / Dropdown Fields)
   // =========================================================================
-  const choiceFields = useMemo(() => {
-    if (!connectedForm?.fields || !Array.isArray(connectedForm.fields)) return [];
-    return connectedForm.fields.filter(f => {
-      const type = (f.type || '').toLowerCase();
-      return ['select', 'radio', 'dropdown', 'choice'].includes(type) ||
-        Array.isArray(f.options);
-    });
-  }, [connectedForm]);
+  const choiceFields = useMemo(
+    () => formFields.filter(f => CHOICE_TYPES.includes((f.type || '').toLowerCase()) || Array.isArray(f.options)),
+    [formFields]
+  );
 
   const [activeDiagramFieldId, setActiveDiagramFieldId] = useState('');
 
@@ -320,7 +296,7 @@ export function useEventRegistrationStats({
     }
   }, [choiceFields, activeDiagramFieldId]);
 
-  const activeChoiceField = useMemo(() => {
+  const activeChoiceField = useMemo<FormField | null>(() => {
     if (!activeDiagramFieldId) return choiceFields[0] || null;
     return choiceFields.find(f => f.id === activeDiagramFieldId) || choiceFields[0] || null;
   }, [activeDiagramFieldId, choiceFields]);
@@ -329,13 +305,13 @@ export function useEventRegistrationStats({
   const diagramData = useMemo(() => {
     if (!activeChoiceField) {
       // Fallback: Status breakdown
-      const statusMap = { 'Accepted': 0, 'Submitted': 0, 'Rejected': 0 };
+      const statusMap: Record<string, number> = { 'Accepted': 0, 'Submitted': 0, 'Rejected': 0 };
       formSubmissions.forEach(s => {
         const st = s.status || 'Submitted';
         statusMap[st] = (statusMap[st] || 0) + 1;
       });
       const total = formSubmissions.length;
-      const items = Object.entries(statusMap).map(([opt, count], idx) => ({
+      const items: DiagramItem[] = Object.entries(statusMap).map(([opt, count], idx) => ({
         label: opt === 'Accepted' ? 'Diterima' : (opt === 'Submitted' ? 'Menunggu Review' : 'Ditolak'),
         count,
         percentage: total > 0 ? Math.round((count / total) * 100) : 0,
@@ -350,28 +326,18 @@ export function useEventRegistrationStats({
       };
     }
 
-    const fId = activeChoiceField.id;
     const fLabel = activeChoiceField.label || 'Pilihan';
-    const answersMap = {};
+    const answersMap: Record<string, number> = {};
     let totalAnswered = 0;
 
-    // Collect pre-defined options if available
-    const definedOptionsSet = new Set();
-    if (Array.isArray(activeChoiceField.options)) {
-      activeChoiceField.options.forEach(opt => {
-        const val = typeof opt === 'object' ? (opt.value || opt.label || '') : String(opt);
-        if (val.trim()) definedOptionsSet.add(val.trim());
-      });
-    }
-
-    // Initialize counts for defined options
-    definedOptionsSet.forEach(opt => {
+    // Pre-defined options start at zero so unanswered choices still show
+    (activeChoiceField.options || []).map(optionText).filter(Boolean).forEach(opt => {
       answersMap[opt] = 0;
     });
 
     // Tally submission responses
     formSubmissions.forEach(sub => {
-      const val = sub.data?.[fLabel] ?? sub.data?.[fId] ?? '';
+      const val = fieldValue(sub.data, activeChoiceField) ?? '';
       if (val !== undefined && val !== null && String(val).trim() !== '') {
         totalAnswered += 1;
         const ansKey = String(val).trim();
@@ -379,7 +345,7 @@ export function useEventRegistrationStats({
       }
     });
 
-    const items = Object.entries(answersMap).map(([opt, count], idx) => ({
+    const items: DiagramItem[] = Object.entries(answersMap).map(([opt, count], idx) => ({
       label: opt,
       count,
       percentage: totalAnswered > 0 ? Math.round((count / totalAnswered) * 100) : 0,
@@ -399,31 +365,15 @@ export function useEventRegistrationStats({
   // TABLE FILTERING, DYNAMIC MULTI-FILTER, SORTING & PAGINATION
   // =========================================================================
   const [searchQuery, setSearchQuery] = useState('');
-  const [dropdownFilters, setDropdownFilters] = useState({});
+  const [dropdownFilters, setDropdownFilters] = useState<Record<string, string>>({});
   const [winnerFilter, setWinnerFilter] = useState('ALL');
 
-  // Dynamic choice / dropdown fields from connected form
-  const dropdownFields = useMemo(() => {
-    if (!connectedForm?.fields || !Array.isArray(connectedForm.fields)) return [];
-    return connectedForm.fields.filter(f => {
-      const type = (f.type || '').toLowerCase();
-      return ['select', 'radio', 'dropdown', 'choice'].includes(type) ||
-        Array.isArray(f.options);
-    });
-  }, [connectedForm]);
-
   // Extract distinct available options for any dropdown field
-  const getDropdownOptions = useCallback((df) => {
-    const opts = new Set();
-    if (Array.isArray(df.options)) {
-      df.options.forEach(o => {
-        const val = typeof o === 'object' ? (o.value || o.label || '') : String(o);
-        if (val.trim()) opts.add(val.trim());
-      });
-    }
+  const getDropdownOptions = useCallback((df: FormField) => {
+    const opts = new Set<string>((df.options || []).map(optionText).filter(Boolean));
     // Also include any value that appears in the submissions data
     formSubmissions.forEach(sub => {
-      const val = sub.data?.[df.label] ?? sub.data?.[df.id];
+      const val = fieldValue(sub.data, df);
       if (val !== undefined && val !== null && String(val).trim()) {
         opts.add(String(val).trim());
       }
@@ -433,79 +383,37 @@ export function useEventRegistrationStats({
 
   // Dynamic search placeholder based on form fields
   const searchPlaceholder = useMemo(() => {
-    if (connectedForm?.fields && connectedForm.fields.length > 0) {
-      const sample = connectedForm.fields.slice(0, 3).map(f => f.label).join(', ');
-      return `Cari ${sample}...`;
-    }
+    if (formFields.length > 0) return `Cari ${formFields.slice(0, 3).map(f => f.label).join(', ')}...`;
     return 'Cari data pendaftar...';
-  }, [connectedForm]);
+  }, [formFields]);
 
   // Multi-sorting: { key, direction: 'asc' | 'desc' }
-  const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'createdAt', direction: 'desc' });
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10); // 10, 25, 50, 'all'
+  const [pageSize, setPageSize] = useState<PageSize>(10);
 
-  // Existing Lucky Draw Winners for this event (dynamically enriched from form submissions)
+  // Lucky draw winners of this event, with the name resolved from the submission when missing
   const eventWinners = useMemo(() => {
     if (!eventId) return [];
-    const rawList = (luckyDraws || []).filter(ld => ld.eventId === eventId);
-    return rawList.map((ld, idx) => {
-      const sub = formSubmissions.find(s => s.id === ld.submissionId) ||
-        formSubmissions.find(s => (s.name || '').toLowerCase() === (ld.winnerName || '').toLowerCase());
-      const subData = ld.submissionData || sub?.data || {};
-
-      let resolvedName = ld.winnerName || '';
-      if (!resolvedName && sub) {
-        if (sub.name && sub.name.trim()) {
-          resolvedName = sub.name.trim();
-        } else {
-          const nameEntry = Object.entries(subData).find(([k]) => k.toLowerCase().includes('nama'));
-          if (nameEntry && nameEntry[1]) {
-            resolvedName = String(nameEntry[1]).trim();
-          } else if (connectedForm?.fields?.[0]) {
-            const firstF = connectedForm.fields[0];
-            const val = subData[firstF.label] ?? subData[firstF.id];
-            if (val) resolvedName = String(val).trim();
-          } else {
-            const firstVal = Object.values(subData)[0];
-            if (firstVal) resolvedName = String(firstVal).trim();
-          }
-        }
-      }
-
-      return {
-        ...ld,
-        winnerName: resolvedName || ld.winnerName || 'Peserta',
-        submissionData: subData,
-        rawSubmission: sub || null
-      };
+    return luckyDraws.filter(ld => ld.eventId === eventId).map((ld): AppItem => {
+      const sub = formSubmissions.find(s => s.id === ld.submissionId) || null;
+      const subData: SubmissionData = ld.submissionData || sub?.data || {};
+      const resolvedName = ld.winnerName || (sub ? winnerNameFrom(subData, formFields) : '');
+      return { ...ld, winnerName: resolvedName || 'Peserta', submissionData: subData, rawSubmission: sub };
     });
-  }, [luckyDraws, eventId, formSubmissions, connectedForm]);
+  }, [luckyDraws, eventId, formSubmissions, formFields]);
 
-  const getWinnerDisplayName = (w) => {
+  const getWinnerDisplayName = (w: AppItem | null) => {
     if (!w) return 'Peserta';
     if (w.winnerName && w.winnerName !== 'Peserta') return w.winnerName;
-    const sub = formSubmissions.find(s => s.id === (w.submissionId || w.submission_id));
-    if (sub) {
-      if (sub.name && sub.name.trim()) return sub.name.trim();
-      const data = w.submissionData || sub.data || {};
-      const nameKey = Object.keys(data).find(k => k.toLowerCase().includes('nama'));
-      if (nameKey && data[nameKey]) return String(data[nameKey]).trim();
-      if (connectedForm?.fields?.[0]) {
-        const firstField = connectedForm.fields[0];
-        const val = data[firstField.label] ?? data[firstField.id];
-        if (val) return String(val).trim();
-      }
-      const firstVal = Object.values(data)[0];
-      if (firstVal) return String(firstVal).trim();
-    }
-    return w.winnerName || 'Peserta';
+    const sub = formSubmissions.find(s => s.id === w.submissionId);
+    return (sub && winnerNameFrom(w.submissionData || sub.data, formFields)) || w.winnerName || 'Peserta';
   };
 
   const wonIdsSet = useMemo(() => {
-    const s = new Set();
+    const s = new Set<string>();
     eventWinners.forEach(w => {
       if (w.submissionId) s.add(w.submissionId);
       if (w.winnerName) s.add(w.winnerName.toLowerCase().trim());
@@ -523,20 +431,15 @@ export function useEventRegistrationStats({
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(sub => {
         const dataValues = Object.entries(sub.data || {}).map(([k, v]) => `${k} ${v}`).join(' ').toLowerCase();
-        const rawTime = sub.createdAt || sub.created_at || sub.submittedAt || '';
-        return dataValues.includes(q) || rawTime.toLowerCase().includes(q);
+        return dataValues.includes(q) || String(sub.createdAt || '').toLowerCase().includes(q);
       });
     }
 
     // 2. Dynamic Dropdown Filters
     Object.entries(dropdownFilters).forEach(([fieldId, selectedVal]) => {
       if (selectedVal && selectedVal !== 'ALL') {
-        const fObj = connectedForm?.fields?.find(f => f.id === fieldId);
-        const fLabel = fObj?.label || fieldId;
-        result = result.filter(sub => {
-          const val = String(sub.data?.[fLabel] ?? sub.data?.[fieldId] ?? '').trim();
-          return val === selectedVal;
-        });
+        const field = formFields.find(f => f.id === fieldId) || { id: fieldId, label: fieldId };
+        result = result.filter(sub => String(fieldValue(sub.data, field) ?? '').trim() === selectedVal);
       }
     });
 
@@ -551,16 +454,14 @@ export function useEventRegistrationStats({
 
     // 4. Sorting
     result.sort((a, b) => {
-      let valA, valB;
+      let valA: number | string, valB: number | string;
       if (sortConfig.key === 'createdAt') {
-        valA = new Date(a.createdAt || a.created_at || a.submittedAt || 0).getTime();
-        valB = new Date(b.createdAt || b.created_at || b.submittedAt || 0).getTime();
+        valA = new Date(a.createdAt || 0).getTime();
+        valB = new Date(b.createdAt || 0).getTime();
       } else {
-        const fObj = connectedForm?.fields?.find(f => f.id === sortConfig.key || f.label === sortConfig.key);
-        const fLabel = fObj?.label || sortConfig.key;
-        const fId = fObj?.id || sortConfig.key;
-        valA = String(a.data?.[fLabel] ?? a.data?.[fId] ?? '').toLowerCase();
-        valB = String(b.data?.[fLabel] ?? b.data?.[fId] ?? '').toLowerCase();
+        const field = formFields.find(f => f.id === sortConfig.key || f.label === sortConfig.key) || { id: sortConfig.key, label: sortConfig.key };
+        valA = String(fieldValue(a.data, field) ?? '').toLowerCase();
+        valB = String(fieldValue(b.data, field) ?? '').toLowerCase();
       }
 
       if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -569,7 +470,7 @@ export function useEventRegistrationStats({
     });
 
     return result;
-  }, [formSubmissions, searchQuery, dropdownFilters, winnerFilter, isLuckyDrawEnabled, sortConfig, connectedForm, wonIdsSet]);
+  }, [formSubmissions, searchQuery, dropdownFilters, winnerFilter, isLuckyDrawEnabled, sortConfig, formFields, wonIdsSet]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -586,7 +487,7 @@ export function useEventRegistrationStats({
 
   const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(totalFiltered / pageSize));
 
-  const handleHeaderSort = (key) => {
+  const handleHeaderSort = (key: string) => {
     setSortConfig(prev => {
       if (prev.key === key) {
         if (prev.direction === 'asc') return { key, direction: 'desc' };
@@ -615,7 +516,6 @@ export function useEventRegistrationStats({
   // Export Table Data to CSV (100% dynamic based on actual form fields)
   const handleExportCsv = () => {
     if (formSubmissions.length === 0) return;
-    const formFields = connectedForm?.fields || [];
     const fieldHeaders = formFields.map(f => f.label || 'Field');
     const allHeaders = [
       'No',
@@ -626,12 +526,8 @@ export function useEventRegistrationStats({
 
     const rows = filteredSubmissions.map((sub, idx) => {
       const isWinner = wonIdsSet.has(sub.id) ? 'Pemenang Undian' : 'Belum Menang';
-      const fieldVals = formFields.map(f => {
-        const val = sub.data?.[f.label] ?? sub.data?.[f.id] ?? '';
-        return `"${String(val).replace(/"/g, '""')}"`;
-      });
-      const rawDate = sub.createdAt || sub.created_at || sub.submittedAt;
-      const formattedDate = formatWibTimestamp(rawDate).shortDate || rawDate || '-';
+      const fieldVals = formFields.map(f => csvCell(fieldValue(sub.data, f) ?? ''));
+      const formattedDate = formatWibTimestamp(sub.createdAt).shortDate || sub.createdAt || '-';
       return [
         idx + 1,
         ...fieldVals,
@@ -640,14 +536,7 @@ export function useEventRegistrationStats({
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [allHeaders.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `pendaftar-${event?.title ? event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`pendaftar-${slug(event?.title)}.csv`, allHeaders, rows);
   };
 
   // =========================================================================
@@ -655,25 +544,22 @@ export function useEventRegistrationStats({
   // =========================================================================
   const [winnerSearchQuery, setWinnerSearchQuery] = useState('');
   const [winnerPrizeFilter, setWinnerPrizeFilter] = useState('ALL');
-  const [winnerDropdownFilters, setWinnerDropdownFilters] = useState({});
-  const [winnerSortConfig, setWinnerSortConfig] = useState({ key: 'drawNumber', direction: 'asc' });
+  const [winnerDropdownFilters, setWinnerDropdownFilters] = useState<Record<string, string>>({});
+  const [winnerSortConfig, setWinnerSortConfig] = useState<SortConfig>({ key: 'drawNumber', direction: 'asc' });
   const [winnerCurrentPage, setWinnerCurrentPage] = useState(1);
-  const [winnerPageSize, setWinnerPageSize] = useState(10); // 10, 25, 50, 'all'
+  const [winnerPageSize, setWinnerPageSize] = useState<PageSize>(10);
 
   // Dynamic search placeholder for winners
   const winnerSearchPlaceholder = useMemo(() => {
-    if (connectedForm?.fields && connectedForm.fields.length > 0) {
-      const sample = connectedForm.fields.slice(0, 2).map(f => f.label).join(', ');
-      return `Cari pemenang, ${sample}, hadiah...`;
-    }
+    if (formFields.length > 0) return `Cari pemenang, ${formFields.slice(0, 2).map(f => f.label).join(', ')}, hadiah...`;
     return 'Cari nama, hadiah, atau data pemenang...';
-  }, [connectedForm]);
+  }, [formFields]);
 
   // Unique list of prize names among winners
   const uniquePrizeNames = useMemo(() => {
-    const set = new Set();
+    const set = new Set<string>();
     eventWinners.forEach(w => {
-      const p = w.prizeTitle || w.prizeName;
+      const p = w.prizeName;
       if (p && p.trim()) set.add(p.trim());
     });
     return Array.from(set);
@@ -706,9 +592,9 @@ export function useEventRegistrationStats({
       result = result.filter(w => {
         const subData = w.submissionData || {};
         const dataValues = Object.entries(subData).map(([k, v]) => `${k} ${v}`).join(' ').toLowerCase();
-        const pName = (w.prizeTitle || w.prizeName || '').toLowerCase();
+        const pName = (w.prizeName || '').toLowerCase();
         const wName = (w.winnerName || '').toLowerCase();
-        const rawTime = w.drawnAt || w.created_at || w.createdAt || '';
+        const rawTime = w.drawnAt || w.createdAt || '';
         const drawNum = String(w.drawNumber || '');
         return dataValues.includes(q) || pName.includes(q) || wName.includes(q) || rawTime.toLowerCase().includes(q) || drawNum.includes(q);
       });
@@ -716,42 +602,35 @@ export function useEventRegistrationStats({
 
     // 2. Prize Filter
     if (winnerPrizeFilter !== 'ALL') {
-      result = result.filter(w => (w.prizeTitle || w.prizeName || '').trim() === winnerPrizeFilter);
+      result = result.filter(w => (w.prizeName || '').trim() === winnerPrizeFilter);
     }
 
     // 3. Form Dropdown Filters
     Object.entries(winnerDropdownFilters).forEach(([fieldId, selectedVal]) => {
       if (selectedVal && selectedVal !== 'ALL') {
-        const fObj = connectedForm?.fields?.find(f => f.id === fieldId);
-        const fLabel = fObj?.label || fieldId;
-        result = result.filter(w => {
-          const subData = w.submissionData || {};
-          const val = String(subData[fLabel] ?? subData[fieldId] ?? '').trim();
-          return val === selectedVal;
-        });
+        const field = formFields.find(f => f.id === fieldId) || { id: fieldId, label: fieldId };
+        result = result.filter(w => String(fieldValue(w.submissionData, field) ?? '').trim() === selectedVal);
       }
     });
 
     // 4. Sorting
     result.sort((a, b) => {
-      let valA, valB;
+      let valA: number | string, valB: number | string;
       if (winnerSortConfig.key === 'drawNumber') {
         valA = a.drawNumber || 0;
         valB = b.drawNumber || 0;
       } else if (winnerSortConfig.key === 'prizeName') {
-        valA = (a.prizeTitle || a.prizeName || '').toLowerCase();
-        valB = (b.prizeTitle || b.prizeName || '').toLowerCase();
+        valA = (a.prizeName || '').toLowerCase();
+        valB = (b.prizeName || '').toLowerCase();
       } else if (winnerSortConfig.key === 'drawnAt') {
-        valA = new Date(a.drawnAt || a.created_at || a.createdAt || 0).getTime();
-        valB = new Date(b.drawnAt || b.created_at || b.createdAt || 0).getTime();
+        valA = new Date(a.drawnAt || a.createdAt || 0).getTime();
+        valB = new Date(b.drawnAt || b.createdAt || 0).getTime();
       } else {
-        const fObj = connectedForm?.fields?.find(f => f.id === winnerSortConfig.key || f.label === winnerSortConfig.key);
-        const fLabel = fObj?.label || winnerSortConfig.key;
-        const fId = fObj?.id || winnerSortConfig.key;
-        const subA = a.submissionData || {};
-        const subB = b.submissionData || {};
-        valA = String(subA[fLabel] ?? subA[fId] ?? (winnerSortConfig.key === connectedForm?.fields?.[0]?.id ? a.winnerName : '') ?? '').toLowerCase();
-        valB = String(subB[fLabel] ?? subB[fId] ?? (winnerSortConfig.key === connectedForm?.fields?.[0]?.id ? b.winnerName : '') ?? '').toLowerCase();
+        const field = formFields.find(f => f.id === winnerSortConfig.key || f.label === winnerSortConfig.key) || { id: winnerSortConfig.key, label: winnerSortConfig.key };
+        // The first column falls back to the winner name when the answer is missing
+        const isFirstColumn = winnerSortConfig.key === formFields[0]?.id;
+        valA = String(fieldValue(a.submissionData, field) ?? (isFirstColumn ? a.winnerName : '') ?? '').toLowerCase();
+        valB = String(fieldValue(b.submissionData, field) ?? (isFirstColumn ? b.winnerName : '') ?? '').toLowerCase();
       }
 
       if (valA < valB) return winnerSortConfig.direction === 'asc' ? -1 : 1;
@@ -760,7 +639,7 @@ export function useEventRegistrationStats({
     });
 
     return result;
-  }, [eventWinners, winnerSearchQuery, winnerPrizeFilter, winnerDropdownFilters, winnerSortConfig, connectedForm]);
+  }, [eventWinners, winnerSearchQuery, winnerPrizeFilter, winnerDropdownFilters, winnerSortConfig, formFields]);
 
   // Reset winner page when filters change
   useEffect(() => {
@@ -776,7 +655,7 @@ export function useEventRegistrationStats({
     return filteredWinners.slice(start, start + winnerPageSize);
   }, [filteredWinners, winnerCurrentPage, winnerPageSize]);
 
-  const handleWinnerHeaderSort = (key) => {
+  const handleWinnerHeaderSort = (key: string) => {
     setWinnerSortConfig(prev => {
       if (prev.key === key) {
         if (prev.direction === 'asc') return { key, direction: 'desc' };
@@ -790,7 +669,6 @@ export function useEventRegistrationStats({
   const handleExportWinnersCsv = () => {
     if (eventWinners.length === 0) return;
 
-    const formFields = connectedForm?.fields || [];
     const fieldHeaders = formFields.map(f => f.label || 'Field');
     const allHeaders = [
       'No Undian',
@@ -800,31 +678,17 @@ export function useEventRegistrationStats({
     ];
 
     const rows = filteredWinners.map((w, idx) => {
-      const subData = w.submissionData || {};
-      const rawTime = w.drawnAt || w.created_at || w.createdAt;
-      const formattedTime = formatWibTimestamp(rawTime).exact || '-';
-
-      const fieldVals = formFields.map((f, colIdx) => {
-        const val = subData[f.label] ?? subData[f.id] ?? (colIdx === 0 ? w.winnerName : '-');
-        return `"${String(val).replace(/"/g, '""')}"`;
-      });
-
+      const formattedTime = formatWibTimestamp(w.drawnAt || w.createdAt).exact || '-';
+      const fieldVals = formFields.map((f, colIdx) => csvCell(fieldValue(w.submissionData, f) ?? (colIdx === 0 ? w.winnerName : '-')));
       return [
         `"#${w.drawNumber || idx + 1}"`,
         ...fieldVals,
-        `"${String(w.prizeTitle || w.prizeName || 'Doorprize Utama').replace(/"/g, '""')}"`,
+        csvCell(w.prizeName || 'Doorprize Utama'),
         `"${formattedTime}"`
       ].join(',');
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [allHeaders.join(','), ...rows].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `pemenang-undian-${event?.title ? event.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event'}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`pemenang-undian-${slug(event?.title)}.csv`, allHeaders, rows);
   };
 
   // =========================================================================
@@ -836,22 +700,20 @@ export function useEventRegistrationStats({
   const [isRolling, setIsRolling] = useState(false);
   const [countdown, setCountdown] = useState(10);
   const [rollingName, setRollingName] = useState('Siap Mengundi...');
-  const [latestWinners, setLatestWinners] = useState([]);
+  const [latestWinners, setLatestWinners] = useState<AppItem[]>([]);
   const [showLatestWinnersModal, setShowLatestWinnersModal] = useState(false);
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
-  const [winnerToDelete, setWinnerToDelete] = useState(null);
+  const [winnerToDelete, setWinnerToDelete] = useState<AppItem | null>(null);
 
-  const rollIntervalRef = useRef(null);
-  const countdownIntervalRef = useRef(null);
+  const rollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Automatically keep selectedDrawFieldId bound to the first or available field
   useEffect(() => {
-    if (connectedForm?.fields && connectedForm.fields.length > 0) {
-      if (!selectedDrawFieldId || !connectedForm.fields.some(f => f.id === selectedDrawFieldId)) {
-        setSelectedDrawFieldId(connectedForm.fields[0].id);
-      }
+    if (formFields.length > 0 && !formFields.some(f => f.id === selectedDrawFieldId)) {
+      setSelectedDrawFieldId(formFields[0].id);
     }
-  }, [connectedForm, selectedDrawFieldId]);
+  }, [formFields, selectedDrawFieldId]);
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -863,11 +725,11 @@ export function useEventRegistrationStats({
 
   // Candidates for Lucky Draw are STRICTLY from form submissions
   const allCandidates = useMemo(() => {
-    const pool = [];
-    const seen = new Set();
+    const pool: DrawCandidate[] = [];
+    const seen = new Set<string>();
 
     formSubmissions.forEach(sub => {
-      const info = getSubmissionInfo(sub);
+      const info = participantInfo(sub as { id: string; data?: SubmissionData }, formFields);
       const key = (info.name + '|' + info.identifier).toLowerCase().trim();
       if (!seen.has(key)) {
         seen.add(key);
@@ -884,7 +746,7 @@ export function useEventRegistrationStats({
     });
 
     return pool;
-  }, [formSubmissions]);
+  }, [formSubmissions, formFields]);
 
   // Eligible pool: candidates who haven't won yet
   const eligiblePool = useMemo(() => {
@@ -898,20 +760,18 @@ export function useEventRegistrationStats({
   }, [allCandidates, wonIdsSet]);
 
   // Helper to get candidate display value based on selectedDrawFieldId
-  const getCandidateDrawDisplay = useCallback((candidate) => {
+  const drawField = formFields.find(f => f.id === selectedDrawFieldId) || formFields[0] || null;
+  const getCandidateDrawDisplay = useCallback((candidate: DrawCandidate | undefined) => {
     if (!candidate) return '';
-    const fObj = (connectedForm?.fields || []).find(f => f.id === selectedDrawFieldId) || connectedForm?.fields?.[0];
-    const fLabel = fObj?.label || '';
-    const fId = fObj?.id || '';
-    const customVal = candidate.raw?.data?.[fLabel] ?? candidate.raw?.data?.[fId];
+    const customVal = fieldValue(candidate.raw?.data, drawField);
     if (customVal !== undefined && customVal !== null && String(customVal).trim() !== '') {
       return String(customVal).trim();
     }
     return candidate.name || 'Kandidat';
-  }, [connectedForm, selectedDrawFieldId]);
+  }, [drawField]);
 
   // Safe draw count clamping
-  const handleDrawCountChange = (val) => {
+  const handleDrawCountChange = (val: string) => {
     const num = parseInt(val, 10);
     if (isNaN(num) || num <= 0) {
       setDrawCount(1);
@@ -927,8 +787,8 @@ export function useEventRegistrationStats({
 
   // Run Lucky Draw Spin with 10-Second Countdown
   const handleRunLuckyDraw = () => {
-    if (isRolling || eligiblePool.length === 0) return;
-    const requestedCount = Math.min(Math.max(1, parseInt(drawCount, 10) || 1), eligiblePool.length);
+    if (isRolling || eligiblePool.length === 0 || !event) return;
+    const requestedCount = Math.min(Math.max(1, drawCount || 1), eligiblePool.length);
 
     setIsRolling(true);
     setCountdown(10);
@@ -946,13 +806,13 @@ export function useEventRegistrationStats({
       setCountdown(currentSec);
 
       if (currentSec <= 0) {
-        clearInterval(countdownIntervalRef.current);
-        clearInterval(rollIntervalRef.current);
+        if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+        if (rollIntervalRef.current) clearInterval(rollIntervalRef.current);
 
         // Pick winners using Fisher-Yates (Knuth) Shuffle with cryptographic randomness
         const shuffled = [...eligiblePool];
         for (let i = shuffled.length - 1; i > 0; i--) {
-          let rand;
+          let rand: number;
           if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
             const buf = new Uint32Array(1);
             window.crypto.getRandomValues(buf);
@@ -966,12 +826,10 @@ export function useEventRegistrationStats({
         const chosen = shuffled.slice(0, requestedCount);
 
         const nowIso = new Date().toISOString();
-        const fObj = (connectedForm?.fields || []).find(f => f.id === selectedDrawFieldId) || connectedForm?.fields?.[0];
-        const fLabel = fObj?.label || 'Field Undian';
-        const fId = fObj?.id || '';
+        const fLabel = drawField?.label || 'Field Undian';
 
-        const newWinners = chosen.map((c, idx) => {
-          const customFieldVal = String(c.raw?.data?.[fLabel] ?? c.raw?.data?.[fId] ?? c.name ?? '');
+        const newWinners: AppItem[] = chosen.map((c, idx) => {
+          const customFieldVal = String(fieldValue(c.raw?.data, drawField) ?? c.name ?? '');
 
           return {
             id: `draw-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1009,7 +867,7 @@ export function useEventRegistrationStats({
             spread: 100,
             origin: { y: 0.6 }
           });
-        } catch (e) {}
+        } catch { /* confetti is decorative */ }
       }
     }, 1000);
   };
@@ -1023,12 +881,13 @@ export function useEventRegistrationStats({
     allCandidates,
     choiceFields,
     connectedForm,
+    formFields,
     copySuccess,
     countdown,
     currentPage,
     diagramData,
     drawCount,
-    dropdownFields,
+    dropdownFields: choiceFields,
     dropdownFilters,
     effectiveIsLimited,
     effectiveMaxQuota,
@@ -1052,7 +911,6 @@ export function useEventRegistrationStats({
     handleWinnerHeaderSort,
     hasActiveFilters,
     hasActiveWinnerFilters,
-    isDark,
     isFormClosed,
     isGeneratingPoster,
     isLuckyDrawEnabled,

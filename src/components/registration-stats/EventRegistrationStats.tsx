@@ -1,7 +1,7 @@
 import { AlertCircle, ArrowLeft, Calendar, CheckCircle2, Clock, ExternalLink, Link2, Lock, MapPin, Users } from 'lucide-react';
 import { formatToIndonesianDate, formatWibEventRange, getDeadlineStatus } from '../../utils/dateUtils';
 import { Badge, Button, EmptyState, cn } from '../../ui';
-import { useEventRegistrationStats } from './useEventRegistrationStats';
+import { useEventRegistrationStats, type UseEventRegistrationStatsProps } from './useEventRegistrationStats';
 import { RegistrationStatsContext } from './RegistrationStatsContext';
 import ViewSwitcher from './sections/ViewSwitcher';
 import StatsView from './sections/StatsView';
@@ -13,14 +13,8 @@ import DeleteWinnerConfirmModal from './sections/DeleteWinnerConfirmModal';
 import PosterModal from './sections/PosterModal';
 import DrawAlert from './sections/DrawAlert';
 
-/**
- * Values the hook exposes. Keys are checked; values stay `any` because the hook is still
- * JavaScript, where TypeScript would infer `useState(null)` as always-null.
- */
-export type RegistrationStatsState = { [K in keyof ReturnType<typeof useEventRegistrationStats>]: any };
-
-export default function EventRegistrationStats(props: any) {
-  const state: RegistrationStatsState = useEventRegistrationStats(props);
+export default function EventRegistrationStats(props: UseEventRegistrationStatsProps) {
+  const state = useEventRegistrationStats(props);
   const {
     activeAlert,
     activeView,
@@ -84,7 +78,7 @@ export default function EventRegistrationStats(props: any) {
   })();
 
   return (
-    <RegistrationStatsContext.Provider value={state}>
+    <RegistrationStatsContext.Provider value={{ ...state, event }}>
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-4 pb-24 pt-6 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
           <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack}>Kembali ke kalender acara</Button>

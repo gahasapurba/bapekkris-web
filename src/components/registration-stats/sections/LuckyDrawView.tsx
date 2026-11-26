@@ -7,7 +7,7 @@ const selectClass = 'h-10 max-w-full cursor-pointer rounded-full border border-l
 
 export default function LuckyDrawView() {
   const {
-    allCandidates, connectedForm, countdown, drawCount, dropdownFields, eligiblePool, eventWinners, filteredWinners, getDropdownOptions,
+    allCandidates, connectedForm, formFields, countdown, drawCount, dropdownFields, eligiblePool, eventWinners, filteredWinners, getDropdownOptions,
     handleDrawCountChange, handleExportWinnersCsv, handleResetWinnerFilters, handleRunLuckyDraw, handleWinnerHeaderSort, hasActiveWinnerFilters,
     isRolling, paginatedWinners, prizeName, rollingName, selectedDrawFieldId, setPrizeName, setResetConfirmOpen, setSelectedDrawFieldId,
     setWinnerCurrentPage, setWinnerDropdownFilters, setWinnerPageSize, setWinnerPrizeFilter, setWinnerSearchQuery, setWinnerToDelete,
@@ -15,7 +15,6 @@ export default function LuckyDrawView() {
     winnerSearchPlaceholder, winnerSearchQuery, winnerSortConfig
   } = useRegistrationStats();
 
-  const fields: any[] = connectedForm?.fields || [];
   const sortHeader = (key: string, label: string) => {
     const active = winnerSortConfig.key === key;
     return (
@@ -61,7 +60,7 @@ export default function LuckyDrawView() {
           </Field>
           <Field label="Data yang diacak di layar" hint="Nilai pertanyaan ini yang muncul saat pengundian.">
             <Select value={selectedDrawFieldId} onChange={(e) => setSelectedDrawFieldId(e.target.value)}>
-                {fields.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
+                {formFields.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}
               </Select>
           </Field>
         </div>
@@ -108,13 +107,13 @@ export default function LuckyDrawView() {
               {uniquePrizeNames.length > 1 && (
                 <select aria-label="Saring hadiah" value={winnerPrizeFilter} onChange={(e) => setWinnerPrizeFilter(e.target.value)} className={selectClass}>
                   <option value="ALL">Semua hadiah</option>
-                  {uniquePrizeNames.map((p: any, i: number) => <option key={i} value={p}>{p}</option>)}
+                  {uniquePrizeNames.map((p, i) => <option key={i} value={p}>{p}</option>)}
                 </select>
               )}
-              {dropdownFields.map((df: any) => (
-                <select key={df.id} aria-label={`Saring ${df.label}`} value={winnerDropdownFilters[df.id] || 'ALL'} onChange={(e) => setWinnerDropdownFilters((prev: any) => ({ ...prev, [df.id]: e.target.value }))} className={selectClass}>
+              {dropdownFields.map((df) => (
+                <select key={df.id} aria-label={`Saring ${df.label}`} value={winnerDropdownFilters[df.id] || 'ALL'} onChange={(e) => setWinnerDropdownFilters((prev) => ({ ...prev, [df.id]: e.target.value }))} className={selectClass}>
                   <option value="ALL">Semua {df.label}</option>
-                  {getDropdownOptions(df).map((opt: any, i: number) => <option key={i} value={opt}>{opt}</option>)}
+                  {getDropdownOptions(df).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
                 </select>
               ))}
               {hasActiveWinnerFilters && <Button size="sm" variant="ghost" icon={<RotateCcw size={13} aria-hidden="true" />} onClick={handleResetWinnerFilters}>Reset filter</Button>}
@@ -125,20 +124,20 @@ export default function LuckyDrawView() {
                 <thead>
                   <tr className="border-b border-line text-[0.78rem] uppercase tracking-wide text-dim">
                     {sortHeader('drawNumber', 'No')}
-                    {fields.map((f) => sortHeader(f.id, f.label))}
+                    {formFields.map((f) => sortHeader(f.id, f.label))}
                     {sortHeader('prizeName', 'Hadiah')}
                     {sortHeader('drawnAt', 'Waktu menang')}
                     <th scope="col" className="w-16 px-3 py-3 text-center font-semibold"><span className="sr-only">Aksi</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedWinners.length > 0 ? paginatedWinners.map((w: any, idx: number) => {
+                  {paginatedWinners.length > 0 ? paginatedWinners.map((w, idx) => {
                     const data = w.submissionData || {};
                     const ts = formatWibTimestamp(w.drawnAt || w.created_at || w.createdAt);
                     return (
                       <tr key={w.id || idx} className="border-b border-line last:border-b-0">
                         <td className="whitespace-nowrap px-3 py-2.5 font-semibold tabular-nums text-gold-ink">#{w.drawNumber || idx + 1}</td>
-                        {fields.map((f, colIdx) => (
+                        {formFields.map((f, colIdx) => (
                           <td key={f.id} className={cn('px-3 py-2.5 text-ink', colIdx === 0 && 'font-semibold')}>{String((data[f.label] ?? data[f.id] ?? (colIdx === 0 ? w.winnerName : '-')) || '-')}</td>
                         ))}
                         <td className="whitespace-nowrap px-3 py-2.5"><Badge tone="gold">{w.prizeTitle || w.prizeName || 'Doorprize utama'}</Badge></td>
@@ -152,7 +151,7 @@ export default function LuckyDrawView() {
                       </tr>
                     );
                   }) : (
-                    <tr><td colSpan={4 + fields.length} className="px-3 py-10 text-center text-muted">Tidak ada pemenang yang cocok dengan filter.</td></tr>
+                    <tr><td colSpan={4 + formFields.length} className="px-3 py-10 text-center text-muted">Tidak ada pemenang yang cocok dengan filter.</td></tr>
                   )}
                 </tbody>
               </table>

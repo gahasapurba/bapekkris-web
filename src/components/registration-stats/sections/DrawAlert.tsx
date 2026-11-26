@@ -4,6 +4,7 @@ import { useRegistrationStats } from '../RegistrationStatsContext';
 /** Bottom-right notice for each new registrant (queued by the hook). */
 export default function DrawAlert() {
   const { activeAlert, setActiveAlert } = useRegistrationStats();
+  if (!activeAlert) return null;
   return (
     <div role="status" aria-live="polite"
       className="fixed bottom-6 right-4 z-[99999] flex w-[calc(100vw-32px)] max-w-[380px] items-center gap-3 rounded-lg border border-success-line bg-surface p-4 shadow-card md:right-6">

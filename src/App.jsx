@@ -1193,13 +1193,11 @@ function MainApp() {
               submissions={submissions}
               eventRsvps={eventRsvps}
               luckyDraws={luckyDraws}
-              divisions={divisions}
               onAddLuckyDraw={handleAddLuckyDraw}
               onDeleteLuckyDraw={handleDeleteLuckyDraw}
               onResetLuckyDraw={handleResetLuckyDraw}
               onBack={() => setCurrentTab('event')}
               onNavigateForm={(fId) => setCurrentTab('form', fId)}
-              theme={theme}
             />
           )}
 

@@ -4,9 +4,12 @@ import { useRegistrationStats } from '../RegistrationStatsContext';
 
 export default function PosterModal() {
   const { posterModal, setPosterModal } = useRegistrationStats();
+  if (!posterModal) return null;
+  const { blob } = posterModal;
   const close = () => setPosterModal(null);
   const download = () => {
-    const blobUrl = URL.createObjectURL(posterModal.blob);
+    if (!blob) return;
+    const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = blobUrl;
     a.download = posterModal.fileName;

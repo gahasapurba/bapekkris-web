@@ -38,8 +38,8 @@ export default function CheckInView() {
   // Form registrations when the event has a connected form, otherwise direct RSVPs
   const attendees: Attendee[] = useMemo(() => {
     const source = connectedForm
-      ? (formSubmissions || []).filter((s: any) => !REJECTED.includes(s.status)).map((s: any) => ({ id: s.id, name: extractParticipantName(s), checkedInAt: s.checkedInAt || null }))
-      : (initialRsvps || []).map((r: any) => ({ id: r.id, name: r.attendeeName || 'Peserta', checkedInAt: r.checkedInAt || null }));
+      ? (formSubmissions || []).filter((s) => !REJECTED.includes(s.status)).map((s) => ({ id: s.id, name: extractParticipantName(s), checkedInAt: s.checkedInAt || null }))
+      : (initialRsvps || []).map((r) => ({ id: r.id, name: r.attendeeName || 'Peserta', checkedInAt: r.checkedInAt || null }));
     return source.map((a: Attendee) => (a.id in overrides ? { ...a, checkedInAt: overrides[a.id] } : a));
   }, [connectedForm, formSubmissions, initialRsvps, extractParticipantName, overrides]);
 
