@@ -227,6 +227,17 @@ export function getMemberLevel(member: AppItem | null | undefined, tenureRoles: 
 }
 
 /**
+ * Whether a member holds the given role: by roleId when the member has one; legacy rows without a
+ * roleId match by exact name, or by prefix for division roles (e.g. "Pimpro Divisi Acara").
+ */
+export function memberHasRole(member: AppItem, role: { id?: string; name?: string; requiresDivision?: boolean }): boolean {
+  if (member.roleId) return member.roleId === role.id;
+  const mRole = String(member.role || '').toLowerCase().trim();
+  const rName = String(role.name || '').toLowerCase().trim();
+  return Boolean(rName) && (mRole === rName || (Boolean(role.requiresDivision) && mRole.startsWith(rName)));
+}
+
+/**
  * Validasi Hapus Role: Cek apakah masih ada member yang menggunakan role ini.
  */
 export function canDeleteRole(
@@ -236,15 +247,7 @@ export function canDeleteRole(
 ): { canDelete: boolean; count: number; members: AppItem[]; reason?: string } {
   if (!role) return { canDelete: true, count: 0, members: [] };
   const targetMembers = (members || []).filter(m => (!tenureId || m.tenureId === tenureId));
-  const roleNameLower = String(role.name || '').toLowerCase().trim();
-
-  const dependentMembers = targetMembers.filter(m => {
-    if (m.roleId && m.roleId === role.id) return true;
-    const mRole = String(m.role || '').toLowerCase().trim();
-    if (mRole === roleNameLower) return true;
-    if (role.requiresDivision && mRole.startsWith(roleNameLower)) return true;
-    return false;
-  });
+  const dependentMembers = targetMembers.filter(m => memberHasRole(m, role));
 
   if (dependentMembers.length > 0) {
     const sampleNames = dependentMembers.slice(0, 3).map(m => `"${m.name}"`).join(', ');
@@ -274,14 +277,14 @@ export function validateMemberQuota(
   const targetTenureId = tenureId || '';
   const resolvedRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
 
-  // Cari role yang dimaksud
-  const roleObj = resolvedRoles.find(r => {
-    const rName = String(r?.name || '').toLowerCase().trim();
-    const targetRole = String(role || '').toLowerCase().trim();
-    return (roleId && r?.id === roleId) ||
-      (targetRole && rName === targetRole) ||
-      (targetRole && (rName.startsWith(targetRole) || targetRole.startsWith(rName)));
-  });
+  // The selected role: by id first; the name is only a fallback for assignments without an id.
+  const targetRole = String(role || '').toLowerCase().trim();
+  const byName = (r: TenureRole) => String(r.name || '').toLowerCase().trim();
+  const roleObj = (roleId ? resolvedRoles.find(r => r.id === roleId) : undefined)
+    || (targetRole ? resolvedRoles.find(r => byName(r) === targetRole) : undefined)
+    || (targetRole && !roleId
+      ? [...resolvedRoles].sort((a, b) => byName(b).length - byName(a).length).find(r => targetRole.startsWith(byName(r)))
+      : undefined);
 
   if (!roleObj) {
     return {
@@ -328,11 +331,7 @@ export function validateMemberQuota(
 
     if (roleObj.requiresDivision) {
       // Kuota per divisi
-      const existingInDiv = targetMembers.filter(m => {
-        const matchesThisRole = (m.roleId === roleObj.id) || 
-          String(m.role || '').toLowerCase().startsWith(String(roleObj.name || '').toLowerCase());
-        return matchesThisRole && m.divisionId === divisionId;
-      });
+      const existingInDiv = targetMembers.filter(m => memberHasRole(m, roleObj) && m.divisionId === divisionId);
 
       if (existingInDiv.length >= maxQuota) {
         const divObj = (divisions || []).find(d => d.id === divisionId);
@@ -346,10 +345,7 @@ export function validateMemberQuota(
       }
     } else {
       // Kuota global periode
-      const existingGlobal = targetMembers.filter(m => {
-        return (m.roleId === roleObj.id) ||
-          String(m.role || '').toLowerCase().trim() === String(roleObj.name || '').toLowerCase().trim();
-      });
+      const existingGlobal = targetMembers.filter(m => memberHasRole(m, roleObj));
 
       if (existingGlobal.length >= maxQuota) {
         const names = existingGlobal.map(e => `"${e.name}"`).join(', ');
@@ -380,12 +376,7 @@ export function getTenureQuotaSummary(
   const targetDivisions = (divisions || []).filter(d => !tenureId || d.tenureId === tenureId);
 
   const roleSummaries = roles.map(role => {
-    const matched = targetMembers.filter(m => {
-      if (m.roleId && m.roleId === role.id) return true;
-      const mRole = String(m?.role || '').toLowerCase().trim();
-      const rName = String(role?.name || '').toLowerCase().trim();
-      return mRole === rName || (role.requiresDivision && mRole.startsWith(rName));
-    });
+    const matched = targetMembers.filter(m => memberHasRole(m, role));
 
     return {
       ...role,

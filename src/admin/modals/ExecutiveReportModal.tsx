@@ -7,7 +7,7 @@ import { useModalBehavior } from '../../ui/useModalBehavior';
 import { AdminTable, tdClass, thClass } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
 
-/** Printable accountability report (LPJ) for one tenure. Printing hides the rest of the page (see legacy.css @media print). */
+/** Printable accountability report (LPJ) for one tenure. Printing hides the rest of the page (see the print rules in styles/base.css). */
 export default function ExecutiveReportModal() {
   const { activeTenure, devotions, divisions, events, galleries, members, reportTenureId, setReportTenureId, setShowExecutiveReportModal, tenures, worshipSongs } = useAdminPortal();
   const panelRef = useRef<HTMLDivElement>(null);

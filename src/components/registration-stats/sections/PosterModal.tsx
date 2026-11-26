@@ -1,6 +1,7 @@
 import { Download } from 'lucide-react';
 import { Button, Dialog } from '../../../ui';
 import { useRegistrationStats } from '../RegistrationStatsContext';
+import { downloadBlob } from '../../../utils/download';
 
 export default function PosterModal() {
   const { posterModal, setPosterModal } = useRegistrationStats();
@@ -9,13 +10,7 @@ export default function PosterModal() {
   const close = () => setPosterModal(null);
   const download = () => {
     if (!blob) return;
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = posterModal.fileName;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 2000);
+    downloadBlob(blob, posterModal.fileName);
   };
   return (
     <Dialog open onClose={close} title="Poster QR pendaftaran"

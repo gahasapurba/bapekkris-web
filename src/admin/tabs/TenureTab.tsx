@@ -15,7 +15,7 @@ const PER_PAGE = 6;
 
 export default function TenureTab() {
   const {
-    activeTenure, handleDeleteTenureClick, onAddTenure, onSelectTenure, onUpdateTenure, setEditingItem, setTenurePage,
+    handleDeleteTenureClick, onAddTenure, onSelectTenure, onUpdateTenure, setEditingItem, setTenurePage,
     setTenureSearchQuery, setTenureStatusFilter, showToast, tenurePage, tenureSearchQuery, tenureStatusFilter, tenures
   } = useAdminPortal();
   const { handleSubmit, field, resetToDefaults, formState: { errors } } = useAdminDraftForm<TenureForm>('tenure', tenureCreateSchema, EMPTY_TENURE);
@@ -35,7 +35,7 @@ export default function TenureTab() {
     showToast(`Periode Kepengurusan "${v.newTenureCode}" beserta Visi Misi berhasil dibuat!`);
   }, () => showToast('Mohon lengkapi field wajib (Kode Tahun & Nama Periode)', 'error'));
 
-  const isActive = (t: AppItem) => activeTenure?.id === t.id || Boolean(t.isActive);
+  const isActive = (t: AppItem) => Boolean(t.isActive);
   const q = tenureSearchQuery.toLowerCase().trim();
   const filtered = (tenures || []).filter((t) =>
     (!q || [t.code, t.title, t.themeTagline, t.heroHeadline].some((v) => String(v || '').toLowerCase().includes(q))) &&
@@ -82,7 +82,7 @@ export default function TenureTab() {
         {visible.length === 0 ? <AdminEmpty>Tidak ada periode yang cocok.</AdminEmpty> : (
           <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
             {visible.map((t) => {
-              const active = activeTenure?.id === t.id;
+              const active = Boolean(t.isActive);
               return (
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3">
                   <div className="min-w-0">

@@ -63,10 +63,11 @@ function describe(dc: DeleteConfirm): ConfirmBody {
         intro: <>Divisi {name} belum dapat dihapus karena masih menaungi <strong>{n(dc.totalDependentCount)} data kepengurusan</strong>. Pindahkan atau hapus data berikut terlebih dahulu:</>,
         dependencies: [
           dep(Users, 'Anggota divisi', dc.memCount, 'orang'), dep(CalendarDays, 'Acara', dc.evtCount, 'acara'),
+          dep(Layers, 'Sub-divisi', dc.subCount, 'sub-divisi'),
           ...(n(dc.galCount) > 0 ? [dep(ImageIcon, 'Galeri terkait', dc.galCount, 'album')] : [])
         ],
-        note: hint(<>Buka tab <strong>Pengurus & pelayan</strong> dan <strong>Ibadah & acara</strong> untuk memindahkan divisi personel/acara atau menghapusnya terlebih dahulu.</>)
-      } : { intro: <>Yakin ingin menghapus divisi {name}?</>, note: safe('Divisi ini tidak menaungi anggota maupun acara (0 anggota, 0 acara).') };
+        note: hint(<>Pindahkan atau hapus personel di tab <strong>Pengurus & pelayan</strong>, acara di <strong>Ibadah & acara</strong>, dan sub-divisi lewat tombol <strong>Kelola</strong> pada kartu divisi ini.</>)
+      } : { intro: <>Yakin ingin menghapus divisi {name}?</>, note: safe('Divisi ini tidak menaungi anggota, acara, maupun sub-divisi.') };
     case 'sub_division':
       return dc.isBlocked ? {
         intro: <>Sub-divisi {name} belum dapat dihapus karena masih memiliki <strong>{n(dc.memCount)} personel</strong> yang ditempatkan di sub-divisi ini.</>,

@@ -91,23 +91,23 @@ export default function FormFields() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Judul formulir" required><Input {...bind('title')} /></Field>
+      <Field label="Judul" required><Input {...bind('title')} /></Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Kategori" required>
           <Select value={item.category || 'Kegiatan & Event'} onChange={(e) => set({ category: e.target.value })}>
             {FORM_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
         </Field>
-        <Field label="Batas akhir pendaftaran (WIB)" required
+        <Field label="Batas waktu (WIB)" required
           hint={item.deadline ? `Tampil di web: ${formatDeadlineWib(item.deadline)}` : 'Pilih tanggal dan jam batas akhir.'}>
           <Input type="datetime-local" step="1" value={toDatetimeLocalSecondsValue(item.deadline || '')} onChange={(e) => set({ deadline: e.target.value })} />
         </Field>
       </div>
-      <Field label="Deskripsi singkat"><Textarea rows={2} {...bind('subtitle')} /></Field>
-      <Field label="Pesan setelah mendaftar (opsional)" hint="Ditampilkan kepada peserta setelah berhasil mengirim formulir, misalnya tautan grup WhatsApp. Tautan dapat diklik.">
+      <Field label="Subjudul"><Textarea rows={2} {...bind('subtitle')} /></Field>
+      <Field label="Pesan setelah mengirim" hint="Ditampilkan kepada peserta setelah berhasil mengirim formulir, misalnya tautan grup WhatsApp. Tautan dapat diklik.">
         <Textarea rows={3} placeholder="Contoh: Terima kasih! Silakan bergabung ke grup peserta: https://chat.whatsapp.com/…" {...bind('notes')} />
       </Field>
-      <Field label="Periode kepengurusan" required hint='Pertanyaan "Dropdown divisi" menampilkan divisi dari periode ini.'>
+      <Field label="Periode" required hint='Pertanyaan "Dropdown divisi" menampilkan divisi dari periode ini.'>
         <Select value={tenureId} onChange={(e) => {
           const next = e.target.value;
           const keepEvent = Boolean(item.eventId) && eventTenure(item.eventId) === next;
@@ -119,16 +119,16 @@ export default function FormFields() {
       </Field>
 
       <CheckField checked={item.requiresTracking !== false} onChange={(checked) => set({ requiresTracking: checked })}
-        label="Pendaftar dapat melacak status pendaftaran"
+        label="Pendaftar bisa melacak status"
         description={item.requiresTracking !== false ? 'Pendaftar mencari status lewat ID pendaftaran atau pertanyaan yang ditandai sebagai indeks pencarian.' : 'Formulir biasa tanpa pelacakan status.'} />
       <CheckField checked={Boolean(item.showAnnouncement)} onChange={(checked) => set({ showAnnouncement: checked })}
-        label="Umumkan peserta yang diterima di halaman formulir"
+        label="Umumkan peserta yang diterima"
         description={item.showAnnouncement ? 'Nama pendaftar berstatus "Diterima" tampil di halaman formulir.' : 'Hasil seleksi tidak diumumkan ke publik.'} />
       <CheckField checked={Boolean(item.isLimited)} onChange={(checked) => set({ isLimited: checked, maxQuota: checked ? (item.maxQuota || 50) : 0 })}
-        label="Batasi kuota pendaftar"
+        label="Batasi kuota"
         description={item.isLimited ? 'Formulir tertutup otomatis saat jumlah pendaftar mencapai kuota.' : 'Tanpa batas kuota (hanya dibatasi batas akhir).'} />
       {item.isLimited && (
-        <Field label="Kuota maksimal pendaftar" required className="ml-6 max-w-xs">
+        <Field label="Kuota maksimal" required className="ml-6 max-w-xs">
           <Input type="number" min="1" placeholder="Contoh: 100" value={item.maxQuota || ''}
             onChange={(e) => set({ maxQuota: e.target.value === '' ? '' : parseInt(e.target.value, 10) || 0 })} />
         </Field>
@@ -138,7 +138,7 @@ export default function FormFields() {
         description={item.isEventConnected ? 'Formulir ini menggantikan RSVP pada acara terkait, dan pendaftarnya masuk statistik serta undian acara.' : 'Formulir mandiri yang tidak terikat ke acara.'} />
       {item.isEventConnected && (
         <div className="ml-6 flex flex-col gap-3">
-          <Field label="Acara terhubung" required error={selectableEvents.length === 0 ? 'Belum ada acara pada periode ini.' : undefined}>
+          <Field label="Acara" required error={selectableEvents.length === 0 ? 'Belum ada acara pada periode ini.' : undefined}>
             <Select value={item.eventId || ''} onChange={(e) => set({ eventId: e.target.value })}>
               <option value="">Pilih acara</option>
               {selectableEvents.map((evt) => {
@@ -155,7 +155,7 @@ export default function FormFields() {
             </p>
           )}
           <CheckField checked={item.isLuckyDraw === true} onChange={(checked) => set({ isLuckyDraw: checked })}
-            label="Perlu undian doorprize"
+            label="Ada undian doorprize"
             description={item.isLuckyDraw ? 'Halaman statistik acara menampilkan modul undian doorprize.' : 'Halaman statistik hanya menampilkan analitik pendaftar.'} />
         </div>
       )}

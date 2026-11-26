@@ -78,7 +78,7 @@ export default function RolesTab() {
           <Field label="Kuota maksimal" hint={values.newRoleMax > 0 ? `${values.newRoleMax} orang per ${values.newRoleRequiresDivision ? 'divisi' : 'periode'}` : '0 = tanpa batas'}>
             <Input type="number" min={0} max={100} {...field('newRoleMax', { setValueAs: (v) => parseInt(v, 10) || 0 })} />
           </Field>
-          <CheckField checked={values.newRoleRequiresDivision} onChange={(v) => setValue('newRoleRequiresDivision', v)} label="Wajib memilih divisi" description="Untuk jabatan yang ditempatkan di divisi tertentu, misalnya Ketua Divisi." />
+          <CheckField checked={values.newRoleRequiresDivision} onChange={(v) => { setValue('newRoleRequiresDivision', v); if (!v) setValue('newRoleRequiresSubDivision', false); }} label="Wajib memilih divisi" description="Untuk jabatan yang ditempatkan di divisi tertentu, misalnya Ketua Divisi." />
           {values.newRoleRequiresDivision && (
             <CheckField checked={values.newRoleRequiresSubDivision} onChange={(v) => setValue('newRoleRequiresSubDivision', v)} label="Wajib memilih sub-divisi juga" description="Personel ditempatkan di sub-divisi di bawah divisi yang dipilih." />
           )}

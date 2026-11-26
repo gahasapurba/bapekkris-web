@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS public.divisions (
 -- 5. Tabel Sub-Divisi / Tim Kerja Pelayanan (sub_divisions)
 CREATE TABLE IF NOT EXISTS public.sub_divisions (
     id TEXT PRIMARY KEY,
-    division_id TEXT NOT NULL REFERENCES public.divisions(id) ON DELETE CASCADE,
+    division_id TEXT NOT NULL REFERENCES public.divisions(id) ON DELETE RESTRICT,
     name TEXT NOT NULL,
     code TEXT,
     description TEXT,
@@ -1190,3 +1190,10 @@ CREATE POLICY "Public read daily_devotions" ON public.daily_devotions FOR SELECT
     USING (devotion_date <= (now() AT TIME ZONE 'Asia/Jakarta')::DATE OR public.is_super_admin());
 
 NOTIFY pgrst, 'reload schema';
+
+-- A division that still has sub-divisions cannot be deleted: the sub-divisions used to be removed
+-- silently by ON DELETE CASCADE. Delete or move the sub-divisions first.
+ALTER TABLE public.sub_divisions DROP CONSTRAINT IF EXISTS sub_divisions_division_id_fkey;
+ALTER TABLE public.sub_divisions
+  ADD CONSTRAINT sub_divisions_division_id_fkey
+  FOREIGN KEY (division_id) REFERENCES public.divisions(id) ON DELETE RESTRICT;

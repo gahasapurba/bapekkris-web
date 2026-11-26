@@ -12,7 +12,7 @@ export default function DivisionFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nama divisi" required><Input {...bind('name')} /></Field>
-        <Field label="Periode kepengurusan">
+        <Field label="Periode">
           <Select value={item.tenureId || activeTenure?.id || ''} onChange={(e) => set({ tenureId: e.target.value })}>
             {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
           </Select>
@@ -33,8 +33,8 @@ export default function DivisionFields() {
         </div>
       </div>
       <Field label="Motto divisi"><Input {...bind('motto')} /></Field>
-      <Field label="Deskripsi peran"><Textarea rows={3} {...bind('description')} /></Field>
-      <Field label="Fokus area" hint={focusAreas.length > 0 ? `Fokus aktif (${focusAreas.length}): ${focusAreas.join(' • ')}` : 'Pisahkan dengan koma, contoh: Liturgi, Musik, Multimedia.'}>
+      <Field label="Deskripsi tugas"><Textarea rows={3} {...bind('description')} /></Field>
+      <Field label="Fokus program" hint={focusAreas.length > 0 ? `Fokus aktif (${focusAreas.length}): ${focusAreas.join(' • ')}` : 'Pisahkan dengan koma, contoh: Liturgi, Musik, Multimedia.'}>
         <Input placeholder="Contoh: Liturgi, Musik, Multimedia" value={focusText}
           onChange={(e) => set({ rawFocusAreas: e.target.value, focusAreas: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })} />
       </Field>

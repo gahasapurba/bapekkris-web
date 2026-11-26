@@ -11,6 +11,7 @@ import { getFormFields } from '../../utils/formMeta';
 import { DIAGRAM_COLORS } from './constants';
 import { downloadCsv } from '../../utils/csv';
 import { fieldValue, participantInfo, participantName, winnerNameFrom, type SubmissionData } from '../../utils/participantInfo';
+import { downloadBlob } from '../../utils/download';
 
 export interface UseEventRegistrationStatsProps {
   eventId: string | null;
@@ -248,16 +249,7 @@ export function useEventRegistrationStats({
       }
 
       if (!result.blob) throw new Error('Poster PNG gagal dibuat');
-      const blobUrl = URL.createObjectURL(result.blob);
-      const a = document.createElement('a');
-      a.href = blobUrl;
-      a.download = result.fileName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      }, 3000);
+      downloadBlob(result.blob, result.fileName);
     } catch (err) {
       console.error('Error generating QR poster:', err);
     }

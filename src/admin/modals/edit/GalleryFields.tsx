@@ -45,7 +45,7 @@ export default function GalleryFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Judul kegiatan" required><Input {...bind('title')} /></Field>
-        <Field label="Periode kepengurusan">
+        <Field label="Periode">
           <Select value={tenureId} onChange={(e) => {
             const next = e.target.value;
             const keep = divisions.find((d) => d.tenureId === next && (d.id === item.divisionId || d.name === item.division));
@@ -70,7 +70,7 @@ export default function GalleryFields() {
             {tenureDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </Select>
         </Field>
-        <Field label="Hubungkan ke acara (opsional)">
+        <Field label="Hubungkan ke acara">
           <Select value={item.eventId || ''} onChange={(e) => set({ eventId: e.target.value || null })}>
             <option value="">Tanpa hubungan acara</option>
             {tenureEvents.map((ev) => <option key={ev.id} value={ev.id}>{ev.title} ({ev.date || 'tanpa tanggal'})</option>)}
@@ -78,7 +78,7 @@ export default function GalleryFields() {
         </Field>
       </div>
 
-      <Field label="Deskripsi kegiatan"><Textarea rows={3} {...bind('description')} /></Field>
+      <Field label="Deskripsi"><Textarea rows={3} {...bind('description')} /></Field>
 
       <section aria-label="Foto album" className="flex flex-col gap-3 border-t border-line pt-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

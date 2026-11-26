@@ -25,7 +25,7 @@ export default function MemberFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nama lengkap" required><Input {...bind('name')} /></Field>
-        <Field label="Periode kepengurusan" required>
+        <Field label="Periode" required>
           <Select value={tenureId} onChange={(e) => {
             const next = e.target.value;
             const keepDivision = divisions.some((d) => d.tenureId === next && d.id === item.divisionId);
@@ -35,7 +35,7 @@ export default function MemberFields() {
           </Select>
         </Field>
 
-        <Field label="Jabatan / role" required
+        <Field label="Jabatan" required
           error={availableRoles.length === 0 ? 'Periode ini belum memiliki role. Buat dulu di tab Role & jabatan.' : undefined}>
           <Select value={selectedRole?.id || ''} disabled={availableRoles.length === 0} onChange={(e) => {
             const role = availableRoles.find((r) => r.id === e.target.value);
@@ -50,7 +50,7 @@ export default function MemberFields() {
         </Field>
 
         {requiresDivision ? (
-          <Field label="Divisi penugasan" required error={tenureDivisions.length === 0 ? 'Periode ini belum memiliki divisi.' : undefined}>
+          <Field label="Divisi" required error={tenureDivisions.length === 0 ? 'Periode ini belum memiliki divisi.' : undefined}>
             <Select value={item.divisionId || ''} onChange={(e) => set({ divisionId: e.target.value || undefined, subDivisionId: undefined })}>
               <option value="">Pilih divisi</option>
               {tenureDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -64,7 +64,7 @@ export default function MemberFields() {
         )}
 
         {requiresDivision && selectedRole?.requiresSubDivision && (
-          <Field label="Sub-divisi penugasan" required
+          <Field label="Sub-divisi" required
             error={item.divisionId && divisionSubs.length === 0 ? 'Divisi ini belum memiliki sub-divisi. Buat dulu di tab Divisi.' : undefined}>
             <Select value={item.subDivisionId || ''} disabled={!item.divisionId || divisionSubs.length === 0}
               onChange={(e) => set({ subDivisionId: e.target.value || undefined })}>
@@ -74,8 +74,8 @@ export default function MemberFields() {
           </Field>
         )}
 
-        <Field label="Nomor WhatsApp (opsional)"><Input inputMode="tel" placeholder="Contoh: 08123456789" {...bind('whatsapp')} /></Field>
-        <Field label="Motto (opsional)"><Input placeholder="Contoh: Melayani dengan kasih" {...bind('motto')} /></Field>
+        <Field label="Nomor WhatsApp"><Input inputMode="tel" placeholder="Contoh: 08123456789" {...bind('whatsapp')} /></Field>
+        <Field label="Motto"><Input placeholder="Contoh: Melayani dengan kasih" {...bind('motto')} /></Field>
       </div>
 
       <Field label="Tanggung jawab utama" hint="Satu poin per baris.">

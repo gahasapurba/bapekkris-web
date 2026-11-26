@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { soundFx } from '../../utils/audio';
 import { getTenureRoles, getMemberLevel, findMatchingRole } from '../../utils/memberQuotaUtils';
 import type { AppItem, AppRecord } from '../../lib/supabase';
+import { downloadBlob } from '../../utils/download';
 
 export function formatWaNumber(raw: string = ''): string {
   const digits = String(raw).replace(/\D/g, '');
@@ -95,16 +96,8 @@ export function useOrganization({
       'END:VCARD'
     ].filter(Boolean).join('\r\n');
 
-    const blob = new Blob([vcardLines], { type: 'text/vcard;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
     const safeName = String(member.name || 'bapekkris').toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    a.href = url;
-    a.download = `kontak-${safeName}.vcf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    downloadBlob(new Blob([vcardLines], { type: 'text/vcard;charset=utf-8' }), `kontak-${safeName}.vcf`);
   };
 
   const handleCopyPhone = (rawPhone: string) => {

@@ -5,7 +5,7 @@ export function submissionStatus(status: string | undefined): { label: string; t
   switch (status) {
     case 'Accepted': case 'Diterima': case 'Diterima ✓': return { label: 'Diterima', tone: 'success' };
     case 'Interview': case 'Wawancara': return { label: 'Wawancara', tone: 'navy' };
-    case 'Reviewed': case 'Direview': return { label: 'Sedang direview', tone: 'gold' };
+    case 'Reviewed': case 'Direview': return { label: 'Sedang ditinjau', tone: 'gold' };
     case 'Rejected': case 'Ditolak': return { label: 'Belum lolos', tone: 'danger' };
     default: return { label: 'Baru masuk', tone: 'info' };
   }

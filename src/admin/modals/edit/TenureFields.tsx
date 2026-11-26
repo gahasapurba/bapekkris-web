@@ -8,10 +8,10 @@ export default function TenureFields() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nama kepengurusan" required><Input {...bind('title')} /></Field>
-        <Field label="Tagline tema"><Input {...bind('themeTagline')} /></Field>
-        <Field label="Judul hero beranda"><Input {...bind('heroHeadline')} /></Field>
-        <Field label="Sorotan judul hero"><Input {...bind('heroHighlight')} /></Field>
+        <Field label="Nama periode" required><Input {...bind('title')} /></Field>
+        <Field label="Tema / tagline"><Input {...bind('themeTagline')} /></Field>
+        <Field label="Judul beranda"><Input {...bind('heroHeadline')} /></Field>
+        <Field label="Sorotan judul"><Input {...bind('heroHighlight')} /></Field>
       </div>
       <Field label="Visi"><Textarea rows={3} {...bind('visi')} /></Field>
       <Field label="Misi" hint="Satu baris untuk setiap poin misi.">

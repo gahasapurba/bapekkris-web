@@ -1,5 +1,6 @@
 import type { AppItem } from '../../lib/supabase';
 import { parseWibDateTime, toWibIsoDate } from '../../utils/dateUtils';
+import { downloadBlob } from '../../utils/download';
 
 const SITE_URL = 'https://bapekkris-mandiri.netlify.app';
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
@@ -85,14 +86,7 @@ export function buildIcs(evt: AppItem, now: Date = new Date()): string {
 
 /** Downloads the .ics file (Outlook, Apple Calendar, Google Calendar import, ...). */
 export function downloadIcs(evt: AppItem): void {
-  const url = URL.createObjectURL(new Blob([buildIcs(evt)], { type: 'text/calendar;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', `${String(evt.title || 'acara').replace(/[^\w-]+/g, '_')}.ics`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(new Blob([buildIcs(evt)], { type: 'text/calendar;charset=utf-8' }), `${String(evt.title || 'acara').replace(/[^\w-]+/g, '_')}.ics`);
 }
 
 export function googleCalendarUrl(evt: AppItem): string {

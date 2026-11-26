@@ -11,16 +11,16 @@ export default function BrandAssetFields() {
   const { bind, editingItem, handleBrandAssetUpload, item, set, setEditingItem } = useEditBinding();
   return (
     <div className="flex flex-col gap-4">
-      <Field label="Judul aset / templat" required><Input {...bind('title')} /></Field>
+      <Field label="Judul" required><Input {...bind('title')} /></Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Kategori">
           <Select value={item.category || 'Logo & Brand'} onChange={(e) => set({ category: e.target.value })}>
             {ASSET_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </Select>
         </Field>
-        <Field label="Label tambahan / tag"><Input {...bind('badge')} /></Field>
-        <Field label="Format file"><Input {...bind('fileType')} /></Field>
-        <Field label="Ukuran file"><Input {...bind('fileSize')} /></Field>
+        <Field label="Label tambahan"><Input {...bind('badge')} /></Field>
+        <Field label="Format"><Input {...bind('fileType')} /></Field>
+        <Field label="Ukuran"><Input {...bind('fileSize')} /></Field>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -45,7 +45,7 @@ export default function BrandAssetFields() {
           <FileButton icon={<ImageIcon size={15} aria-hidden="true" />} accept="image/*" onChange={(e) => handleBrandAssetUpload(e, 'previewUrl')}>
             {editingItem.pendingPreviewFile ? 'Ganti gambar' : 'Pilih gambar'}
           </FileButton>
-          <Input className="min-w-0 flex-1" aria-label="URL gambar pratinjau" placeholder="URL gambar pratinjau" {...bind('previewUrl')} />
+          <Input className="min-w-0 flex-1" aria-label="Gambar pratinjau (opsional)" placeholder="URL gambar pratinjau" {...bind('previewUrl')} />
         </div>
         {editingItem.pendingPreviewFile && (
           <PendingFile onCancel={() => setEditingItem((prev) => prev ? { ...prev, pendingPreviewFile: null, item: { ...prev.item, previewUrl: '' } } : null)}>

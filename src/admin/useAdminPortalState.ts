@@ -6,6 +6,7 @@ import { soundFx } from '../utils/audio';
 import { useFeedback } from '../ui';
 import { DIVISION_ADMIN_TABS, SYNC_BADGE } from './adminConstants';
 import type { PageVisibility } from '../components/layout/navItems';
+import { downloadBlob } from '../utils/download';
 
 type Save = (item: AppItem) => unknown;
 type Remove = (id: string) => unknown;
@@ -120,6 +121,7 @@ export interface DeleteConfirm {
   memCount?: number;
   evtCount?: number;
   galCount?: number;
+  subCount?: number;
   formCount?: number;
   formSubCount?: number;
   rsvpCount?: number;
@@ -315,7 +317,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
   // Helper to initiate tenure deletion with dependency checks and protection validation
   const handleDeleteTenureClick = (t: AppItem) => {
     const isOnlyTenure = tenures.length <= 1;
-    const isActiveTenure = (activeTenure?.id === t.id) || Boolean(t.isActive);
+    const isActiveTenure = Boolean(t.isActive);
     const divCount = divisions.filter(d => d.tenureId === t.id).length;
     const memCount = members.filter(m => m.tenureId === t.id).length;
     const evtCount = events.filter(e => e.tenureId === t.id).length;
@@ -345,7 +347,8 @@ export function useAdminPortalState(props: AdminPortalProps) {
     const memCount = members.filter(m => m.divisionId === d.id).length;
     const evtCount = events.filter(e => e.divisionId === d.id).length;
     const galCount = galleries.filter(g => g.divisionId === d.id || g.division === d.name).length;
-    const totalDependentCount = memCount + evtCount + galCount;
+    const subCount = subDivisions.filter(sd => sd.divisionId === d.id).length;
+    const totalDependentCount = memCount + evtCount + galCount + subCount;
 
     setDeleteConfirm({
       type: 'division',
@@ -354,6 +357,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
       memCount,
       evtCount,
       galCount,
+      subCount,
       totalDependentCount,
       isBlocked: totalDependentCount > 0
     });
@@ -650,14 +654,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
       announcementBar
     };
     const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Backup_Bapekkris_Bank_Mandiri_${new Date().toISOString().slice(0, 10)}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `Backup_Bapekkris_Bank_Mandiri_${new Date().toISOString().slice(0, 10)}.json`);
     showToast('Snapshot Backup Penuh (.json) seluruh 13 tabel berhasil diunduh!');
   };
   const restoreBackupFile = (e: ChangeEvent<HTMLInputElement>) => {

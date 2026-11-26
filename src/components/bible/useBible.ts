@@ -51,7 +51,8 @@ export function useBible({ onSendToEasyWorship }: UseBibleProps) {
 
     const controller = new AbortController();
     const { signal } = controller;
-    const cleanVerses = (list: unknown): Verse[] => (Array.isArray(list) ? list : []).map((v: { verse: number; text?: string }) => ({ verse: v.verse, text: (v.text || '').trim() }));
+    // Source texts break lines mid-sentence ("The LORD\nis my shepherd"); one line per verse for copy, share and projector.
+    const cleanVerses = (list: unknown): Verse[] => (Array.isArray(list) ? list : []).map((v: { verse: number; text?: string }) => ({ verse: v.verse, text: (v.text || '').replace(/\s+/g, ' ').trim() }));
 
     const loadEnglish = async () => {
       const bookQuery = selectedBook.en || selectedBook.name;

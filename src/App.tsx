@@ -560,11 +560,13 @@ function MainApp() {
   };
   const handleDeleteDivision = (divId: string) => {
     const targetDiv = divisions.find(d => d.id === divId);
-    // Defense-in-depth safety checks: do not delete division if members, events, or galleries still depend on it
+    // Defense-in-depth: a division with members, events, galleries or sub-divisions is never deleted
+    // (the database also refuses: sub_divisions.division_id is ON DELETE RESTRICT).
     const hasMem = members.some(m => m.divisionId === divId);
     const hasEvt = events.some(e => e.divisionId === divId);
     const hasGal = galleries.some(g => g.divisionId === divId || (targetDiv && g.division === targetDiv.name));
-    if (hasMem || hasEvt || hasGal) return;
+    const hasSub = subDivisions.some(sd => sd.divisionId === divId);
+    if (hasMem || hasEvt || hasGal || hasSub) return;
 
     setDivisions(prev => prev.filter(d => d.id !== divId));
     persist('Penghapusan divisi', () => deleteRow('divisions', divId));
@@ -574,7 +576,10 @@ function MainApp() {
   const handleAddTenure = (newTenure: AppItem) => {
     const now = new Date().toISOString();
     const stampedTenure: AppItem = { ...newTenure, createdAt: newTenure.createdAt || now, updatedAt: newTenure.updatedAt || now };
-    const isActivating = Boolean(stampedTenure.isActive);
+    // With no stored official tenure (fresh database), the first tenure added becomes the official one.
+    const hasStoredOfficial = rawTenures.some(t => t.id === officialTenureId || t.isActive);
+    const isActivating = Boolean(stampedTenure.isActive) || !hasStoredOfficial;
+    if (isActivating) stampedTenure.isActive = true;
     const deactivated = isActivating ? tenures.filter(t => t.isActive).map(t => ({ ...t, isActive: false, updatedAt: now })) : [];
 
     setTenures(prev => sortTenuresDesc([...replaceById(prev, deactivated), stampedTenure]));
@@ -607,7 +612,7 @@ function MainApp() {
   const handleDeleteTenure = (tenureId: string) => {
     // Defense-in-depth safety checks: do not delete if only 1 tenure, active, or has dependencies
     if (tenures.length <= 1) return;
-    if (activeTenure?.id === tenureId) return;
+    if (tenures.some(t => t.id === tenureId && t.isActive)) return;
     const hasDiv = divisions.some(d => d.tenureId === tenureId);
     const hasMem = members.some(m => m.tenureId === tenureId);
     const hasEvt = events.some(e => e.tenureId === tenureId);
@@ -1028,7 +1033,7 @@ function MainApp() {
       {/* Theme switch stays reachable when the navbar is hidden */}
       {!isNavbarVisible && currentTab !== 'admin' && (
         <div className="fixed bottom-5 right-5 z-[90] rounded-full border border-line bg-surface p-1.5 shadow-card">
-          <button type="button" onClick={toggleTheme} aria-label={isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
+          <button type="button" onClick={toggleTheme} aria-label={isDark ? 'Gunakan tema terang' : 'Gunakan tema gelap'}
             className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-line bg-field text-navy-ink">
             {isDark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
           </button>

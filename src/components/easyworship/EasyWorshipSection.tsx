@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarDays, ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
 import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn, useFeedback } from '../../ui';
@@ -10,6 +10,8 @@ import { useEasyWorship } from './useEasyWorship';
 import RemoteProjectorDialog from './RemoteProjectorDialog';
 
 /** Projection backgrounds, identical to the projector window (ProjectorDisplay). */
+const orderButton = 'cursor-pointer rounded-full border-0 bg-transparent p-2 text-dim hover:bg-subtle hover:text-ink disabled:cursor-default disabled:opacity-35 disabled:hover:bg-transparent';
+
 const SCREEN_BG: Record<string, string> = {
   heavenly: 'linear-gradient(135deg, #001c3d 0%, #003d79 40%, #ffb800 100%)',
   celestial: 'radial-gradient(circle at center, #003d79 0%, #021226 70%, #010814 100%)',
@@ -51,6 +53,13 @@ export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?
   const goSlide = (index: number) => { setActiveSlideIndex(index); handleGoLive(activeItem, index); };
   const status = liveState.isBlackout ? 'Layar padam' : liveState.isLogo ? 'Layar logo' : 'Live';
   const screenBg = liveState.isBlackout ? '#000000' : SCREEN_BG[liveState.bgTheme] || SCREEN_BG.cathedral;
+  const movePlaylistItem = (index: number, delta: number) => setPlaylist((prev) => {
+    const target = index + delta;
+    if (target < 0 || target >= prev.length) return prev;
+    const next = [...prev];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
   const toggle = (on: boolean) => cn('flex h-10 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-3 text-[0.82rem] font-semibold leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-navy-ink',
     on ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-ink hover:border-line-strong');
 
@@ -120,8 +129,12 @@ export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?
                         <span className="block truncate text-[0.76rem] text-dim">{item.subtitle || item.type}</span>
                       </span>
                     </button>
-                    <button type="button" aria-label={`Hapus ${item.title} dari tata ibadah`} onClick={() => setPlaylist((prev) => prev.filter((p) => p.id !== item.id))}
-                      className="shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-2 text-dim hover:bg-danger-tint hover:text-danger"><Trash2 size={14} aria-hidden="true" /></button>
+                    <span className="flex shrink-0 items-center">
+                      <button type="button" aria-label={`Naikkan ${item.title}`} disabled={i === 0} onClick={() => movePlaylistItem(i, -1)} className={orderButton}><ArrowUp size={14} aria-hidden="true" /></button>
+                      <button type="button" aria-label={`Turunkan ${item.title}`} disabled={i === playlist.length - 1} onClick={() => movePlaylistItem(i, 1)} className={orderButton}><ArrowDown size={14} aria-hidden="true" /></button>
+                      <button type="button" aria-label={`Hapus ${item.title} dari tata ibadah`} onClick={() => setPlaylist((prev) => prev.filter((p) => p.id !== item.id))}
+                        className="cursor-pointer rounded-full border-0 bg-transparent p-2 text-dim hover:bg-danger-tint hover:text-danger"><Trash2 size={14} aria-hidden="true" /></button>
+                    </span>
                   </li>
                 );
               })}

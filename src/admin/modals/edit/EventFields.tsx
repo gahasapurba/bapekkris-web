@@ -32,7 +32,7 @@ export default function EventFields() {
         <Field label="Mulai (WIB)" required error={orderInvalid ? ORDER_ERROR : undefined}>
           <Input type="datetime-local" value={start} max={end || undefined} onChange={(e) => setSchedule(e.target.value, item.endDate || '')} />
         </Field>
-        <Field label="Berakhir (WIB)" required>
+        <Field label="Selesai (WIB)" required>
           <Input type="datetime-local" value={end} min={start || undefined} onChange={(e) => setSchedule(item.startDate || e.target.value, e.target.value)} />
         </Field>
       </div>
@@ -41,7 +41,7 @@ export default function EventFields() {
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Periode kepengurusan">
+        <Field label="Periode">
           <Select value={tenureId} onChange={(e) => {
             const next = e.target.value;
             const keep = divisions.some((d) => d.tenureId === next && d.id === item.divisionId);
@@ -59,14 +59,14 @@ export default function EventFields() {
             {tenureDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </Select>
         </Field>
-        <Field label="Status pelaksanaan">
+        <Field label="Status">
           <Select value={item.status || 'Upcoming'} onChange={(e) => set({ status: e.target.value })}>
             <option value="Upcoming">Akan datang</option>
             <option value="Ongoing">Sedang berjalan</option>
             <option value="Completed">Selesai</option>
           </Select>
         </Field>
-        <Field label="Estimasi total RAB (Rp)" required>
+        <Field label="Estimasi RAB (Rp)" required>
           <Input type="number" min="0" placeholder="Contoh: 15000000" value={item.totalRab ?? ''} onChange={(e) => set({ totalRab: numberOrBlank(e.target.value) })} />
         </Field>
         <Field label="Lokasi"><Input {...bind('location')} /></Field>
@@ -75,19 +75,19 @@ export default function EventFields() {
         </Field>
       </div>
 
-      <Field label="Kategori kegiatan" required>
+      <Field label="Kategori" required>
         <Select value={category} onChange={(e) => set({ kategori: e.target.value, category: e.target.value, badge: e.target.value })}>
           <option value="">Pilih kategori</option>
           {EVENT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           {customCategory && <option value={category}>{category}</option>}
         </Select>
       </Field>
-      <Field label="Deskripsi kegiatan"><Textarea rows={3} {...bind('description')} /></Field>
+      <Field label="Deskripsi"><Textarea rows={3} {...bind('description')} /></Field>
 
       <CheckField checked={Boolean(item.isLimited)} onChange={(checked) => set({ isLimited: checked })}
-        label="Batasi kuota RSVP acara ini" description="RSVP ditutup otomatis ketika jumlah pendaftar mencapai batas." />
+        label="Batasi kuota RSVP" description="RSVP ditutup otomatis ketika jumlah pendaftar mencapai batas." />
       {item.isLimited && (
-        <Field label="Kuota maksimal peserta" required className="ml-6 max-w-xs">
+        <Field label="Kuota maksimal" required className="ml-6 max-w-xs">
           <Input type="number" min="1" placeholder="Contoh: 100" value={item.maxQuota ?? ''} onChange={(e) => set({ maxQuota: numberOrBlank(e.target.value) })} />
         </Field>
       )}
@@ -97,7 +97,7 @@ export default function EventFields() {
           <p className="m-0 text-[0.88rem] font-semibold text-ink">{item.isPublic ? 'Tampil di web publik' : 'Draf (hanya terlihat di Admin Portal)'}</p>
           <p className="m-0 text-[0.82rem] text-muted">Acara draf tidak terlihat oleh pengunjung.</p>
         </div>
-        <Switch checked={Boolean(item.isPublic)} onChange={(checked) => set({ isPublic: checked })} label="Publikasikan acara" />
+        <Switch checked={Boolean(item.isPublic)} onChange={(checked) => set({ isPublic: checked })} label="Publikasikan acara di situs" />
       </div>
     </div>
   );
