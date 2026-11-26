@@ -49,8 +49,12 @@ interface EventCalendarViewProps {
 export default function EventCalendarView({
   events = [], divisions = [], forms = [], registrationCounts, activeTenure = null, onSelectEvent = null, onEditEvent = null, isAdmin = false
 }: EventCalendarViewProps) {
+  // The calendar opens on the nearest upcoming event, so events are compared in date order, not list order.
+  const byDate = (list: AppItem[]) => [...list].sort((a, b) => String(a.startDate || '').localeCompare(String(b.startDate || '')));
   const [currentYear, setCurrentYear] = useState(() => {
-    const first = events.find((e) => e.startDate && e.status !== 'Completed') || events.find((e) => e.startDate);
+    const dated = byDate(events);
+    const upcoming = dated.find((e) => e.startDate && e.status !== 'Completed' && !isEventPassed(e.startDate, e.endDate || e.startDate));
+    const first = upcoming || dated.find((e) => e.startDate && e.status !== 'Completed') || events.find((e) => e.startDate);
     const y = yearMonthOf(first?.startDate)?.year;
     if (y && y > 2000 && y < 2100) return y;
     const tenureYear = parseInt(activeTenure?.code, 10);
@@ -61,8 +65,9 @@ export default function EventCalendarView({
     const nowM = currentYearMonth().month;
     const inYear = events
       .filter((e) => e.status !== 'Completed' && yearMonthOf(e.startDate)?.year === currentYear)
-      .map((e) => (yearMonthOf(e.startDate) as { month: number }).month);
-    if (inYear.length > 0) return inYear.find((m) => m >= nowM) ?? inYear[0];
+      .map((e) => (yearMonthOf(e.startDate) as { month: number }).month)
+      .sort((a, b) => a - b);
+    if (inYear.length > 0) return currentYear === currentYearMonth().year ? (inYear.find((m) => m >= nowM) ?? inYear[0]) : inYear[0];
     return nowM;
   });
   const [page, setPage] = useState(1);
@@ -71,9 +76,9 @@ export default function EventCalendarView({
   // Jump to the browsed tenure's events when the tenure changes.
   useEffect(() => {
     if (!activeTenure?.id) return;
-    const tenureEvents = events.filter((e) => e.tenureId === activeTenure.id && e.startDate);
+    const tenureEvents = byDate(events.filter((e) => e.tenureId === activeTenure.id && e.startDate));
     if (tenureEvents.length > 0) {
-      const target = tenureEvents.find((e) => e.status !== 'Completed' && !isEventPassed(e.startDate, e.startDate)) || tenureEvents[0];
+      const target = tenureEvents.find((e) => e.status !== 'Completed' && !isEventPassed(e.startDate, e.endDate || e.startDate)) || tenureEvents[0];
       const ym = yearMonthOf(target.startDate);
       if (ym) { setCurrentYear(ym.year); setCurrentMonth(ym.month); setPage(1); }
     } else {

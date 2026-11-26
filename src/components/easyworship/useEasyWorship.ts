@@ -6,6 +6,7 @@ import type { AppItem } from '../../lib/supabase';
 import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
+import { rankSongs } from '../../lib/searchUtils';
 
 /** One entry of the service order. */
 export interface PlaylistItem {
@@ -137,15 +138,7 @@ export function useEasyWorship({ songs = [], initialItem, schedules = [], onSave
   const [customText, setCustomText] = useState('');
   const [toastMsg, setToastMsg] = useState('');
 
-  const filteredAvailableSongs = useMemo(() => {
-    const q = songSearchQuery.toLowerCase().trim();
-    if (!q) return availableSongs.slice(0, 50);
-    return availableSongs.filter(s => 
-      (s.title || '').toLowerCase().includes(q) || 
-      (s.songNumber || '').toLowerCase().includes(q) || 
-      (s.lyrics || '').toLowerCase().includes(q)
-    ).slice(0, 50);
-  }, [availableSongs, songSearchQuery]);
+  const filteredAvailableSongs = useMemo(() => rankSongs(availableSongs, songSearchQuery), [availableSongs, songSearchQuery]);
 
   // Handle incoming initialItem (e.g. from Alkitab or Kidung Jemaat "Kirim ke EasyWorship")
   useEffect(() => {

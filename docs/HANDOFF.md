@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 26 November 2026 (Fase 1–4 selesai; kerapian kode tuntas: 100% TypeScript, tanpa logika ganda yang diketahui, tanggal seragam WIB).
+Terakhir diperbarui: 27 November 2026 (Fase 1–4 selesai; uji Master_Test_Checklist berjalan — Web Light selesai, 3 matriks tersisa).
 
 ---
 
@@ -177,6 +177,13 @@ Terakhir diperbarui: 26 November 2026 (Fase 1–4 selesai; kerapian kode tuntas:
 - Perbaikan: kategori lagu tambahan disimpan sebagai `KJ`/`PKJ`/`NKB` sehingga tidak pernah muncul di filter kategori halaman Kidung; kini memakai nama lengkap yang sama dengan kidung bawaan (`SONG_CATEGORIES` di `src/data/contentOptions.ts`). Kategori "Lagu Rohani Lainnya" muncul di halaman publik hanya bila berisi lagu. Tanggal default renungan kini hari ini WIB.
 - Pembentukan data tersimpan: `admin/contentItems.ts` (`toDevotionItem`, `toSongItem`) dipakai form tambah dan dialog edit.
 - Diuji Playwright 15/15 (validasi, draf antar tab, terbit, edit, filter tema & kategori publik, hapus) + cek isi database; data uji dihapus.
+
+### Uji Master_Test_Checklist (187 kasus × 4 matriks) — berjalan
+- **Web Light: selesai.** 182 PASS (termasuk #187 build/push), 3 N/A (#145, #173, #174), #161 manual. Dua FAIL terakhir sudah ditelusuri (27 Nov 2026):
+  - #109 navigasi bulan kalender: **bug aplikasi** — kalender membuka bulan acara pertama menurut urutan data, bukan acara terdekat menurut tanggal (mis. Natal 20 Des tampil sebelum Ibadah Jumat 27 Nov). Diperbaiki di `EventCalendarView.tsx` (acara diurutkan menurut tanggal). Skrip juga diperbaiki: "Bulan ini" = bulan berjalan WIB.
+  - #160 sinkron slide ke proyektor: sinkron sebenarnya berfungsi; pencarian "KJ 1" di Multimedia Live menampilkan KJ 100 (1 bait) di urutan pertama sehingga "Berikutnya" nonaktif. Pencarian lagu kini diurutkan: nomor persis ("KJ 1" = "KJ 001") > awalan nomor > judul > lirik (`rankSongs` di `lib/searchUtils.ts`, ada unit test).
+- **Belum:** matriks Web Dark, Mobile Light, Mobile Dark; berkas `Master_Test_Checklist_Bapekkris_Mandiri_Hasil.xlsx`; daftar uji manual (kamera QR, install PWA, share WhatsApp, Safari iPhone, proyektor nyata).
+- Runner Playwright (`checklist/cycle.sh`, `reset.sh`, `admin_session.sh`, `e2e/cl/*.mjs`, `build_xlsx.py`) **tidak ada di Git**; paket terbarunya ada di QuickDrop. Ia bekerja pada DB produksi yang sengaja dikosongkan (persetujuan pengguna 26 Nov: "Ya, sengaja — biarkan kosong") dan mengembalikannya ke nol setiap siklus; butuh `SUPABASE_MGMT_TOKEN` di `.env` dan berkas asli `Master_Test_Checklist_Bapekkris_Mandiri.xlsx` di root repo (tidak di Git).
 
 ### Temuan kecil yang masih terbuka
 - Tidak ada.
