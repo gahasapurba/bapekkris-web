@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
-import { BIBLE_BOOKS } from '../bible/useBible';
+import { BIBLE_BOOKS } from '../../data/bibleBooks';
 import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn } from '../../ui';
 import { useEasyWorship } from './useEasyWorship';
 import RemoteProjectorDialog from './RemoteProjectorDialog';

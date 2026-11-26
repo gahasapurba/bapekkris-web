@@ -1365,7 +1365,7 @@ function MainApp() {
       {/* GLOBAL QUICK SEARCH MODAL (Ctrl+K / Tombol Cari di Navbar) */}
       {isQuickSearchOpen && (
         <QuickSearch query={quickSearchQuery} onQueryChange={setQuickSearchQuery} onClose={() => setIsQuickSearchOpen(false)}
-          onNavigate={(tab, formId, eventId) => setCurrentTab(tab, formId ?? null, eventId ?? null)} isPageVisible={isPageVisible}
+          onNavigate={(tab, formId, eventId, galleryId) => setCurrentTab(tab, formId ?? null, eventId ?? null, true, galleryId ?? null)} isPageVisible={isPageVisible}
           data={{ members, events, forms, galleries, brandAssets, devotions, worshipSongs, faqs, tenureRoles, divisions }} />
       )}
 

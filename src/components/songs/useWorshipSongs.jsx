@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_SONG_COLLECTION } from '../../data/hymnalLibrary';
 
@@ -37,6 +38,12 @@ export function useWorshipSongs({
   }, [songs]);
 
   const [activeSongId, setActiveSongId] = useState(songList[0]?.id || null);
+  // Opened from site search: show the hymn with no filter hiding it
+  usePageIntent('lagu', ({ songId }) => {
+    setSelectedCategory('ALL');
+    setSearchQuery('');
+    setActiveSongId(songId);
+  });
 
   const activeSong = songList.find(s => s.id === activeSongId) || songList[0] || null;
 

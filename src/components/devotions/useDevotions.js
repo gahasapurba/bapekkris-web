@@ -1,4 +1,5 @@
 import { formatToIndonesianDate } from '../../utils/dateUtils';
+import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
 import { useMemo, useState } from 'react';
 
@@ -23,6 +24,11 @@ export function useDevotions({
   }, [devotions]);
 
   const [activeDevotionId, setActiveDevotionId] = useState(sortedDevotions[0]?.id || null);
+  usePageIntent('renungan', ({ devotionId }) => {
+    setSearchQuery('');
+    setSelectedTheme('all');
+    setActiveDevotionId(devotionId);
+  });
 
   const activeDevotion = sortedDevotions.find(d => d.id === activeDevotionId) || sortedDevotions[0] || null;
 
