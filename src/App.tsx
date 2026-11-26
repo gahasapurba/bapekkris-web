@@ -849,7 +849,11 @@ function MainApp() {
     await persist('Penghapusan lagu', () => deleteRow('worshipSongs', songId));
   };
 
-  // EasyWorship schedules
+  // EasyWorship schedules (saved from the console by admins)
+  const handleAddEasyWorshipSchedule = async (newSch: AppItem) => {
+    setEasyWorshipSchedules(prev => [newSch, ...prev]);
+    await persist('Jadwal EasyWorship', () => saveRow('easyWorshipSchedules', newSch));
+  };
   const handleDeleteEasyWorshipSchedule = async (schId: string) => {
     setEasyWorshipSchedules(prev => prev.filter(s => s.id !== schId));
     await persist('Penghapusan jadwal EasyWorship', () => deleteRow('easyWorshipSchedules', schId));
@@ -1168,6 +1172,8 @@ function MainApp() {
             <EasyWorshipSection
               songs={songs}
               initialItem={easyWorshipInitialItem}
+              schedules={easyWorshipSchedules}
+              onSaveSchedule={isAdmin ? handleAddEasyWorshipSchedule : undefined}
             />
           )}
 

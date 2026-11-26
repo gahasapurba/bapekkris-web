@@ -6,6 +6,7 @@ import { formatWibDateTime } from '../../utils/dateUtils';
 import { Badge, Button, EmptyState, Input, PageHeader, Pagination, cn } from '../../ui';
 import { useModalBehavior } from '../../ui/useModalBehavior';
 import { useGallery, type GalleryState, type UseGalleryProps } from './useGallery';
+import { useSwipe } from '../../ui/useSwipe';
 
 const PER_PAGE = 6;
 const overlayBtn = 'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.25)] bg-[rgba(10,14,24,0.6)] px-3 text-[0.8rem] font-semibold text-white hover:bg-[rgba(10,14,24,0.85)] focus-visible:outline-2 focus-visible:outline-white';
@@ -15,6 +16,7 @@ function Lightbox({ state }: { state: GalleryState }) {
   const { activeEvent: album, copiedGalleryId, currentPhotoUrl, eventPhotos, getDownloadPhotoUrl, handleCopyGalleryLink, handleShareGalleryWa, nextPhoto, prevPhoto, safePhotoIdx, setIsLightboxOpen } = state;
   const panelRef = useRef<HTMLDivElement>(null);
   const close = () => setIsLightboxOpen(false);
+  const swipe = useSwipe(prevPhoto, nextPhoto);
   useModalBehavior(panelRef, true, close);
   return createPortal(
     <div ref={panelRef} role="dialog" aria-modal="true" aria-label={`Foto ${album.title}`} tabIndex={-1} onClick={close} className="fixed inset-0 z-[100000] flex flex-col bg-[rgba(3,6,12,0.94)] outline-none">
@@ -32,7 +34,7 @@ function Lightbox({ state }: { state: GalleryState }) {
       </div>
       <div onClick={(e) => e.stopPropagation()} className="relative flex flex-1 items-center justify-center px-4 pb-6 md:px-16">
         {eventPhotos.length > 1 && <button type="button" onClick={prevPhoto} aria-label="Foto sebelumnya" className={cn(arrowBtn, 'left-3 md:left-6')}><ChevronLeft size={24} aria-hidden="true" /></button>}
-        <img src={currentPhotoUrl} alt={`${album.title} — foto ${safePhotoIdx + 1}`} className="max-h-[80vh] max-w-full rounded-md object-contain" />
+        <img src={currentPhotoUrl} alt={`${album.title} — foto ${safePhotoIdx + 1}`} className="max-h-[80vh] max-w-full rounded-md object-contain" {...swipe} draggable={false} />
         {eventPhotos.length > 1 && <button type="button" onClick={nextPhoto} aria-label="Foto berikutnya" className={cn(arrowBtn, 'right-3 md:right-6')}><ChevronRight size={24} aria-hidden="true" /></button>}
       </div>
     </div>,
@@ -42,6 +44,7 @@ function Lightbox({ state }: { state: GalleryState }) {
 
 export default function GallerySection(props: UseGalleryProps) {
   const state = useGallery(props);
+  const swipe = useSwipe(state.prevPhoto, state.nextPhoto);
   const {
     galleries, divisions, events, activeTenure, tenures, onNavigateEvent, onSelectGalleryUrl, navigateTo, copiedGalleryId, setCurrentPhotoIdx, searchQuery, setSearchQuery,
     divFilter, setDivFilter, tenureFilter, setTenureFilter, isLightboxOpen, setIsLightboxOpen, galleryPage, setGalleryPage, galleryNotFound, setGalleryNotFound,
@@ -101,7 +104,7 @@ export default function GallerySection(props: UseGalleryProps) {
         <article aria-labelledby="album-title" className="mb-16">
           <div className="relative overflow-hidden rounded-xl bg-[#0b1220]">
             <button type="button" onClick={() => setIsLightboxOpen(true)} aria-label="Perbesar foto" className="block w-full cursor-zoom-in border-0 bg-transparent p-0">
-              <img src={currentPhotoUrl} alt={`${album.title} — foto ${safePhotoIdx + 1}`} className="mx-auto aspect-[16/9] w-full object-contain" />
+              <img src={currentPhotoUrl} alt={`${album.title} — foto ${safePhotoIdx + 1}`} className="mx-auto aspect-[16/9] w-full object-contain" {...swipe} draggable={false} />
             </button>
             <div className="absolute right-3 top-3 flex flex-wrap justify-end gap-2">
               <button type="button" onClick={() => setIsLightboxOpen(true)} className={overlayBtn}><Maximize2 size={14} aria-hidden="true" />Layar penuh</button>

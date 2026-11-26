@@ -8,6 +8,7 @@ export interface PageIntents {
   alkitab: { bookId: string; chapter: number };
   lagu: { songId: string };
   renungan: { devotionId: string };
+  easyworship: { scheduleId: string };
 }
 type IntentTab = keyof PageIntents;
 

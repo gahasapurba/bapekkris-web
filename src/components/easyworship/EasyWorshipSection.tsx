@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
-import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn } from '../../ui';
+import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn, useFeedback } from '../../ui';
 import type { ProjectorItem, Song } from '../../types/content';
+import type { AppItem } from '../../lib/supabase';
+import { formatToIndonesianDate, toWibIsoDate } from '../../utils/dateUtils';
 import { useEasyWorship } from './useEasyWorship';
 import RemoteProjectorDialog from './RemoteProjectorDialog';
 
@@ -15,15 +17,36 @@ const SCREEN_BG: Record<string, string> = {
   cathedral: 'linear-gradient(135deg, #040914 0%, #002244 45%, #003d79 80%, #040914 100%)'
 };
 
-export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?: ProjectorItem | null }) {
+export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?: ProjectorItem | null; schedules?: AppItem[]; onSaveSchedule?: (schedule: AppItem) => unknown }) {
   const {
     playlist, setPlaylist, activeItem, setActiveItemId, slides, activeSlideIndex, setActiveSlideIndex, liveState, isAddModalOpen, setIsAddModalOpen,
     addTab, setAddTab, songSearchQuery, setSongSearchQuery, selectedBibleBook, setSelectedBibleBook, selectedBibleChapter, setSelectedBibleChapter,
     selectedBibleVerse, setSelectedBibleVerse, customTitle, setCustomTitle, customText, setCustomText, toastMsg, filteredAvailableSongs,
     broadcastLiveState, handleGoLive, handleToggleBlackout, handleToggleClearText, handleToggleLogo, handleOpenProjectorWindow, handleSavePlaylist, handleAddItemToPlaylist,
-    roomCode, connectedScreens, startRemoteRoom, stopRemoteRoom
+    roomCode, connectedScreens, startRemoteRoom, stopRemoteRoom, schedules, loadSchedule, saveSchedule
   } = useEasyWorship(props);
   const [isRemoteOpen, setIsRemoteOpen] = useState(false);
+  const { confirm, toast } = useFeedback();
+  const [selectedScheduleId, setSelectedScheduleId] = useState('');
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [scheduleTitle, setScheduleTitle] = useState('');
+  const [scheduleDate, setScheduleDate] = useState(toWibIsoDate());
+  const scheduleLabel = (s: AppItem) => `${s.title}${s.serviceDate ? ` · ${formatToIndonesianDate(s.serviceDate)}` : ''}`;
+
+  const openSchedule = async () => {
+    const schedule = schedules.find((s) => s.id === selectedScheduleId);
+    if (!schedule) return;
+    if (playlist.length > 0 && !(await confirm({ title: `Muat "${schedule.title}"?`, message: 'Tata ibadah yang sedang disusun akan diganti dengan jadwal ini.', confirmLabel: 'Muat jadwal' }))) return;
+    loadSchedule(schedule);
+    toast(`Jadwal "${schedule.title}" dimuat`);
+  };
+  const submitSchedule = async () => {
+    if (!saveSchedule || !scheduleTitle.trim()) return;
+    await saveSchedule(scheduleTitle.trim(), scheduleDate);
+    setSaveOpen(false);
+    setScheduleTitle('');
+    toast('Jadwal tersimpan dan dapat dimuat operator lain');
+  };
 
   const goSlide = (index: number) => { setActiveSlideIndex(index); handleGoLive(activeItem, index); };
   const status = liveState.isBlackout ? 'Layar padam' : liveState.isLogo ? 'Layar logo' : 'Live';
@@ -46,7 +69,33 @@ export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?
           </Button>
           <Button icon={<ExternalLink size={16} aria-hidden="true" />} onClick={handleOpenProjectorWindow}>Buka layar proyektor</Button>
         </div>
+        {(schedules.length > 0 || saveSchedule) && (
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-3">
+            <span className="flex items-center gap-1.5 text-[0.86rem] font-semibold text-ink"><CalendarDays size={15} aria-hidden="true" className="text-gold-ink" />Jadwal tersimpan</span>
+            {schedules.length > 0 ? (
+              <>
+                <Select aria-label="Pilih jadwal tersimpan" className="min-w-0 flex-1 sm:max-w-sm" value={selectedScheduleId} onChange={(e) => setSelectedScheduleId(e.target.value)}>
+                  <option value="">Pilih jadwal</option>
+                  {schedules.map((s) => <option key={s.id} value={s.id}>{scheduleLabel(s)}</option>)}
+                </Select>
+                <Button size="sm" variant="secondary" disabled={!selectedScheduleId} onClick={openSchedule}>Muat ke konsol</Button>
+              </>
+            ) : <span className="text-[0.86rem] text-muted">Belum ada jadwal.</span>}
+            {saveSchedule && (
+              <Button size="sm" variant="secondary" icon={<Save size={14} aria-hidden="true" />} disabled={playlist.length === 0} onClick={() => setSaveOpen(true)} className="sm:ml-auto">Simpan sebagai jadwal</Button>
+            )}
+          </div>
+        )}
       </header>
+      {saveOpen && (
+        <Dialog open onClose={() => setSaveOpen(false)} size="sm" title="Simpan sebagai jadwal" description={`${playlist.length} tayangan dalam tata ibadah ini akan disimpan.`}
+          footer={<><Button variant="secondary" onClick={() => setSaveOpen(false)}>Batal</Button><Button disabled={!scheduleTitle.trim()} onClick={submitSchedule}>Simpan jadwal</Button></>}>
+          <div className="flex flex-col gap-4">
+            <Field label="Nama jadwal" required><Input placeholder="Contoh: Ibadah Jumat Bapekkris" value={scheduleTitle} onChange={(e) => setScheduleTitle(e.target.value)} /></Field>
+            <Field label="Tanggal ibadah"><Input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} /></Field>
+          </div>
+        </Dialog>
+      )}
       <RemoteProjectorDialog open={isRemoteOpen} onClose={() => setIsRemoteOpen(false)} roomCode={roomCode} connectedScreens={connectedScreens} onStop={stopRemoteRoom} />
 
       <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_420px]">

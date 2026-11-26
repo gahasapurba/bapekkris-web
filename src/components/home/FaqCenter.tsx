@@ -23,7 +23,8 @@ function newFaqId(): string {
 }
 
 export function FaqCenter({ faqs, onSubmitQuestion }: FaqCenterProps) {
-  const published = faqs.filter((f) => f.isPublished !== false);
+  const published = faqs.filter((f) => f.isPublished !== false)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
   const [openId, setOpenId] = useState<string | null>('faq-1');
   const [category, setCategory] = useState('Semua');
   const [search, setSearch] = useState('');

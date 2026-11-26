@@ -1,4 +1,4 @@
-import { Edit2, MessageCircle, Plus, Trash2, Upload } from 'lucide-react';
+import { Download, Edit2, MessageCircle, Plus, Trash2, Upload } from 'lucide-react';
 import { LEVEL_OPTIONS, findMatchingRole, getCategoryFromLevel, getTenureRoles, validateMemberQuota } from '../../utils/memberQuotaUtils';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select } from '../../ui';
@@ -8,6 +8,7 @@ import { useAdminPortal } from '../AdminPortalContext';
 import { uploadMediaToCloud, type AppItem } from '../../lib/supabase';
 import { memberCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
+import { downloadCsv } from '../../utils/csv';
 
 type MemberForm = {
   memName: string; memWhatsapp: string; memTenureId: string; memRoleId: string; memDivisionId: string; memSubDivisionId: string;
@@ -129,6 +130,21 @@ export default function MembersTab() {
   const filterRoles = (adminMemTenureFilter === 'all' ? tenures.flatMap((t) => getTenureRoles(t.id, roleQuotas, tenureRoles)) : getTenureRoles(adminMemTenureFilter, roleQuotas, tenureRoles))
     .sort((a, b) => a.level - b.level || a.sortOrder - b.sortOrder);
   const q = adminMemSearch.trim().toLowerCase();
+  // Exports the members matching the current filters
+  const exportCsv = () => {
+    downloadCsv(`daftar_pengurus_bapekkris_${Date.now()}.csv`,
+      ['Nama', 'Jabatan', 'Divisi', 'Sub-divisi', 'Periode', 'WhatsApp', 'Motto', 'Tanggung jawab'],
+      filtered.map((m) => [
+        m.name,
+        findMatchingRole(m, tenureRoles)?.name || m.role || '',
+        divisions.find((d) => d.id === m.divisionId)?.name || '',
+        subDivisions.find((sd) => sd.id === m.subDivisionId)?.name || '',
+        tenures.find((t) => t.id === m.tenureId)?.code || '',
+        m.whatsapp || '',
+        m.motto || '',
+        Array.isArray(m.responsibilities) ? m.responsibilities.join('; ') : ''
+      ]));
+  };
   const filtered = members.filter((m) => {
     const matchesSearch = !q || [m.name, m.role, m.title, m.whatsapp].some((v) => String(v || '').toLowerCase().includes(q));
     const matchesCat = adminMemCatFilter === 'all' || (() => {
@@ -147,7 +163,8 @@ export default function MembersTab() {
   const yearOf = (tid?: string | null) => { const t = tenures.find((x) => x.id === tid); return adminMemTenureFilter === 'all' && t ? ` (${t.code || t.title})` : ''; };
 
   return (
-    <AdminPanel title={`Pengurus & pelayan (${members.length})`} description="Pimpinan, pembina, ketua divisi, dan anggota pelayan di bagan organisasi, lengkap dengan nomor WhatsApp untuk koordinasi.">
+    <AdminPanel title={`Pengurus & pelayan (${members.length})`} description="Pimpinan, pembina, ketua divisi, dan anggota pelayan di bagan organisasi, lengkap dengan nomor WhatsApp untuk koordinasi."
+      actions={filtered.length > 0 && <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={exportCsv}>Ekspor CSV</Button>}>
       <AdminSubsection title="Tambah personel">
         <form onSubmit={createMember} noValidate className="grid gap-4 md:grid-cols-2">
           <Field label="Nama lengkap" required error={err.memName?.message}>

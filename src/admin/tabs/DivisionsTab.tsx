@@ -5,7 +5,7 @@ import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { getDivisionLead, getDivisionStructure } from '../../utils/memberQuotaUtils';
 import { Badge, Button, Field, Input, Pagination, Select, Textarea, cn } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FilterSelect, IconButton, ListToolbar, SearchBox, Switch } from '../AdminUi';
-import { downloadCsv } from '../csv';
+import { downloadCsv } from '../../utils/csv';
 import { useAdminPortal } from '../AdminPortalContext';
 import { divisionCreateSchema, subDivisionDraftSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';

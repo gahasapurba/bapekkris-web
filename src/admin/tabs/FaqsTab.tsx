@@ -1,10 +1,11 @@
-import { Edit2, Eye, EyeOff, Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Edit2, Eye, EyeOff, Plus, Search, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib, formatWibTimestamp } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select, Textarea } from '../../ui';
 import { faqCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
 import { AdminEmpty, AdminPanel, AdminSubsection, IconButton } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
+import type { AppItem } from '../../lib/supabase';
 
 const PER_PAGE = 10;
 export const FAQ_CATEGORIES = ['Tentang Bapekkris', 'Kegiatan & Event', 'Pelayanan & Operasional', 'Doa & Pelayanan Kasih', 'Pendaftaran & Oprec', 'Umum'];
@@ -20,16 +21,30 @@ export default function FaqsTab() {
   const { handleSubmit, field, resetToDefaults, formState: { errors } } = useAdminDraftForm<FaqForm>('faq', faqCreateSchema,
     { faqCategory: '', faqQuestion: '', faqAnswer: '' });
   const createFaq = handleSubmit(({ faqCategory, faqQuestion, faqAnswer }) => {
-    onAddFaq?.({ id: 'faq-' + Date.now(), category: faqCategory.trim(), question: faqQuestion.trim(), answer: faqAnswer.trim(), isPublished: true });
+    onAddFaq?.({ id: 'faq-' + Date.now(), category: faqCategory.trim(), question: faqQuestion.trim(), answer: faqAnswer.trim(), isPublished: true, sortOrder: nextSortOrder });
     resetToDefaults();
     showToast('Pertanyaan FAQ baru berhasil ditambahkan & disinkronkan!');
   }, () => showToast('Mohon lengkapi seluruh kolom wajib pada form FAQ', 'error'));
 
+  // Display order (sort_order, then oldest first) is the order on the public page
+  const ordered = [...faqs].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
+  const nextSortOrder = ordered.reduce((max, f) => Math.max(max, Number(f.sortOrder) || 0), 0) + 10;
   const q = faqSearchQuery.trim().toLowerCase();
-  const filtered = faqs.filter((f) =>
+  const filtered = ordered.filter((f) =>
     (!q || (f.question || '').toLowerCase().includes(q) || (f.answer || '').toLowerCase().includes(q)) &&
     (faqCatFilter === 'all' || f.category === faqCatFilter));
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
+
+  /** Swaps a question with its neighbour in the visible list; positions are renumbered 10, 20, ... */
+  const move = (faq: AppItem, direction: -1 | 1) => {
+    const neighbour = filtered[filtered.indexOf(faq) + direction];
+    if (!neighbour) return;
+    const next = [...ordered];
+    const a = next.indexOf(faq);
+    const b = next.indexOf(neighbour);
+    [next[a], next[b]] = [next[b], next[a]];
+    next.forEach((f, i) => { if ((f.sortOrder ?? 0) !== (i + 1) * 10) onUpdateFaq?.({ ...f, sortOrder: (i + 1) * 10 }); });
+  };
   const page = Math.min(Math.max(1, adminFaqPage), pageCount);
   const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
@@ -86,6 +101,8 @@ export default function FaqsTab() {
                     {f.updatedAt && <p className="mt-1.5 text-[0.76rem] text-dim">{formatLastUpdatedWib(f.updatedAt)}</p>}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
+                    <IconButton label={`Naikkan urutan: ${f.question}`} disabled={filtered.indexOf(f) === 0} onClick={() => move(f, -1)}><ArrowUp size={15} aria-hidden="true" /></IconButton>
+                    <IconButton label={`Turunkan urutan: ${f.question}`} disabled={filtered.indexOf(f) === filtered.length - 1} onClick={() => move(f, 1)}><ArrowDown size={15} aria-hidden="true" /></IconButton>
                     <Button size="sm" variant="secondary" icon={published ? <EyeOff size={14} aria-hidden="true" /> : <Eye size={14} aria-hidden="true" />} onClick={() => onUpdateFaq?.({ ...f, isPublished: !published })}>
                       {published ? 'Sembunyikan' : 'Tampilkan'}
                     </Button>

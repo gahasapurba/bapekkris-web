@@ -3,7 +3,7 @@ import { AlertTriangle, Camera, CameraOff, CheckCircle2, Download, RotateCcw, Sc
 import { checkInRegistration, undoCheckIn, type CheckInResult } from '../../../lib/supabase';
 import { formatWibTimestamp } from '../../../utils/dateUtils';
 import { Badge, Button, Card, Field, Input, useFeedback, cn } from '../../../ui';
-import { downloadCsv } from '../../../admin/csv';
+import { downloadCsv } from '../../../utils/csv';
 import { useRegistrationStats } from '../RegistrationStatsContext';
 import QrScanner from './QrScanner';
 

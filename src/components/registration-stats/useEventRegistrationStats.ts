@@ -9,6 +9,7 @@ import type { AppItem } from '../../lib/supabase';
 import type { FormField } from '../../types/content';
 import { getFormFields } from '../../utils/formMeta';
 import { DIAGRAM_COLORS } from './constants';
+import { downloadCsv } from '../../utils/csv';
 import { fieldValue, participantInfo, participantName, winnerNameFrom, type SubmissionData } from '../../utils/participantInfo';
 
 export interface UseEventRegistrationStatsProps {
@@ -36,18 +37,6 @@ const CHOICE_TYPES = ['select', 'radio', 'dropdown', 'choice'];
 const optionText = (opt: unknown) => (opt && typeof opt === 'object'
   ? String((opt as { value?: string; label?: string }).value || (opt as { label?: string }).label || '')
   : String(opt ?? '')).trim();
-const csvCell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-
-function downloadCsv(filename: string, headers: string[], rows: string[]) {
-  const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows].join('\n');
-  const link = document.createElement('a');
-  link.setAttribute('href', encodeURI(csvContent));
-  link.setAttribute('download', filename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
-
 const slug = (title?: string) => (title ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'event');
 
 /** State, data and handlers of EventRegistrationStats; the markup lives in EventRegistrationStats.tsx and ./sections. */
@@ -526,14 +515,8 @@ export function useEventRegistrationStats({
 
     const rows = filteredSubmissions.map((sub, idx) => {
       const isWinner = wonIdsSet.has(sub.id) ? 'Pemenang Undian' : 'Belum Menang';
-      const fieldVals = formFields.map(f => csvCell(fieldValue(sub.data, f) ?? ''));
       const formattedDate = formatWibTimestamp(sub.createdAt).shortDate || sub.createdAt || '-';
-      return [
-        idx + 1,
-        ...fieldVals,
-        ...(isLuckyDrawEnabled ? [`"${isWinner}"`] : []),
-        `"${formattedDate}"`
-      ].join(',');
+      return [idx + 1, ...formFields.map(f => fieldValue(sub.data, f) ?? ''), ...(isLuckyDrawEnabled ? [isWinner] : []), formattedDate];
     });
 
     downloadCsv(`pendaftar-${slug(event?.title)}.csv`, allHeaders, rows);
@@ -679,13 +662,12 @@ export function useEventRegistrationStats({
 
     const rows = filteredWinners.map((w, idx) => {
       const formattedTime = formatWibTimestamp(w.drawnAt || w.createdAt).exact || '-';
-      const fieldVals = formFields.map((f, colIdx) => csvCell(fieldValue(w.submissionData, f) ?? (colIdx === 0 ? w.winnerName : '-')));
       return [
-        `"#${w.drawNumber || idx + 1}"`,
-        ...fieldVals,
-        csvCell(w.prizeName || 'Doorprize Utama'),
-        `"${formattedTime}"`
-      ].join(',');
+        `#${w.drawNumber || idx + 1}`,
+        ...formFields.map((f, colIdx) => fieldValue(w.submissionData, f) ?? (colIdx === 0 ? w.winnerName : '-')),
+        w.prizeName || 'Doorprize Utama',
+        formattedTime
+      ];
     });
 
     downloadCsv(`pemenang-undian-${slug(event?.title)}.csv`, allHeaders, rows);

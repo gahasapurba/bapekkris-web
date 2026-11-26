@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { createRoomCode, useProjectorRoomOperator, type ProjectorLiveState } from '../../lib/projectorSync';
 import { mergeSongLibrary, useHymnal } from '../../lib/songLibrary';
 import type { ProjectorItem, Song } from '../../types/content';
+import type { AppItem } from '../../lib/supabase';
+import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
 
@@ -19,6 +21,18 @@ export interface Slide { index: number; label: string; text: string }
 interface UseEasyWorshipProps {
   songs?: Song[];
   initialItem?: ProjectorItem | null;
+  /** Saved service orders (easy_worship_schedules), readable by everyone. */
+  schedules?: AppItem[];
+  /** Present for signed-in admins only: saves the current service order as a schedule. */
+  onSaveSchedule?: (schedule: AppItem) => unknown;
+}
+
+/** Keeps only well-formed slides from a stored schedule. */
+function toPlaylist(items: unknown): PlaylistItem[] {
+  if (!Array.isArray(items)) return [];
+  return items
+    .filter((i): i is Partial<PlaylistItem> => Boolean(i) && typeof i === 'object' && typeof (i as PlaylistItem).title === 'string')
+    .map((i, index) => ({ id: i.id || `ew-${Date.now()}-${index}`, type: i.type || 'custom', title: i.title || '', subtitle: i.subtitle, text: i.text || '' }));
 }
 
 const DEFAULT_LIVE_STATE: ProjectorLiveState = {
@@ -61,7 +75,7 @@ function parseTextToSlides(rawText: string = ''): Slide[] {
 }
 
 /** Service order, slides, live projector state and controls; markup in EasyWorshipSection.tsx. */
-export function useEasyWorship({ songs = [], initialItem }: UseEasyWorshipProps) {
+export function useEasyWorship({ songs = [], initialItem, schedules = [], onSaveSchedule }: UseEasyWorshipProps) {
   // Built-in hymnal with the custom songs from Supabase
   const { data: hymnal } = useHymnal();
   const availableSongs = useMemo(() => mergeSongLibrary(hymnal || [], songs), [hymnal, songs]);
@@ -245,6 +259,28 @@ export function useEasyWorship({ songs = [], initialItem }: UseEasyWorshipProps)
     } catch { /* storage unavailable */ }
   };
 
+  // Saved schedules: load into the console (anyone) or save the current order (admins)
+  const loadSchedule = (schedule: AppItem) => {
+    const items = toPlaylist(schedule.items);
+    setPlaylist(items);
+    setActiveItemId(items[0]?.id || null);
+    setActiveSlideIndex(0);
+    try { localStorage.setItem('bapekkris_ew_playlist', JSON.stringify(items)); } catch { /* storage unavailable */ }
+  };
+  const saveSchedule = onSaveSchedule
+    ? (title: string, serviceDate: string) => onSaveSchedule({ id: `ews-${Date.now()}`, title, serviceDate, items: playlist, sortOrder: 0 })
+    : undefined;
+  // "Buka di konsol" from the admin portal; applied once the schedules have loaded
+  const [pendingScheduleId, setPendingScheduleId] = useState<string | null>(null);
+  usePageIntent('easyworship', ({ scheduleId }) => setPendingScheduleId(scheduleId));
+  useEffect(() => {
+    if (!pendingScheduleId) return;
+    const schedule = schedules.find((s) => s.id === pendingScheduleId);
+    if (!schedule) return;
+    setPendingScheduleId(null);
+    loadSchedule(schedule);
+  }, [pendingScheduleId, schedules]);
+
   const handleAddItemToPlaylist = (newItem: PlaylistItem) => {
     setPlaylist(prev => [...prev, newItem]);
     setActiveItemId(newItem.id);
@@ -287,6 +323,9 @@ export function useEasyWorship({ songs = [], initialItem }: UseEasyWorshipProps)
     handleOpenProjectorWindow,
     handleSavePlaylist,
     handleAddItemToPlaylist,
+    schedules,
+    loadSchedule,
+    saveSchedule,
     roomCode,
     connectedScreens,
     startRemoteRoom,

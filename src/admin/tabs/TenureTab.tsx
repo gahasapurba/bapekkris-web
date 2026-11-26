@@ -2,7 +2,7 @@ import { Download, Edit2, Plus, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Textarea } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FilterSelect, IconButton, ListToolbar, SearchBox } from '../AdminUi';
-import { downloadCsv } from '../csv';
+import { downloadCsv } from '../../utils/csv';
 import { useAdminPortal } from '../AdminPortalContext';
 import { tenureCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
