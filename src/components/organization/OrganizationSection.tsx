@@ -119,7 +119,7 @@ export default function OrganizationSection(props: UseOrganizationProps) {
                   const effectiveLeaders: AppItem[] = leaders.length > 0 ? leaders : lead.member ? [lead.member] : div.leadName ? activeMembers.filter((m) => m.name === div.leadName) : [];
                   const accent = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(div.color || '') ? div.color : '#0b2f5e';
                   return (
-                    <div key={div.id} data-pdf-card className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 shadow-card" style={{ borderTopWidth: 3, borderTopColor: accent }}>
+                    <div key={div.id} data-pdf-card className="flex min-w-0 flex-col gap-3 rounded-lg border border-line bg-surface p-4 shadow-card" style={{ borderTopWidth: 3, borderTopColor: accent }}>
                       <p className="font-display text-[1.15rem] font-semibold text-ink">{div.name}</p>
                       {effectiveLeaders.length > 0
                         ? <div className="flex flex-col gap-2">{effectiveLeaders.map((m) => card(m, true))}</div>

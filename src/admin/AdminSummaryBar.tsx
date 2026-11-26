@@ -81,8 +81,8 @@ export default function AdminSummaryBar() {
     });
   }
 
-  return (
-    <section aria-label={`Ringkasan periode ${tenureLabel}`} className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+  const tiles = (
+    <>
       <Tile className="col-span-2" label={`Personel · ${tenureLabel}`} icon={<Users size={16} />} value={scopedMembers.length} unit="orang">
         {roleCounts.length > 0
           ? <ul className="flex list-none flex-wrap gap-x-3 gap-y-0.5">{roleCounts.map((rc, i) => <li key={i}><strong className="text-ink">{rc.count}</strong> {rc.name}</li>)}</ul>
@@ -100,6 +100,20 @@ export default function AdminSummaryBar() {
       <Tile className="col-span-2 lg:col-span-2" label="Pelayanan firman & pujian" icon={<BookOpen size={16} />} value={devotions.length} unit={`renungan · ${worshipSongs.length} lagu`}>
         {easyWorshipSchedules.length} jadwal EasyWorship
       </Tile>
-    </section>
+    </>
+  );
+  return (
+    <>
+      {/* Desktop: always visible. Phones: folded so each tab's content starts near the top. */}
+      <section aria-label={`Ringkasan periode ${tenureLabel}`} className="hidden grid-cols-4 gap-3 lg:grid">{tiles}</section>
+      <details className="group rounded-lg border border-line bg-surface shadow-card lg:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-[0.9rem] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+          <span>Ringkasan periode {tenureLabel}</span>
+          <span className="text-[0.8rem] font-medium text-muted group-open:hidden">Tampilkan</span>
+          <span className="hidden text-[0.8rem] font-medium text-muted group-open:inline">Sembunyikan</span>
+        </summary>
+        <div className="grid grid-cols-2 gap-3 border-t border-line p-3" aria-label={`Ringkasan periode ${tenureLabel}`}>{tiles}</div>
+      </details>
+    </>
   );
 }

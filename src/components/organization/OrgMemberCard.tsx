@@ -27,7 +27,7 @@ export function OrgMemberCard({ member, roleName, subDivisionName, onClick, comp
           : <span aria-hidden="true">{initials(member.name)}</span>}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-gold-ink">{roleName || 'Pelayan'}{subDivisionName ? ` · ${subDivisionName}` : ''}</span>
+        <span className="line-clamp-2 block break-words text-[0.72rem] font-semibold uppercase leading-snug tracking-[0.1em] text-gold-ink">{roleName || 'Pelayan'}{subDivisionName ? ` · ${subDivisionName}` : ''}</span>
         <span className={cn('block truncate font-display font-semibold text-ink', compact ? 'text-[0.98rem]' : 'text-[1.08rem]')}>{member.name}</span>
         {!compact && member.motto && <span className="block truncate text-[0.82rem] italic text-muted">“{member.motto}”</span>}
       </span>

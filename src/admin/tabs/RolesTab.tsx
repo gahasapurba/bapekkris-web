@@ -1,6 +1,6 @@
 import { Edit2, Plus, Trash2 } from 'lucide-react';
 import { LEVEL_OPTIONS, canDeleteRole, formatLevelOptionLabel } from '../../utils/memberQuotaUtils';
-import { formatLastUpdatedWib } from '../../utils/dateUtils';
+import { formatLastUpdatedWib, formatWibTimestamp } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select } from '../../ui';
 import { AdminPanel, AdminSubsection, AdminTable, CheckField, FilterSelect, IconButton, ListToolbar, SearchBox, tdClass, thClass } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
@@ -135,9 +135,9 @@ export default function RolesTab() {
                     {role.requiresDivision ? <>Divisi{role.requiresSubDivision && ' + sub-divisi'}</> : <span className="text-muted">Global</span>}
                   </td>
                   <td className={tdClass} title={names ? `Terisi oleh: ${names}` : undefined}>
-                    <Badge tone={full ? 'danger' : count > 0 ? 'success' : 'neutral'}>{count}{maxQ > 0 ? `/${maxQ}` : ''}{full ? ' · penuh' : maxQ === 0 ? ' · tanpa batas' : ''}</Badge>
+                    <Badge className="whitespace-nowrap" tone={full ? 'danger' : count > 0 ? 'success' : 'neutral'}>{count}{maxQ > 0 ? `/${maxQ}` : ''}{full ? ' · penuh' : maxQ === 0 ? ' · tanpa batas' : ''}</Badge>
                   </td>
-                  <td className={`${tdClass} whitespace-nowrap text-[0.78rem] text-dim`}>{formatLastUpdatedWib(role.updatedAt || role.createdAt)}</td>
+                  <td className={`${tdClass} whitespace-nowrap text-[0.78rem] text-dim`} title={formatLastUpdatedWib(role.updatedAt || role.createdAt)}>{formatWibTimestamp(role.updatedAt || role.createdAt).shortDate || '—'}</td>
                   <td className={`${tdClass} text-right`}>
                     <div className="inline-flex gap-1">
                       <IconButton label={`Edit ${role.name}`} onClick={() => setEditingItem({ type: 'role', item: { ...role } })}><Edit2 size={15} aria-hidden="true" /></IconButton>

@@ -141,14 +141,14 @@ export default function EventCalendarView({
       )}
 
       <Card padding="none" className="overflow-x-auto">
-        <div className="min-w-[680px]">
+        <div className="md:min-w-[680px]">
           <div className="grid grid-cols-7 border-b border-line">
             {DAYS.map((d, i) => (
-              <div key={d} className={cn('px-3 py-3 text-center text-[0.74rem] font-semibold uppercase tracking-[0.12em]', i === 0 ? 'text-danger' : 'text-dim')}>{d}</div>
+              <div key={d} className={cn('px-1 py-2 text-center text-[0.7rem] font-semibold uppercase md:px-3 md:py-3 md:text-[0.74rem] md:tracking-[0.12em]', i === 0 ? 'text-danger' : 'text-dim')}>{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7">
-            {Array.from({ length: offset }).map((_, i) => <div key={`empty-${i}`} className="min-h-28 border-b border-r border-line bg-page" />)}
+            {Array.from({ length: offset }).map((_, i) => <div key={`empty-${i}`} className="min-h-16 border-b border-r border-line bg-page md:min-h-28" />)}
             {Array.from({ length: totalDays }).map((_, i) => {
               const day = i + 1;
               const date = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -161,10 +161,17 @@ export default function EventCalendarView({
                   onClick={() => dayEvents.length > 0 && open(dayEvents[0], dayEvents)}
                   onMouseEnter={() => dayEvents.length > 0 && setHoveredDate(date)}
                   onMouseLeave={() => setHoveredDate(null)}
-                  className={cn('relative flex min-h-28 flex-col gap-1 border-b border-r border-line p-2', dayEvents.length > 0 && 'cursor-pointer bg-surface hover:bg-surface-hover', col === 6 && 'border-r-0')}>
+                  className={cn('relative flex min-h-16 flex-col items-center gap-1 border-b border-r border-line p-1 md:min-h-28 md:items-stretch md:p-2', dayEvents.length > 0 && 'cursor-pointer bg-surface hover:bg-surface-hover', col === 6 && 'border-r-0')}>
                   <span className={cn('inline-flex size-7 items-center justify-center rounded-full text-[0.84rem] font-semibold', isToday ? 'bg-action text-on-action' : col === 0 ? 'text-danger' : 'text-ink')}>
                     {day}
                   </span>
+                  {dayEvents.length > 0 && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); open(dayEvents[0], dayEvents); }}
+                      aria-label={`${day} ${INDONESIAN_MONTHS[currentMonth]}: ${dayEvents.map((ev) => ev.title).join(', ')}`}
+                      className="flex cursor-pointer flex-wrap justify-center gap-1 border-0 bg-transparent p-1 md:hidden">
+                      {dayEvents.slice(0, 3).map((ev) => <span key={ev.id} aria-hidden="true" className="size-2 rounded-full" style={{ background: colorOf(ev) || FALLBACK_COLOR }} />)}
+                    </button>
+                  )}
                   {dayEvents.slice(0, 2).map((ev) => {
                     const done = ev.status === 'Completed' || isEventPassed(ev.startDate, ev.endDate);
                     const draft = isAdmin && ev.isPublic !== true;
@@ -172,14 +179,14 @@ export default function EventCalendarView({
                       <button key={ev.id} type="button" onClick={(e) => { e.stopPropagation(); open(ev, dayEvents); }}
                         title={`${ev.title}${done ? ' (selesai)' : ''}${isAdmin ? (ev.isPublic !== true ? ' — draft' : ' — publik') : ''}`}
                         style={{ borderLeftColor: done ? 'var(--text-dim)' : colorOf(ev) || FALLBACK_COLOR, background: tint(colorOf(ev), 0.1) }}
-                        className={cn('w-full cursor-pointer truncate rounded-sm border-0 border-l-[3px] px-1.5 py-0.5 text-left text-[0.74rem] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-navy-ink',
+                        className={cn('hidden w-full cursor-pointer truncate rounded-sm border-0 border-l-[3px] md:block px-1.5 py-0.5 text-left text-[0.74rem] font-semibold text-ink focus-visible:outline-2 focus-visible:outline-navy-ink',
                           draft && 'border-dashed', done && 'text-dim line-through decoration-1')}>
                         {draft && <span className="mr-1 text-gold-ink">Draft ·</span>}{ev.title}
                       </button>
                     );
                   })}
                   {dayEvents.length > 2 && (
-                    <button type="button" onClick={(e) => { e.stopPropagation(); open(dayEvents[0], dayEvents); }} className="cursor-pointer border-0 bg-transparent p-0 text-left text-[0.72rem] font-semibold text-navy-ink hover:underline">
+                    <button type="button" onClick={(e) => { e.stopPropagation(); open(dayEvents[0], dayEvents); }} className="hidden cursor-pointer border-0 bg-transparent p-0 text-left text-[0.72rem] font-semibold text-navy-ink hover:underline md:block">
                       +{dayEvents.length - 2} lagi
                     </button>
                   )}
