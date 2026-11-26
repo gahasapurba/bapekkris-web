@@ -54,6 +54,30 @@ export const loginSchema = z.object({
 export type LoginValues = z.infer<typeof loginSchema>;
 
 // ---------------------------------------------------------------------------------------------
+// Password change
+// ---------------------------------------------------------------------------------------------
+
+export const PASSWORD_MIN_LENGTH = 12;
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().refine((v) => v !== '', { message: 'Password saat ini wajib diisi' }),
+    newPassword: z
+      .string()
+      .refine((v) => v.length >= PASSWORD_MIN_LENGTH, { message: `Password baru minimal ${PASSWORD_MIN_LENGTH} karakter` })
+      .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), { message: 'Password baru harus mengandung huruf dan angka' }),
+    confirmPassword: z.string()
+  })
+  .superRefine((v, ctx) => {
+    if (v.newPassword && v.newPassword === v.currentPassword) {
+      ctx.addIssue({ code: 'custom', path: ['newPassword'], message: 'Password baru harus berbeda dari password saat ini' });
+    }
+    if (v.confirmPassword !== v.newPassword) {
+      ctx.addIssue({ code: 'custom', path: ['confirmPassword'], message: 'Konfirmasi password tidak sama' });
+    }
+  });
+export type PasswordChangeValues = z.infer<typeof passwordChangeSchema>;
+
+// ---------------------------------------------------------------------------------------------
 // "Tambah" forms of the admin tabs
 // ---------------------------------------------------------------------------------------------
 

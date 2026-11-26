@@ -11,6 +11,7 @@ import {
   galleryCreateSchema,
   loginSchema,
   memberCreateSchema,
+  passwordChangeSchema,
   roleCreateSchema,
   ROLE_NAME_DUPLICATE,
   ROLE_NAME_REQUIRED
@@ -49,6 +50,27 @@ describe('login', () => {
     });
     // whitespace is a valid password, like before
     expect(collectFieldErrors(loginSchema, { loginEmail: ' a@b.co ', loginPassword: ' ' })).toEqual({});
+  });
+});
+
+describe('password change', () => {
+  const base = { currentPassword: 'lama-password-1', newPassword: 'BaruSekali2026', confirmPassword: 'BaruSekali2026' };
+
+  it('accepts a strong, confirmed, different password', () => {
+    expect(collectFieldErrors(passwordChangeSchema, base)).toEqual({});
+  });
+
+  it('enforces length, letters + digits, difference and confirmation', () => {
+    expect(collectFieldErrors(passwordChangeSchema, { ...base, newPassword: 'Pendek1', confirmPassword: 'Pendek1' }).newPassword)
+      .toBe('Password baru minimal 12 karakter');
+    expect(collectFieldErrors(passwordChangeSchema, { ...base, newPassword: 'hanyahurufsaja', confirmPassword: 'hanyahurufsaja' }).newPassword)
+      .toBe('Password baru harus mengandung huruf dan angka');
+    expect(collectFieldErrors(passwordChangeSchema, { ...base, newPassword: base.currentPassword, confirmPassword: base.currentPassword }).newPassword)
+      .toBe('Password baru harus berbeda dari password saat ini');
+    expect(collectFieldErrors(passwordChangeSchema, { ...base, confirmPassword: 'BaruSekali2027' }).confirmPassword)
+      .toBe('Konfirmasi password tidak sama');
+    expect(collectFieldErrors(passwordChangeSchema, { ...base, currentPassword: '' }).currentPassword)
+      .toBe('Password saat ini wajib diisi');
   });
 });
 

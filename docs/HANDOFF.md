@@ -148,7 +148,7 @@ Terakhir diperbarui: 26 November 2026 (Fase 3 selesai — seluruh halaman publik
 - Aksesibilitas (focus-visible, aria, kontras AA, tombol bukan `div onClick`), ganti `alert()` dengan toast, rapikan copy sisa template ("Agenda/Program Budaya" → Ibadah/Pelayanan), kurangi emoji di UI, starfield hormati `prefers-reduced-motion`.
 
 ### Fase 4 — Fitur baru (urut prioritas)
-1. Halaman ganti password admin (saat ini lewat dashboard Supabase).
+1. ✅ Ganti password admin: tombol "Ganti password" di top bar Admin Portal → `src/admin/ChangePasswordDialog.tsx` (react-hook-form + `passwordChangeSchema`: min 12 karakter, huruf + angka, beda dari yang lama, konfirmasi sama). `changeAdminPassword` di `supabase.ts` memverifikasi password lama dulu (login ulang) lalu `auth.updateUser`. Diuji Playwright dengan akun admin sementara (7/7) + login API password baru 200 / lama 400.
 2. Check-in QR di lokasi acara (scan ID registrasi → tandai hadir → laporan).
 3. EasyWorship/Projector lintas perangkat via Supabase Realtime.
 4. SEO: `document.title` per halaman, sitemap, robots.txt, JSON-LD.

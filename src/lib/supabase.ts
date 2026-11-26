@@ -952,6 +952,27 @@ export async function signInAdmin(email: string, password: string): Promise<Admi
   return profile;
 }
 
+/**
+ * Changes the signed-in admin's password. The current password is verified first by signing in
+ * again, which also gives the fresh session Supabase requires for a password change.
+ */
+export async function changeAdminPassword(currentPassword: string, newPassword: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) throw new Error('Sesi admin tidak ditemukan. Silakan masuk kembali.');
+
+  const verify = await supabase.auth.signInWithPassword({ email: user.email, password: currentPassword });
+  if (verify.error) {
+    throw new Error(verify.error.message === 'Invalid login credentials' ? 'Password saat ini salah' : verify.error.message);
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    throw new Error(error.code === 'same_password'
+      ? 'Password baru harus berbeda dari password saat ini'
+      : `Gagal mengganti password: ${error.message}`);
+  }
+}
+
 export async function signOutAdmin(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);

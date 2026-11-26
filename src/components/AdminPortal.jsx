@@ -8,7 +8,8 @@ import {
   Download,
   Globe,
   RefreshCw,
-  Upload
+  Upload,
+  KeyRound
 } from 'lucide-react';
 import AdminAccountsPanel from '../admin/AdminAccountsPanel';
 import { uploadMediaToCloud } from '../lib/supabase';
@@ -27,6 +28,7 @@ import {
 
 import { AdminPortalContext } from '../admin/AdminPortalContext';
 import AdminLoginForm from '../admin/AdminLoginForm';
+import ChangePasswordDialog from '../admin/ChangePasswordDialog';
 import { Badge, Button, useFeedback } from '../ui';
 import {
   collectFieldErrors,
@@ -168,6 +170,7 @@ export default function AdminPortal({
   const isSuperAdmin = adminProfile?.role === 'super_admin';
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [showExecutiveReportModal, setShowExecutiveReportModal] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // Notices go through the site-wide toast (src/ui/Toast).
   const { toast: notify } = useFeedback();
@@ -1982,6 +1985,7 @@ export default function AdminPortal({
           {onResetDefault && (
             <Button size="sm" variant="secondary" icon={<RefreshCw size={14} aria-hidden="true" />} onClick={() => setDeleteConfirm({ type: 'reset_all', id: 'reset', name: 'Sync Data' })} title="Kosongkan cache lokal dan muat ulang data terbaru">Sinkronkan</Button>
           )}
+          <Button size="sm" variant="secondary" icon={<KeyRound size={14} aria-hidden="true" />} onClick={() => setIsChangePasswordOpen(true)}>Ganti password</Button>
           <Button size="sm" variant="danger" icon={<LogOut size={14} aria-hidden="true" />} onClick={handleLogoutClick} className="lg:hidden">Keluar</Button>
         </div>
       </header>
@@ -2045,6 +2049,7 @@ export default function AdminPortal({
 
       {/* PRINT-READY EXECUTIVE REPORT & LPJ MODAL */}
       {showExecutiveReportModal && <ExecutiveReportModal />}
+      <ChangePasswordDialog open={isChangePasswordOpen} onClose={() => setIsChangePasswordOpen(false)} showToast={showToast} />
       </div>
       </div>
     </div>
