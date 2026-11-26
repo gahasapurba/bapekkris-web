@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { normalizeRoomCode, useProjectorRoomScreen, ROOM_CODE_LENGTH } from '../lib/projectorSync';
+import { buildPageMeta, useDocumentMeta } from '../lib/seo';
 
 const CONNECTION_LABEL = {
   connecting: 'Menyambungkan ke konsol operator…',
@@ -78,6 +79,8 @@ export default function ProjectorDisplay() {
       return { isLogo: true, bgTheme: 'cathedral' };
     }
   });
+
+  useDocumentMeta(buildPageMeta('projector'));
 
   // Room on another device (?room=CODE); otherwise windows on this device sync via BroadcastChannel
   const [roomCode, setRoomCode] = useState(() => normalizeRoomCode(new URLSearchParams(window.location.search).get('room')));

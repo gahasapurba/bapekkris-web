@@ -64,6 +64,7 @@ import {
 } from './lib/queries';
 import { isEventPassed } from './utils/dateUtils';
 import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
+import { buildPageMeta, useDocumentMeta } from './lib/seo';
 import { deriveRegistrationCounts } from './utils/quotaUtils';
 
 const EMPTY_ROLE_QUOTAS = {};
@@ -968,6 +969,13 @@ function MainApp() {
           : (isPageVisible(currentTab)
               ? (currentTab === 'program' ? 'event' : currentTab === 'oprec' ? 'form' : currentTab)
               : visiblePublicPages[0]));
+
+  // Per-page title, description, canonical URL and structured data
+  const seoEvent = activeEventIdFromUrl ? events.find(e => e.id === activeEventIdFromUrl && e.isPublic === true) : null;
+  const seoForm = activeFormIdFromUrl ? forms.find(f => f.id === activeFormIdFromUrl) : null;
+  const seoGallery = activeGalleryIdFromUrl ? galleries.find(g => g.id === activeGalleryIdFromUrl) : null;
+  const upcomingPublicEvents = useMemo(() => events.filter(e => e.isPublic === true && e.status !== 'Completed'), [events]);
+  useDocumentMeta(buildPageMeta(effectiveTab, { event: seoEvent, form: seoForm, gallery: seoGallery, events: upcomingPublicEvents }));
 
   return (
     <AppNavigationContext.Provider value={navigateTo}>
