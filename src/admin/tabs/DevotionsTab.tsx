@@ -1,57 +1,54 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { Edit2, Plus, Trash2 } from 'lucide-react';
 import { Badge, Button, Field, Input, Textarea, useFeedback } from '../../ui';
+import { DEFAULT_DEVOTION_AUTHOR, DEFAULT_DEVOTION_THEME, DEVOTION_THEMES } from '../../data/contentOptions';
+import { formatToIndonesianDate, toWibIsoDate } from '../../utils/dateUtils';
+import { devotionSchema } from '../validation/schemas';
+import { toDevotionItem, type DevotionValues } from '../contentItems';
+import { useAdminDraftForm } from '../useAdminDraftForm';
 import { AdminEmpty, AdminList, AdminListRow, AdminPanel, AdminSubsection, IconButton } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
+import type { AppItem } from '../../lib/supabase';
+
+/** Theme suggestions: the standard list plus themes already used in the archive. */
+export function devotionThemeOptions(devotions: AppItem[]): string[] {
+  return Array.from(new Set([...DEVOTION_THEMES, ...devotions.map((d) => String(d.theme || '').trim()).filter(Boolean)]));
+}
 
 export default function DevotionsTab() {
-  const {
-    devotionAuthor, devotionBody, devotionDate, devotionPrayer, devotionScriptureRef, devotionScriptureText, devotionTitle,
-    devotions, onAddDevotion, onDeleteDevotion, setDevotionAuthor, setDevotionBody, setDevotionDate, setDevotionPrayer,
-    setDevotionScriptureRef, setDevotionScriptureText, setDevotionTitle, showToast
-  } = useAdminPortal();
+  const { devotions, onAddDevotion, onDeleteDevotion, setEditingItem, showToast } = useAdminPortal();
   const { confirm } = useFeedback();
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!devotionTitle.trim() || !devotionBody.trim()) {
-      showToast('Judul dan isi renungan wajib diisi', 'error');
-      return;
-    }
-    if (!onAddDevotion) return;
-    onAddDevotion({
-      id: 'dev-' + Date.now(),
-      devotionDate: devotionDate || new Date().toISOString().split('T')[0],
-      title: devotionTitle.trim(),
-      scriptureRef: devotionScriptureRef.trim(),
-      scriptureText: devotionScriptureText.trim(),
-      body: devotionBody.trim(),
-      prayer: devotionPrayer.trim(),
-      author: devotionAuthor.trim() || 'Bapekkris Bank Mandiri',
-      // The create form has no theme field yet; every new devotion gets the default theme
-      theme: 'Integritas & Karakter Kristiani'
-    });
-    setDevotionTitle('');
-    setDevotionScriptureRef('');
-    setDevotionScriptureText('');
-    setDevotionBody('');
-    setDevotionPrayer('');
-    showToast('Renungan harian berhasil disimpan!');
+  const emptyDevotion: DevotionValues = {
+    devotionDate: toWibIsoDate(), title: '', theme: DEFAULT_DEVOTION_THEME, scriptureRef: '', scriptureText: '', body: '', prayer: '', author: DEFAULT_DEVOTION_AUTHOR
   };
+  const { handleSubmit, field, resetToDefaults, formState: { errors, isSubmitting } } = useAdminDraftForm<DevotionValues>('devotion', devotionSchema, emptyDevotion);
+
+  const publish = handleSubmit(async (values) => {
+    const item = toDevotionItem({ id: 'dev-' + Date.now() }, values);
+    await onAddDevotion(item);
+    resetToDefaults();
+    showToast(`Renungan "${item.title}" berhasil diterbitkan.`);
+  }, () => showToast('Lengkapi kolom wajib renungan terlebih dahulu', 'error'));
 
   return (
     <AdminPanel title={`Renungan harian (${devotions.length})`} description="Renungan yang terbit tampil di beranda dan halaman Renungan.">
       <AdminSubsection title="Tulis renungan baru">
-        <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
+        <form onSubmit={publish} className="flex flex-col gap-4" noValidate>
           <div className="grid gap-4 md:grid-cols-2">
-            <Field label="Tanggal" required><Input type="date" value={devotionDate} onChange={(e) => setDevotionDate(e.target.value)} /></Field>
-            <Field label="Judul" required><Input placeholder="Contoh: Setia dalam perkara kecil" value={devotionTitle} onChange={(e) => setDevotionTitle(e.target.value)} /></Field>
-            <Field label="Nats Alkitab"><Input placeholder="Contoh: Matius 25:21" value={devotionScriptureRef} onChange={(e) => setDevotionScriptureRef(e.target.value)} /></Field>
-            <Field label="Penulis"><Input placeholder="Contoh: Tim Kerohanian Bapekkris" value={devotionAuthor} onChange={(e) => setDevotionAuthor(e.target.value)} /></Field>
+            <Field label="Tanggal" required error={errors.devotionDate?.message}><Input type="date" {...field('devotionDate')} /></Field>
+            <Field label="Judul" required error={errors.title?.message}><Input placeholder="Contoh: Setia dalam perkara kecil" {...field('title')} /></Field>
+            <Field label="Tema" required error={errors.theme?.message} hint="Pilih dari daftar atau ketik tema baru. Dipakai untuk filter di halaman Renungan.">
+              <Input list="devotion-theme-options" placeholder="Contoh: Iman & Pengharapan" {...field('theme')} />
+            </Field>
+            <Field label="Nats Alkitab"><Input placeholder="Contoh: Matius 25:21" {...field('scriptureRef')} /></Field>
+            <Field label="Penulis" className="md:col-span-2"><Input placeholder="Contoh: Tim Kerohanian Bapekkris" {...field('author')} /></Field>
           </div>
-          <Field label="Isi ayat"><Textarea rows={2} placeholder="Kutipan ayat lengkap" value={devotionScriptureText} onChange={(e) => setDevotionScriptureText(e.target.value)} /></Field>
-          <Field label="Isi renungan" required><Textarea rows={6} placeholder="Tuliskan renungan di sini" value={devotionBody} onChange={(e) => setDevotionBody(e.target.value)} /></Field>
-          <Field label="Doa penutup"><Textarea rows={2} value={devotionPrayer} onChange={(e) => setDevotionPrayer(e.target.value)} /></Field>
-          <div className="flex justify-end"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Terbitkan renungan</Button></div>
+          <datalist id="devotion-theme-options">
+            {devotionThemeOptions(devotions).map((t) => <option key={t} value={t} />)}
+          </datalist>
+          <Field label="Isi ayat"><Textarea rows={2} placeholder="Kutipan ayat lengkap" {...field('scriptureText')} /></Field>
+          <Field label="Isi renungan" required error={errors.body?.message}><Textarea rows={6} placeholder="Tuliskan renungan di sini" {...field('body')} /></Field>
+          <Field label="Doa penutup"><Textarea rows={2} {...field('prayer')} /></Field>
+          <div className="flex justify-end"><Button type="submit" loading={isSubmitting} icon={<Plus size={16} aria-hidden="true" />}>Terbitkan renungan</Button></div>
         </form>
       </AdminSubsection>
 
@@ -61,16 +58,17 @@ export default function DevotionsTab() {
           <AdminList label="Arsip renungan">
             {devotions.map((dev) => (
               <AdminListRow key={dev.id}
-                meta={<><Badge tone="gold">{dev.devotionDate}</Badge>{dev.scriptureRef && <span>{dev.scriptureRef}</span>}</>}
+                meta={<><Badge tone="gold">{formatToIndonesianDate(dev.devotionDate)}</Badge>{dev.theme && <Badge tone="neutral">{dev.theme}</Badge>}{dev.scriptureRef && <span>{dev.scriptureRef}</span>}</>}
                 title={dev.title} subtitle={dev.author ? `oleh ${dev.author}` : undefined}
-                actions={
+                actions={<>
+                  <IconButton label={`Edit renungan ${dev.title}`} onClick={() => setEditingItem({ type: 'devotion', item: { ...dev } })}><Edit2 size={15} aria-hidden="true" /></IconButton>
                   <IconButton label={`Hapus renungan ${dev.title}`} tone="danger" onClick={async () => {
                     if (await confirm({ title: `Hapus renungan "${dev.title}"?`, message: 'Tindakan ini tidak dapat dibatalkan.', confirmLabel: 'Hapus', danger: true })) {
-                      onDeleteDevotion?.(dev.id);
+                      onDeleteDevotion(dev.id);
                       showToast('Renungan berhasil dihapus.');
                     }
                   }}><Trash2 size={16} aria-hidden="true" /></IconButton>
-                } />
+                </>} />
             ))}
           </AdminList>
         )}

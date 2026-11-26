@@ -12,6 +12,8 @@ import SubDivisionFields from './edit/SubDivisionFields';
 import GalleryFields from './edit/GalleryFields';
 import TenureFields from './edit/TenureFields';
 import DevotionFields from './edit/DevotionFields';
+import SongFields from './edit/SongFields';
+import { toDevotionItem, toSongItem } from '../contentItems';
 import FormFields from './edit/FormFields';
 import EventFields from './edit/EventFields';
 import BrandAssetFields from './edit/BrandAssetFields';
@@ -32,6 +34,7 @@ export default function EditItemModal() {
     members,
     onUpdateBrandAsset,
     onUpdateDevotion,
+    onUpdateWorshipSong,
     onUpdateDivision,
     onUpdateEvent,
     onUpdateFaq,
@@ -310,7 +313,8 @@ export default function EditItemModal() {
                 const { rawMisi, ...cleanItem } = editingItem.item;
                 onUpdateTenure({ ...cleanItem, misi: finalMisi });
               }
-              if (editingItem.type === 'devotion' && onUpdateDevotion) onUpdateDevotion(editingItem.item);
+              if (editingItem.type === 'devotion') onUpdateDevotion(toDevotionItem(editingItem.item, editingItem.item));
+              if (editingItem.type === 'song') onUpdateWorshipSong(toSongItem(editingItem.item, editingItem.item));
               if (editingItem.type === 'form') {
                 const fields = editingItem.item.fields || [];
                 if (onUpdateForm) {
@@ -491,6 +495,7 @@ export default function EditItemModal() {
           {editingItem.type === 'gallery' && <GalleryFields />}
           {editingItem.type === 'tenure' && <TenureFields />}
           {editingItem.type === 'devotion' && <DevotionFields />}
+          {editingItem.type === 'song' && <SongFields />}
           {editingItem.type === 'form' && <FormFields />}
           {editingItem.type === 'event' && <EventFields />}
           {editingItem.type === 'brand_asset' && <BrandAssetFields />}

@@ -170,6 +170,13 @@ Terakhir diperbarui: 26 November 2026 (Fase 1–4 selesai; kerapian kode tuntas:
 - **Bug yang ikut ditemukan & diperbaiki**: lagu tambahan admin tidak pernah tampil di halaman Kidung maupun EasyWorship (prop `worshipSongs` vs `songs` sejak template awal); error "Divisi wajib dipilih" di form galeri tidak hilang saat divisi dipilih.
 - Uji: `npm test` 62 uji (baru: songLibrary, participantInfo, quotaUtils, dateUtils). Smoke Playwright: 6 halaman publik, RSVP + formulir + upload + lacak status, statistik acara + CSV + undian, Admin Portal 17 tab + dialog edit/hapus/laporan/backup, kalender & batas waktu identik di zona Jakarta vs Los Angeles. Data uji selalu dihapus.
 
+### Renungan & lagu — ✅ SELESAI (26 Nov 2026)
+- Form tambah renungan dan lagu kini react-hook-form (`useAdminDraftForm`, draf tersimpan saat pindah tab) dengan skema `devotionSchema` / `songSchema` di `admin/validation/schemas.ts`; skema yang sama memvalidasi dialog edit (`editItemError`). State form lama (`devotion*`, `song*`) dihapus dari `useAdminPortalState`.
+- Renungan punya kolom **tema** (wajib; pilih dari saran `DEVOTION_THEMES` atau ketik tema baru, saran juga diambil dari arsip). Default tema disatukan: `DEFAULT_DEVOTION_THEME` = "Iman & Pengharapan" dipakai form, mapper database, dan halaman publik (sebelumnya admin memakai "Integritas & Karakter Kristiani").
+- Tombol **Edit** di arsip renungan dan daftar lagu; dialog edit memuat semua kolom (`modals/edit/DevotionFields.tsx`, `SongFields.tsx` baru). `onUpdateWorshipSong` disambungkan kembali.
+- Perbaikan: kategori lagu tambahan disimpan sebagai `KJ`/`PKJ`/`NKB` sehingga tidak pernah muncul di filter kategori halaman Kidung; kini memakai nama lengkap yang sama dengan kidung bawaan (`SONG_CATEGORIES` di `src/data/contentOptions.ts`). Kategori "Lagu Rohani Lainnya" muncul di halaman publik hanya bila berisi lagu. Tanggal default renungan kini hari ini WIB.
+- Pembentukan data tersimpan: `admin/contentItems.ts` (`toDevotionItem`, `toSongItem`) dipakai form tambah dan dialog edit.
+- Diuji Playwright 15/15 (validasi, draf antar tab, terbit, edit, filter tema & kategori publik, hapus) + cek isi database; data uji dihapus.
+
 ### Temuan kecil yang masih terbuka
-- Form tambah renungan belum punya kolom **tema**; renungan baru selalu bertema "Integritas & Karakter Kristiani" (perilaku lama, kini eksplisit di `DevotionsTab.tsx`). Filter tema di halaman publik tetap berfungsi untuk data yang punya tema lain.
-- Form tambah renungan & lagu masih memakai state di `useAdminPortalState` (belum react-hook-form seperti tab lain).
+- Tidak ada.

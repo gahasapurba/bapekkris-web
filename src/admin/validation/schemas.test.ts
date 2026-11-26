@@ -165,9 +165,13 @@ describe('edit dialog', () => {
     expect(editItemError('faq', { category: 'Umum', question: 'Q', answer: '' })).toBe('Pertanyaan dan jawaban FAQ wajib diisi');
   });
 
-  it('has no field rules for devotions and songs', () => {
-    expect(editItemError('devotion', {})).toBeNull();
-    expect(editItemError('song', {})).toBeNull();
+  it('requires the core fields of devotions and songs', () => {
+    expect(editItemError('devotion', {})).toBe('Tanggal renungan wajib diisi');
+    expect(editItemError('devotion', { devotionDate: '2026-11-26', title: 'Setia', theme: '', body: 'Isi' })).toBe('Tema renungan wajib dipilih atau diisi');
+    expect(editItemError('devotion', { devotionDate: '2026-11-26', title: 'Setia', theme: 'Iman & Pengharapan', body: 'Isi' })).toBeNull();
+    expect(editItemError('song', { title: 'Suci', category: 'Kidung Jemaat', lyrics: '' })).toBe('Lirik lagu wajib diisi');
+    expect(editItemError('song', { title: 'Suci', category: 'Kidung Jemaat', lyrics: 'Bait', youtubeUrl: 'youtube.com/x' })).toMatch(/^Tautan YouTube/);
+    expect(editItemError('song', { title: 'Suci', category: 'Kidung Jemaat', lyrics: 'Bait', youtubeUrl: '' })).toBeNull();
   });
 });
 

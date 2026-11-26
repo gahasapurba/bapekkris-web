@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { AdminProfile, AppItem, AppRecord, RegistrationCounts } from '../lib/supabase';
 import { soundFx } from '../utils/audio';
-import { toWibIsoDate } from '../utils/dateUtils';
 import { useFeedback } from '../ui';
 import { DIVISION_ADMIN_TABS, SYNC_BADGE } from './adminConstants';
 import type { PageVisibility } from '../components/layout/navItems';
@@ -49,6 +48,7 @@ export interface AdminPortalProps {
   onDeleteDevotion: Remove;
   worshipSongs?: AppItem[];
   onAddWorshipSong: Save;
+  onUpdateWorshipSong: Save;
   onDeleteWorshipSong: Remove;
   easyWorshipSchedules?: AppItem[];
   onDeleteEasyWorshipSchedule: Remove;
@@ -158,7 +158,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
     events = [], onAddEvent, onUpdateEvent, onDeleteEvent,
     subDivisions = [], onAddSubDivision, onUpdateSubDivision, onDeleteSubDivision,
     devotions = [], onAddDevotion, onUpdateDevotion, onDeleteDevotion,
-    worshipSongs = [], onAddWorshipSong, onDeleteWorshipSong,
+    worshipSongs = [], onAddWorshipSong, onUpdateWorshipSong, onDeleteWorshipSong,
     easyWorshipSchedules = [], onDeleteEasyWorshipSchedule,
     forms = [], onAddForm, onUpdateForm, onDeleteForm,
     submissions = [], onUpdateSubmission, onDeleteSubmission,
@@ -280,23 +280,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
   const [expandedDivSubId, setExpandedDivSubId] = useState<string | null>(null);
   const [isAdminMobileMenuOpen, setIsAdminMobileMenuOpen] = useState(false);
 
-  // Devotions State
-  const [devotionDate, setDevotionDate] = useState(toWibIsoDate());
-  const [devotionTitle, setDevotionTitle] = useState('');
-  const [devotionScriptureRef, setDevotionScriptureRef] = useState('');
-  const [devotionScriptureText, setDevotionScriptureText] = useState('');
-  const [devotionBody, setDevotionBody] = useState('');
-  const [devotionPrayer, setDevotionPrayer] = useState('');
-  const [devotionAuthor, setDevotionAuthor] = useState('Bapekkris Bank Mandiri');
-
-  // Worship Songs State
-  const [songTitle, setSongTitle] = useState('');
-  const [songNumber, setSongNumber] = useState('');
-  const [songCategory, setSongCategory] = useState('KJ');
-  const [songKey, setSongKey] = useState('C');
-  const [songAuthor, setSongAuthor] = useState('');
-  const [songLyrics, setSongLyrics] = useState('');
-  const [songYoutube, setSongYoutube] = useState('');
+  // Song list search
   const [songSearch, setSongSearch] = useState('');
 
   // List filters: divisions
@@ -733,13 +717,6 @@ export function useAdminPortalState(props: AdminPortalProps) {
     assetSearchQuery,
     brandAssets,
     deleteConfirm,
-    devotionAuthor,
-    devotionBody,
-    devotionDate,
-    devotionPrayer,
-    devotionScriptureRef,
-    devotionScriptureText,
-    devotionTitle,
     devotions,
     divPage,
     divRecruitFilter,
@@ -794,6 +771,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
     onAddForm,
     onAddSubDivision,
     onAddWorshipSong,
+    onUpdateWorshipSong,
     onDeleteBrandAsset,
     onDeleteDevotion,
     onDeleteDivision,
@@ -852,13 +830,6 @@ export function useAdminPortalState(props: AdminPortalProps) {
     setAssetPage,
     setAssetSearchQuery,
     setDeleteConfirm,
-    setDevotionAuthor,
-    setDevotionBody,
-    setDevotionDate,
-    setDevotionPrayer,
-    setDevotionScriptureRef,
-    setDevotionScriptureText,
-    setDevotionTitle,
     setDivPage,
     setDivRecruitFilter,
     setDivSearchQuery,
@@ -896,14 +867,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
     setRsvpSearchQuery,
     setSelectedSubFilter,
     setShowExecutiveReportModal,
-    setSongAuthor,
-    setSongCategory,
-    setSongKey,
-    setSongLyrics,
-    setSongNumber,
     setSongSearch,
-    setSongTitle,
-    setSongYoutube,
     setSubCurrentPage,
     setSubSearchQuery,
     setSubStatusFilter,
@@ -912,14 +876,7 @@ export function useAdminPortalState(props: AdminPortalProps) {
     setTenureSearchQuery,
     setTenureStatusFilter,
     showToast,
-    songAuthor,
-    songCategory,
-    songKey,
-    songLyrics,
-    songNumber,
     songSearch,
-    songTitle,
-    songYoutube,
     subCurrentPage,
     subDivisions,
     subSearchQuery,

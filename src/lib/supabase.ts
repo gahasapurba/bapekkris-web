@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { toWibIsoDate } from '../utils/dateUtils';
 import type { Database, Json, Tables } from '../types/database';
+import { DEFAULT_DEVOTION_AUTHOR, DEFAULT_DEVOTION_THEME, DEFAULT_SONG_CATEGORY, DEFAULT_SONG_KEY } from '../data/contentOptions';
 
 const supabaseUrl: string = import.meta.env?.VITE_SUPABASE_URL || '';
 const supabaseAnonKey: string = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
@@ -508,8 +509,8 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       scripture_text: item.scriptureText || '',
       body: String(item.body || '').trim(),
       prayer: item.prayer || '',
-      author: item.author || 'Bapekkris Bank Mandiri',
-      theme: item.theme || 'Iman & Pengharapan',
+      author: item.author || DEFAULT_DEVOTION_AUTHOR,
+      theme: item.theme || DEFAULT_DEVOTION_THEME,
       sort_order: Number(item.sortOrder || 0),
       updated_at: new Date().toISOString()
     }),
@@ -521,8 +522,8 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       scriptureText: row.scripture_text || '',
       body: row.body,
       prayer: row.prayer || '',
-      author: row.author || 'Bapekkris Bank Mandiri',
-      theme: row.theme || 'Iman & Pengharapan',
+      author: row.author || DEFAULT_DEVOTION_AUTHOR,
+      theme: row.theme || DEFAULT_DEVOTION_THEME,
       sortOrder: Number(row.sort_order || 0),
       createdAt: row.created_at,
       updatedAt: row.updated_at
@@ -534,8 +535,8 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       id: String(item.id),
       title: String(item.title || '').trim(),
       song_number: item.songNumber || '',
-      category: item.category || 'Kidung Jemaat',
-      key_signature: item.keySignature || 'C',
+      category: item.category || DEFAULT_SONG_CATEGORY,
+      key_signature: item.keySignature || DEFAULT_SONG_KEY,
       author: item.author || '',
       lyrics: String(item.lyrics || '').trim(),
       youtube_url: item.youtubeUrl || '',
@@ -546,8 +547,8 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       id: row.id,
       title: row.title,
       songNumber: row.song_number || '',
-      category: row.category || 'Kidung Jemaat',
-      keySignature: row.key_signature || 'C',
+      category: row.category || DEFAULT_SONG_CATEGORY,
+      keySignature: row.key_signature || DEFAULT_SONG_KEY,
       author: row.author || '',
       lyrics: row.lyrics || '',
       youtubeUrl: row.youtube_url || '',

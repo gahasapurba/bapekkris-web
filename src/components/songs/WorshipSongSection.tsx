@@ -2,6 +2,7 @@ import { Check, ChevronRight, Copy, MonitorPlay, Music, Search } from 'lucide-re
 import { soundFx } from '../../utils/audio';
 import { Badge, Button, EmptyState, Input, PageHeader, cn } from '../../ui';
 import type { SendToProjector, Song } from '../../types/content';
+import { SONG_CATEGORIES } from '../../data/contentOptions';
 import { useWorshipSongs } from './useWorshipSongs';
 
 interface WorshipSongSectionProps {
@@ -9,13 +10,9 @@ interface WorshipSongSectionProps {
   onSendToEasyWorship?: SendToProjector;
 }
 
-const CATEGORIES = [
-  { id: 'ALL', label: 'Semua' },
-  { id: 'Kidung Jemaat', label: 'Kidung Jemaat' },
-  { id: 'Pelengkap Kidung Jemaat', label: 'PKJ' },
-  { id: 'Nyanyikanlah Kidung Baru', label: 'NKB' },
-  { id: 'Praise & Worship', label: 'Praise & Worship' }
-];
+const CATEGORIES = [{ id: 'ALL', label: 'Semua' }, ...SONG_CATEGORIES.map((c) => ({ id: c.value, label: c.short }))];
+/** Shown only when it has songs; the built-in hymnal has none in it. */
+const OPTIONAL_CATEGORIES = new Set<string>(['Lagu Rohani Lainnya']);
 
 export default function WorshipSongSection(props: WorshipSongSectionProps) {
   const {
@@ -35,7 +32,7 @@ export default function WorshipSongSection(props: WorshipSongSectionProps) {
         <>
           <div className="mb-8 flex flex-col gap-4 border-y border-line py-4 lg:flex-row lg:items-center lg:justify-between">
             <div role="group" aria-label="Kategori lagu" className="flex flex-wrap gap-1.5">
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.filter((c) => !OPTIONAL_CATEGORIES.has(c.id) || categoryCounts[c.id]).map((c) => (
                 <button key={c.id} type="button" aria-pressed={selectedCategory === c.id} onClick={() => { soundFx.playClick(); setSelectedCategory(c.id); }}
                   className={cn('inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-[0.84rem] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy-ink',
                     selectedCategory === c.id ? 'border-action bg-action text-on-action' : 'border-line bg-surface text-muted hover:border-line-strong hover:text-ink')}>

@@ -87,6 +87,31 @@ export const faqCreateSchema = z.object({
   faqAnswer: requiredText('Jawaban / penjelasan FAQ wajib diisi')
 });
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A devotion, for the create form and the edit dialog (same field names as the stored item). */
+export const devotionSchema = z.object({
+  devotionDate: text.refine((v) => ISO_DATE.test(v.trim()), { message: 'Tanggal renungan wajib diisi' }),
+  title: requiredText('Judul renungan wajib diisi'),
+  theme: requiredText('Tema renungan wajib dipilih atau diisi'),
+  body: requiredText('Isi renungan wajib diisi'),
+  scriptureRef: text,
+  scriptureText: text,
+  prayer: text,
+  author: text
+});
+
+/** A song, for the create form and the edit dialog (same field names as the stored item). */
+export const songSchema = z.object({
+  title: requiredText('Judul lagu wajib diisi'),
+  category: requiredText('Kategori lagu wajib dipilih'),
+  lyrics: requiredText('Lirik lagu wajib diisi'),
+  youtubeUrl: text.refine((v) => !v.trim() || WEB_URL.test(v.trim()), { message: 'Tautan YouTube harus diawali http:// atau https://' }),
+  songNumber: text,
+  keySignature: text,
+  author: text
+});
+
 /** Inline "add sub-division" row; validated in the tab because the duplicate check needs data. */
 export const subDivisionDraftSchema = z.object({ newSubDivDivisionId: z.string(), newSubDivName: z.string(), newSubDivCode: z.string() });
 
@@ -285,6 +310,8 @@ const editSchemas: Record<string, z.ZodType> = {
   event: titled,
   brand_asset: titled,
   tenure: z.object({ title: TITLE_REQUIRED, code: requiredText('Kode tahun periode wajib diisi') }),
+  devotion: devotionSchema,
+  song: songSchema,
   faq: z
     .object({ category: requiredText('Kategori topik FAQ wajib dipilih'), question: text, answer: text })
     .superRefine((v, ctx) => {

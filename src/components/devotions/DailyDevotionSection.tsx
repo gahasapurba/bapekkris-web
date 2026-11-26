@@ -5,6 +5,7 @@ import { soundFx } from '../../utils/audio';
 import { formatToIndonesianDate } from '../../utils/dateUtils';
 import { Badge, Button, EmptyState, Input, PageHeader, Select, cn } from '../../ui';
 import type { SendToProjector } from '../../types/content';
+import { DEFAULT_DEVOTION_THEME } from '../../data/contentOptions';
 import { useDevotions } from './useDevotions';
 
 export default function DailyDevotionSection(props: { devotions?: AppItem[]; onSendToEasyWorship?: SendToProjector }) {
@@ -28,7 +29,7 @@ export default function DailyDevotionSection(props: { devotions?: AppItem[]; onS
             <article ref={articleRef} aria-labelledby="devotion-title" className="scroll-mt-24">
               <div className="flex flex-wrap items-center gap-3 text-[0.86rem]">
                 <span className="font-semibold text-gold-ink">{formatToIndonesianDate(d.devotionDate)}</span>
-                <Badge tone="gold">{d.theme || 'Iman & Pengharapan'}</Badge>
+                <Badge tone="gold">{d.theme || DEFAULT_DEVOTION_THEME}</Badge>
               </div>
               <h2 id="devotion-title" className="mt-4 font-display text-[clamp(1.9rem,4vw,2.8rem)] font-semibold leading-[1.1] text-ink">{d.title}</h2>
 

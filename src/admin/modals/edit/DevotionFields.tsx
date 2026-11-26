@@ -1,39 +1,34 @@
 import { useEditDialogContext } from '../../AdminPortalContext';
-import { Input, Textarea } from '../../../ui';
+import { Field, Input, Textarea } from '../../../ui';
+import type { DevotionValues } from '../../contentItems';
+import { devotionThemeOptions } from '../../tabs/DevotionsTab';
 
-/** Fields of the edit dialog for `devotion` items. */
+/** Fields of the edit dialog for `devotion` items (same fields as the create form). */
 export default function DevotionFields() {
-  const {
-    editingItem,
-    setEditingItem
-  } = useEditDialogContext();
+  const { devotions, editingItem, setEditingItem } = useEditDialogContext();
+  const item = editingItem.item;
+  const bind = (key: keyof DevotionValues) => ({
+    value: String(item[key] ?? ''),
+    onChange: (e: { target: { value: string } }) => setEditingItem({ ...editingItem, item: { ...item, [key]: e.target.value } })
+  });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-      <div>
-        <label htmlFor="ef-devotion-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Judul Renungan</label>
-        <Input id="ef-devotion-1"
-          type="text"
-          value={editingItem.item.title || ''}
-          onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-        />
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <Field label="Tanggal" required><Input type="date" {...bind('devotionDate')} /></Field>
+        <Field label="Judul" required><Input {...bind('title')} /></Field>
+        <Field label="Tema" required hint="Pilih dari daftar atau ketik tema baru.">
+          <Input list="edit-devotion-theme-options" {...bind('theme')} />
+        </Field>
+        <Field label="Nats Alkitab"><Input {...bind('scriptureRef')} /></Field>
+        <Field label="Penulis" className="md:col-span-2"><Input {...bind('author')} /></Field>
       </div>
-      <div>
-        <label htmlFor="ef-devotion-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Referensi Nats</label>
-        <Input id="ef-devotion-2"
-          type="text"
-          value={editingItem.item.scriptureRef || ''}
-          onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, scriptureRef: e.target.value } })}
-        />
-      </div>
-      <div>
-        <label htmlFor="ef-devotion-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Isi Renungan</label>
-        <Textarea id="ef-devotion-3"
-          rows={5}
-          value={editingItem.item.body || ''}
-          onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, body: e.target.value } })}
-        />
-      </div>
+      <datalist id="edit-devotion-theme-options">
+        {devotionThemeOptions(devotions).map((t) => <option key={t} value={t} />)}
+      </datalist>
+      <Field label="Isi ayat"><Textarea rows={2} {...bind('scriptureText')} /></Field>
+      <Field label="Isi renungan" required><Textarea rows={7} {...bind('body')} /></Field>
+      <Field label="Doa penutup"><Textarea rows={2} {...bind('prayer')} /></Field>
     </div>
   );
 }

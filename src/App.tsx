@@ -822,6 +822,10 @@ function MainApp() {
     setWorshipSongs(prev => [...prev, newSong]);
     await persist('Lagu', () => saveRow('worshipSongs', newSong));
   };
+  const handleUpdateWorshipSong = async (updatedSong: AppItem) => {
+    setWorshipSongs(prev => replaceById(prev, [updatedSong]));
+    await persist('Lagu', () => saveRow('worshipSongs', updatedSong));
+  };
   const handleDeleteWorshipSong = async (songId: string) => {
     setWorshipSongs(prev => prev.filter(s => s.id !== songId));
     await persist('Penghapusan lagu', () => deleteRow('worshipSongs', songId));
@@ -1301,6 +1305,7 @@ function MainApp() {
                 onDeleteDevotion={handleDeleteDevotion}
                 worshipSongs={worshipSongs}
                 onAddWorshipSong={handleAddWorshipSong}
+                onUpdateWorshipSong={handleUpdateWorshipSong}
                 onDeleteWorshipSong={handleDeleteWorshipSong}
                 easyWorshipSchedules={easyWorshipSchedules}
                 onDeleteEasyWorshipSchedule={handleDeleteEasyWorshipSchedule}

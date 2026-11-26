@@ -37,7 +37,7 @@ export function useWorshipSongs({ songs = [], onSendToEasyWorship }: UseWorshipS
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: songList.length };
     songList.forEach(s => {
-      const category = s.category || 'Lainnya';
+      const category = s.category || 'Lagu Rohani Lainnya';
       counts[category] = (counts[category] || 0) + 1;
     });
     return counts;
@@ -52,7 +52,7 @@ export function useWorshipSongs({ songs = [], onSendToEasyWorship }: UseWorshipS
         (song.lyrics || '').toLowerCase().includes(q) ||
         (song.author || '').toLowerCase().includes(q);
 
-      const matchesCat = selectedCategory === 'ALL' || song.category === selectedCategory;
+      const matchesCat = selectedCategory === 'ALL' || (song.category || 'Lagu Rohani Lainnya') === selectedCategory;
       return matchesSearch && matchesCat;
     });
   }, [songList, searchQuery, selectedCategory]);
