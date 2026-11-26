@@ -4,13 +4,13 @@ import { Button, Dialog } from '../../../ui';
 import { useDynamicFormContext } from '../DynamicFormContext';
 
 export default function SubmitConfirmModal() {
-  const { currentForm, fileData, formData, handleConfirmSubmit, isSubmitting, setIsConfirmOpen } = useDynamicFormContext();
+  const { currentFields, currentForm, fileData, formData, handleConfirmSubmit, isSubmitting, setIsConfirmOpen } = useDynamicFormContext();
   const close = () => setIsConfirmOpen(false);
   return (
     <Dialog open onClose={close} title="Periksa kembali isian Anda" description={currentForm.title}
       footer={<><Button variant="secondary" onClick={close}>Cek ulang</Button><Button variant="gold" onClick={handleConfirmSubmit} loading={isSubmitting} icon={<Send size={15} aria-hidden="true" />} data-autofocus>{isSubmitting ? 'Mengirim…' : 'Ya, kirim sekarang'}</Button></>}>
       <dl className="flex flex-col gap-4">
-        {(currentForm.fields || []).map((field: AppItem) => {
+        {currentFields.map((field) => {
           const value = formData[field.id];
           const file = fileData[field.id];
           if (!value && !file) return null;

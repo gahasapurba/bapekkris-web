@@ -4,6 +4,7 @@ import { useDynamicFormContext } from '../DynamicFormContext';
 
 export default function PosterPreviewModal() {
   const { posterPreview, setPosterPreview } = useDynamicFormContext();
+  if (!posterPreview) return null;
   const close = () => setPosterPreview(null);
   return (
     <Dialog open onClose={close} size="sm" title="Poster QR formulir"

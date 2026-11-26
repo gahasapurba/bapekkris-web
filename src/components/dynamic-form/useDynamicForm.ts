@@ -1,7 +1,12 @@
-import { useFeedback } from '../../ui';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import confetti from 'canvas-confetti';
-import { fetchAcceptedSubmissions, isSubmissionValueTaken, trackSubmissions, uploadMediaToCloud } from '../../lib/supabase';
+import { useFeedback } from '../../ui';
+import {
+  fetchAcceptedSubmissions, isSubmissionValueTaken, trackSubmissions, uploadMediaToCloud,
+  type AppItem, type RegistrationCounts
+} from '../../lib/supabase';
+import type { FormField, SubmittedFile } from '../../types/content';
+import { getFormFields } from '../../utils/formMeta';
 import { generateFormQrPoster } from '../../utils/qrPosterGenerator';
 import { getDeadlineStatus } from '../../utils/dateUtils';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
@@ -9,26 +14,47 @@ import { getUnifiedFormQuota } from '../../utils/quotaUtils';
 import { useAppNavigate } from '../../lib/appNavigation';
 import { DEFAULT_FILE_ACCEPT, MAX_FILE_BYTES, TEXTAREA_MAX_LENGTH, TEXT_MAX_LENGTH, isFileAccepted } from './formLimits';
 
+export interface SubmissionInput {
+  formId: string;
+  data: Record<string, string>;
+  files: Record<string, SubmittedFile>;
+}
+
+export interface UseDynamicFormProps {
+  forms?: AppItem[];
+  divisions?: AppItem[];
+  events?: AppItem[];
+  registrationCounts?: RegistrationCounts;
+  /** Stores the submission and resolves with its registration ID. */
+  onSubmitSubmission: (submission: SubmissionInput) => Promise<string>;
+  initialFormId?: string | null;
+  onSelectFormUrl?: (formId: string | null) => void;
+  activeTenure?: AppItem | null;
+  tenures?: AppItem[];
+}
+
+export type DynamicFormState = ReturnType<typeof useDynamicForm>;
+
+/** Server errors from submit_form carry a code (e.g. FORM_DUPLICATE) and, for duplicates, the field id. */
+type SubmitError = Error & { code?: string; detail?: string };
+
 /** State, data and handlers of DynamicFormSection; the markup lives in DynamicFormSection.tsx and ./sections. */
-export function useDynamicForm({ 
-  forms = [], 
-  divisions = [], 
-  events = [], 
+export function useDynamicForm({
+  forms = [],
+  divisions = [],
+  events = [],
   registrationCounts,
-  onSubmitSubmission, 
-  theme,
+  onSubmitSubmission,
   initialFormId = null,
   onSelectFormUrl,
-  activeTenure = null,
-  tenures = []
-}) {
+  activeTenure = null
+}: UseDynamicFormProps) {
   const { toast } = useFeedback();
-  const notifyError = (message) => toast(message, 'error');
+  const notifyError = (message: string) => toast(message, 'error');
 
   const navigateTo = useAppNavigate();
-  const isDark = theme === 'dark';
 
-  const [tenureFilter, setTenureFilter] = useState('active'); // 'active' | 'all'
+  const [tenureFilter, setTenureFilter] = useState<'active' | 'all'>('active');
 
   // Active form selection scoped to activeTenure
   const activeForms = forms.filter(f => {
@@ -43,13 +69,13 @@ export function useDynamicForm({
 
   const requestedForm = useMemo(() => {
     if (!initialFormId) return null;
-    return (forms || []).find(f => f.id === initialFormId) || null;
+    return forms.find(f => f.id === initialFormId) || null;
   }, [initialFormId, forms]);
 
-  const isInitialFormMissing = Boolean(initialFormId) && (forms || []).length > 0 && !requestedForm;
-  const isInitialFormDisabled = Boolean(requestedForm) && (requestedForm.isOpen === false || Boolean(requestedForm.isClosed));
+  const isInitialFormMissing = Boolean(initialFormId) && forms.length > 0 && !requestedForm;
+  const isInitialFormDisabled = Boolean(requestedForm) && (requestedForm?.isOpen === false || Boolean(requestedForm?.isClosed));
 
-  const [selectedFormId, setSelectedFormId] = useState(() => {
+  const [selectedFormId, setSelectedFormId] = useState<string | null>(() => {
     if (initialFormId && activeForms.some(f => f.id === initialFormId)) {
       return initialFormId;
     }
@@ -57,9 +83,9 @@ export function useDynamicForm({
   });
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSubId, setCopiedSubId] = useState(false);
-  const [uploadingFieldId, setUploadingFieldId] = useState(null);
+  const [uploadingFieldId, setUploadingFieldId] = useState<string | null>(null);
   const [generatingPoster, setGeneratingPoster] = useState(false);
-  const [posterPreview, setPosterPreview] = useState(null);
+  const [posterPreview, setPosterPreview] = useState<{ url: string; filename: string; title: string } | null>(null);
 
   useEffect(() => {
     if (initialFormId) {
@@ -78,15 +104,17 @@ export function useDynamicForm({
   }, [initialFormId, forms, activeTenure]);
 
   // Current active form object
-  const currentForm = activeForms.find(f => f.id === selectedFormId) || activeForms[0] || null;
+  const currentForm: AppItem | null = activeForms.find(f => f.id === selectedFormId) || activeForms[0] || null;
+  const currentFields = getFormFields(currentForm);
 
-  // Submission form state: { [fieldId]: value }
-  const [formData, setFormData] = useState({});
-  const [fileData, setFileData] = useState({}); // { [fieldId]: { name, size, type, dataUrl } }
-  const [pendingFiles, setPendingFiles] = useState({}); // { [fieldId]: File }
-  const [errors, setErrors] = useState({});
+  // Submission form state, keyed by field id
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [fileData, setFileData] = useState<Record<string, SubmittedFile>>({});
+  // Picked files, uploaded only when the form is submitted
+  const [pendingFiles, setPendingFiles] = useState<Record<string, File>>({});
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
   // Unique fields whose current value is already registered: { [fieldId]: normalizedValue }
-  const [uniqueConflicts, setUniqueConflicts] = useState({});
+  const [uniqueConflicts, setUniqueConflicts] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(() => {
     if (typeof window !== 'undefined') {
       const sp = new URLSearchParams(window.location.search);
@@ -111,7 +139,7 @@ export function useDynamicForm({
   // Self-Service Status Tracker state
   const [statusQuery, setStatusQuery] = useState('');
 
-  const getFormDirectUrl = (fId) => {
+  const getFormDirectUrl = (fId: string) => {
     return `${getPublicBaseUrl()}/?form=${encodeURIComponent(fId)}#form`;
   };
 
@@ -137,11 +165,11 @@ export function useDynamicForm({
     setGeneratingPoster(true);
     try {
       const shareUrl = getFormDirectUrl(targetForm.id);
-      const connectedEvent = (events || []).find(e => {
+      const connectedEvent = events.find(e => {
         const isConn = targetForm.isEventConnected || targetForm.fields?.[0]?._isEventConnected;
         const evtId = targetForm.eventId || targetForm.fields?.[0]?._eventId;
         return Boolean(isConn) && String(evtId) === String(e.id);
-      }) || (events || []).find(e => String(e.id) === String(targetForm.eventId));
+      }) || events.find(e => String(e.id) === String(targetForm.eventId));
 
       const poster = await generateFormQrPoster({
         form: targetForm,
@@ -156,17 +184,18 @@ export function useDynamicForm({
       });
 
       // Check if Web Share API with file support is available (e.g. mobile Safari / Chrome)
-      if (navigator.canShare && navigator.canShare({ files: [new File([poster.blob], poster.filename, { type: 'image/png' })] })) {
+      const posterFile = poster.blob ? new File([poster.blob], poster.filename, { type: 'image/png' }) : null;
+      if (posterFile && navigator.canShare?.({ files: [posterFile] })) {
         try {
           await navigator.share({
-            files: [new File([poster.blob], poster.filename, { type: 'image/png' })],
+            files: [posterFile],
             title: `Poster QR ${targetForm.title}`,
             text: `Scan QR Code untuk mendaftar: ${targetForm.title}`
           });
           setGeneratingPoster(false);
           return;
         } catch (shareErr) {
-          if (shareErr.name === 'AbortError') {
+          if ((shareErr as Error).name === 'AbortError') {
             setGeneratingPoster(false);
             return;
           }
@@ -192,13 +221,13 @@ export function useDynamicForm({
       }
     } catch (err) {
       console.error('Failed to generate QR poster:', err);
-      notifyError('Gagal membuat poster QR: ' + (err.message || 'Error'));
+      notifyError('Gagal membuat poster QR: ' + ((err as Error).message || 'Error'));
     } finally {
       setGeneratingPoster(false);
     }
   };
 
-  const handleCopySubId = (subId) => {
+  const handleCopySubId = (subId: string) => {
     if (!subId) return;
     navigator.clipboard?.writeText(subId);
     setCopiedSubId(true);
@@ -206,7 +235,7 @@ export function useDynamicForm({
   };
 
   // Handle Input Changes
-  const handleInputChange = (fieldId, value) => {
+  const handleInputChange = (fieldId: string, value: string) => {
     setFormData(prev => ({ ...prev, [fieldId]: value }));
     if (errors[fieldId]) {
       setErrors(prev => ({ ...prev, [fieldId]: null }));
@@ -214,10 +243,10 @@ export function useDynamicForm({
   };
 
   // Instant Unique Check on Blur (server-side lookup; the value is never compared against downloaded data)
-  const normalizeUniqueValue = (val) => String(val ?? '').trim().toLowerCase();
-  const duplicateMessage = (field, val) =>
+  const normalizeUniqueValue = (val: unknown) => String(val ?? '').trim().toLowerCase();
+  const duplicateMessage = (field: FormField, val: unknown) =>
     `${field.label} "${val}" sudah pernah terdaftar sebelumnya. Field ini bersifat unik dan tidak menerima data duplikat.`;
-  const handleInputBlur = async (field) => {
+  const handleInputBlur = async (field: FormField) => {
     if (!field || !field.isUnique || !currentForm) return;
     const val = formData[field.id];
     const normalized = normalizeUniqueValue(val);
@@ -237,7 +266,7 @@ export function useDynamicForm({
   };
 
   // Handle File Selection - Deferred upload on Submit only (never prematurely on file pick)
-  const handleFileUpload = (field, e) => {
+  const handleFileUpload = (field: FormField, e: ChangeEvent<HTMLInputElement>) => {
     const fieldId = field.id;
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -271,9 +300,9 @@ export function useDynamicForm({
   // Dynamic Validation
   const validate = () => {
     if (!currentForm) return false;
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
 
-    (currentForm.fields || []).forEach(field => {
+    currentFields.forEach(field => {
       const val = formData[field.id];
       if (field.required) {
         if (!val || (typeof val === 'string' && !val.trim())) {
@@ -308,7 +337,7 @@ export function useDynamicForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     // Anti-spam Bot Protection: silent rejection if honeypot is filled
     if (honeypotVal && honeypotVal.trim()) {
@@ -329,7 +358,7 @@ export function useDynamicForm({
   };
 
   const handleConfirmSubmit = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || !currentForm) return;
     const formQuota = getUnifiedFormQuota(currentForm, events, registrationCounts);
     if (formQuota.isFull) {
       setIsConfirmOpen(false);
@@ -357,20 +386,21 @@ export function useDynamicForm({
       console.error(err);
       setIsSubmitting(false);
       setUploadingFieldId(null);
-      notifyError('Gagal mengunggah berkas lampiran ke Cloud Storage. Silakan periksa koneksi dan coba lagi: ' + (err.message || 'Error'));
+      notifyError('Gagal mengunggah berkas lampiran ke Cloud Storage. Silakan periksa koneksi dan coba lagi: ' + ((err as Error).message || 'Error'));
       return;
     }
     setUploadingFieldId(null);
 
-    let newSubId;
+    let newSubId: string;
     try {
       newSubId = await onSubmitSubmission({ formId: currentForm.id, data: { ...formData }, files: uploadedFiles });
-    } catch (err) {
+    } catch (caught) {
+      const err = caught as SubmitError;
       console.error(err);
       setIsSubmitting(false);
       setIsConfirmOpen(false);
       if (err.code === 'FORM_DUPLICATE' && err.detail) {
-        const field = (currentForm.fields || []).find(f => f.id === err.detail);
+        const field = currentFields.find(f => f.id === err.detail);
         if (field) {
           setUniqueConflicts(prev => ({ ...prev, [field.id]: normalizeUniqueValue(formData[field.id]) }));
           setErrors(prev => ({ ...prev, [field.id]: duplicateMessage(field, formData[field.id]) }));
@@ -396,12 +426,10 @@ export function useDynamicForm({
   };
 
   // Dynamic Search Keys Text based on configured index fields in active forms that require tracking
-  const dynamicIndexLabels = React.useMemo(() => {
-    const keys = new Set();
-    const targetForms = trackingActiveForms;
-    
-    targetForms.forEach((f) => {
-      (f.fields || []).forEach((fld) => {
+  const dynamicIndexLabels = useMemo(() => {
+    const keys = new Set<string>();
+    trackingActiveForms.forEach((f) => {
+      getFormFields(f).forEach((fld) => {
         if (fld.isSearchIndex) {
           keys.add(fld.label || 'Indeks Pencarian');
         }
@@ -418,7 +446,7 @@ export function useDynamicForm({
 
   // Self-Service Status Tracker: exact match on registration ID or configured index fields, resolved by the server
   const trimmedStatusQuery = statusQuery.trim().toLowerCase();
-  const [matchedSubmissions, setMatchedSubmissions] = useState([]);
+  const [matchedSubmissions, setMatchedSubmissions] = useState<Awaited<ReturnType<typeof trackSubmissions>>>([]);
   const [isTracking, setIsTracking] = useState(false);
   useEffect(() => {
     if (trimmedStatusQuery.length < 3) {
@@ -444,7 +472,7 @@ export function useDynamicForm({
   }, [trimmedStatusQuery]);
 
   // Announcement of accepted participants for the selected form (names and short detail only)
-  const [acceptedList, setAcceptedList] = useState([]);
+  const [acceptedList, setAcceptedList] = useState<Awaited<ReturnType<typeof fetchAcceptedSubmissions>>>([]);
   useEffect(() => {
     setAcceptedList([]);
     if (!currentForm?.id || !currentForm.showAnnouncement) return undefined;
@@ -463,6 +491,7 @@ export function useDynamicForm({
     activeTenure,
     copiedLink,
     copiedSubId,
+    currentFields,
     currentForm,
     divisions,
     dynamicSearchKeysString,
@@ -484,7 +513,6 @@ export function useDynamicForm({
     hasConfiguredIndex,
     honeypotVal,
     isConfirmOpen,
-    isDark,
     isInitialFormDisabled,
     isInitialFormMissing,
     isSubmitted,

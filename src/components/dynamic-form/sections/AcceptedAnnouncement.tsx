@@ -29,7 +29,7 @@ export default function AcceptedAnnouncement() {
               </div>
               <p className="font-display text-[1.08rem] font-semibold text-ink">{sub.participantName}</p>
               {sub.participantDetail && <p className="text-[0.86rem] font-semibold text-gold-ink">{sub.participantDetail}</p>}
-              <p className="text-[0.82rem] text-dim">{forms.find((f: AppItem) => f.id === sub.formId)?.title || sub.formTitle || 'Formulir'}</p>
+              <p className="text-[0.82rem] text-dim">{forms.find((f) => f.id === sub.formId)?.title || sub.formTitle || 'Formulir'}</p>
               {sub.adminNotes && <p className="mt-1 rounded-md bg-success-tint px-3 py-2 text-[0.84rem] text-ink"><strong className="block text-[0.72rem] uppercase tracking-[0.1em] text-success">Info onboarding</strong>{sub.adminNotes}</p>}
             </li>
           ))}

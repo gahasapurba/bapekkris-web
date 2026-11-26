@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { DynamicFormState } from './DynamicFormSection';
+import type { DynamicFormState } from './useDynamicForm';
 
 export const DynamicFormContext = createContext<DynamicFormState | null>(null);
 

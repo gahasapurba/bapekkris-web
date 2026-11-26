@@ -237,7 +237,7 @@ export default function EventsTab() {
           </div>
 
           {adminEventViewMode === 'calendar' ? (
-            <EventCalendarView events={filtered} divisions={divisions} forms={forms} registrationCounts={registrationCounts} theme={theme}
+            <EventCalendarView events={filtered} divisions={divisions} forms={forms} registrationCounts={registrationCounts}
               activeTenure={eventTenureFilter !== 'all' ? tenures.find((t: any) => t.id === eventTenureFilter) : activeTenure}
               onSelectEvent={(evt: any) => setEditingItem({ type: 'event', item: { ...evt } })} onEditEvent={(evt: any) => setEditingItem({ type: 'event', item: { ...evt } })} isAdmin />
           ) : filtered.length === 0 ? <AdminEmpty>{events.length === 0 ? 'Belum ada acara.' : 'Tidak ada acara yang cocok. Coba ubah pencarian atau filter.'}</AdminEmpty> : (

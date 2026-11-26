@@ -1,7 +1,7 @@
 import { Clock } from 'lucide-react';
 import type { AppItem } from '../../lib/supabase';
 import { EmptyState, PageHeader, cn } from '../../ui';
-import { useDynamicForm } from './useDynamicForm';
+import { useDynamicForm, type UseDynamicFormProps } from './useDynamicForm';
 import { DynamicFormContext } from './DynamicFormContext';
 import FormUnavailableNotice from './sections/FormUnavailableNotice';
 import FormPicker from './sections/FormPicker';
@@ -11,14 +11,8 @@ import StatusTracker from './sections/StatusTracker';
 import AcceptedAnnouncement from './sections/AcceptedAnnouncement';
 import PosterPreviewModal from './sections/PosterPreviewModal';
 
-/**
- * Values the hook exposes. Keys are checked; values stay `any` because the hook is still
- * JavaScript, where TypeScript would infer `useState(null)` as always-null.
- */
-export type DynamicFormState = { [K in keyof ReturnType<typeof useDynamicForm>]: any };
-
-export default function DynamicFormSection(props: any) {
-  const state: DynamicFormState = useDynamicForm(props);
+export default function DynamicFormSection(props: UseDynamicFormProps) {
+  const state = useDynamicForm(props);
   const {
     activeForms,
     activeTenure,
@@ -35,7 +29,7 @@ export default function DynamicFormSection(props: any) {
 
 
 
-  const openFormsCount = forms.filter((f: AppItem) => f.isOpen !== false).length;
+  const openFormsCount = forms.filter((f) => f.isOpen !== false).length;
   const pill = (active: boolean) => cn(
     'inline-flex h-9 cursor-pointer items-center rounded-full border-0 px-4 text-[0.86rem] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy-ink',
     active ? 'bg-action text-on-action' : 'bg-transparent text-muted hover:bg-subtle hover:text-ink'

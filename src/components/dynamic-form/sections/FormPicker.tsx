@@ -16,7 +16,7 @@ export default function FormPicker() {
     <section aria-label="Pilih formulir" className="mx-auto w-full max-w-[1000px]">
       <p className="mb-4 text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-dim">Pilih formulir yang ingin diisi</p>
       <ul className="grid list-none gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {activeForms.map((f: AppItem) => {
+        {activeForms.map((f) => {
           const selected = f.id === selectedFormId;
           const quota = getUnifiedFormQuota(f, events, registrationCounts);
           const deadline = getDeadlineStatus(f.deadline);

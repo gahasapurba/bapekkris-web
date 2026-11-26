@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { ProgramSectionState } from './ProgramSection';
+import type { ProgramSectionState } from './useProgramSection';
 
 export const ProgramSectionContext = createContext<ProgramSectionState | null>(null);
 

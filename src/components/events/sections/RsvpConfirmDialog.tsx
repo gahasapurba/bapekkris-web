@@ -5,6 +5,7 @@ import { useProgramSectionContext } from '../ProgramSectionContext';
 
 export default function RsvpConfirmDialog() {
   const { handleFinalSubmitRsvp, isSubmittingRsvp, rsvpModalEvent: evt, rsvpMode, rsvpName, rsvpNotes, setConfirmRsvpOpen } = useProgramSectionContext();
+  if (!evt) return null;
   const close = () => setConfirmRsvpOpen(false);
   return (
     <Dialog open onClose={close} size="sm" title="Konfirmasi kehadiran" description="Periksa kembali rincian sebelum disimpan."

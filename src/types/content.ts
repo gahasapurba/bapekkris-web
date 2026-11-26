@@ -22,3 +22,26 @@ export interface ProjectorItem {
 }
 
 export type SendToProjector = (item: ProjectorItem) => void;
+
+/** A field of a registration form (stored in forms.fields). */
+export interface FormField {
+  id: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  isUnique?: boolean;
+  isSearchIndex?: boolean;
+  placeholder?: string;
+  accept?: string;
+  options?: string[];
+  /** Options filled from data instead of `options`. */
+  source?: 'divisions' | 'events' | string;
+}
+
+/** File attached to a submission; dataUrl is the storage URL once uploaded. */
+export interface SubmittedFile {
+  name: string;
+  size: string;
+  type: string;
+  dataUrl: string;
+}

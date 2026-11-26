@@ -29,7 +29,6 @@ interface EventCalendarViewProps {
   divisions?: AppItem[];
   forms?: AppItem[];
   registrationCounts?: RegistrationCounts;
-  theme?: string;
   activeTenure?: AppItem | null;
   onSelectEvent?: ((evt: AppItem, sameDayEvents?: AppItem[]) => void) | null;
   onEditEvent?: ((evt: AppItem) => void) | null;

@@ -34,15 +34,16 @@ export default function EventDetailModal() {
     registrationCounts, rsvpErrors, rsvpModalEvent: evt, rsvpMode, rsvpName, rsvpNotes, rsvpSuccess, lastRsvpCode,
     setRsvpErrors, setRsvpMode, setRsvpName, setRsvpNotes
   } = useProgramSectionContext();
+  if (!evt) return null;
 
   const when = formatWibEventRange(evt.startDate, evt.endDate, evt.date);
   const attendance = getUnifiedEventAttendees(evt, forms, registrationCounts);
   const rsvpCount = Number(registrationCounts?.events?.[evt.id] || 0);
-  const connectedForm: AppItem | undefined = forms.find((f: AppItem) => {
+  const connectedForm: AppItem | undefined = forms.find((f) => {
     const connected = f.isEventConnected || f.fields?.[0]?._isEventConnected;
     return Boolean(connected) && String(f.eventId || f.fields?.[0]?._eventId) === String(evt.id);
   });
-  const gallery: AppItem | undefined = galleries.find((g: AppItem) => String(g.eventId) === String(evt.id));
+  const gallery: AppItem | undefined = galleries.find((g) => String(g.eventId) === String(evt.id));
   const category = evt.kategori || evt.category || evt.badge;
 
   const leaveTo = (action: () => void) => { handleCloseEventModal(); action(); };
@@ -109,7 +110,7 @@ export default function EventDetailModal() {
             {lastRsvpCode && <RegistrationQr code={lastRsvpCode} />}
             <form onSubmit={handleOpenConfirmRsvp} noValidate className="grid gap-4 sm:grid-cols-2">
               <Field label="Nama lengkap" required error={rsvpErrors.rsvpName} className="sm:col-span-2">
-                <Input maxLength={120} value={rsvpName} onChange={(e) => { setRsvpName(e.target.value); if (rsvpErrors.rsvpName) setRsvpErrors((prev: Record<string, string | null>) => ({ ...prev, rsvpName: null })); }} />
+                <Input maxLength={120} value={rsvpName} onChange={(e) => { setRsvpName(e.target.value); if (rsvpErrors.rsvpName) setRsvpErrors((prev) => ({ ...prev, rsvpName: undefined })); }} />
               </Field>
               <Field label="Kehadiran">
                 <Select value={rsvpMode} onChange={(e) => setRsvpMode(e.target.value)}>
@@ -126,7 +127,7 @@ export default function EventDetailModal() {
           <div className="border-t border-line pt-4">
             <p className="mb-2 text-[0.8rem] font-semibold text-dim">Sudah konfirmasi hadir</p>
             <ul className="flex max-h-24 list-none flex-wrap gap-2 overflow-y-auto">
-              {modalAttendees.slice(0, 12).map((r: AppItem) => (
+              {modalAttendees.slice(0, 12).map((r) => (
                 <li key={r.id}><Badge tone="success"><Check size={12} aria-hidden="true" />{r.attendeeName}<span className="font-normal opacity-80">· {r.attendanceMode === 'Hadir Online' ? 'online' : 'di lokasi'}</span></Badge></li>
               ))}
             </ul>

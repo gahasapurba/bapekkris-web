@@ -1,8 +1,43 @@
-import { fetchEventAttendees } from '../../lib/supabase';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { fetchEventAttendees, type AppItem, type RegistrationCounts } from '../../lib/supabase';
 import { formatWibEventRange } from '../../utils/dateUtils';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
 import { useAppNavigate } from '../../lib/appNavigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+
+export interface RsvpInput {
+  eventId: string;
+  attendeeName: string;
+  attendanceMode: string;
+  notes: string;
+}
+
+/** A confirmed attendee as listed in the event modal (names and attendance mode only). */
+export interface EventAttendee {
+  id: string;
+  eventId: string;
+  attendeeName: string;
+  attendanceMode: string;
+  createdAt?: string;
+}
+
+export interface UseProgramSectionProps {
+  events?: AppItem[];
+  divisions?: AppItem[];
+  activeTenure?: AppItem | null;
+  registrationCounts?: RegistrationCounts;
+  onAddEventRsvp?: (rsvp: RsvpInput) => Promise<EventAttendee>;
+  onNavigateOprec?: () => void;
+  initialEventId?: string | null;
+  onSelectEventUrl?: (eventId: string | null) => void;
+  tenures?: AppItem[];
+  forms?: AppItem[];
+  onNavigateForm?: (formId: string) => void;
+  onNavigateEventStats?: (eventId: string) => void;
+  galleries?: AppItem[];
+  onNavigateGallery?: (galleryId: string) => void;
+}
+
+export type ProgramSectionState = ReturnType<typeof useProgramSection>;
 
 /** State, data and handlers of ProgramSection; the markup lives in ProgramSection.tsx and ./sections. */
 export function useProgramSection({
@@ -11,7 +46,6 @@ export function useProgramSection({
   activeTenure = null,
   registrationCounts,
   onAddEventRsvp,
-  theme,
   onNavigateOprec,
   initialEventId = null,
   onSelectEventUrl,
@@ -21,20 +55,18 @@ export function useProgramSection({
   onNavigateEventStats,
   galleries = [],
   onNavigateGallery
-}) {
+}: UseProgramSectionProps) {
   const navigateTo = useAppNavigate();
-  const isDark = theme === 'dark';
-  const publicEvents = (events || []).filter((evt) => evt.isPublic === true);
+  const publicEvents = events.filter((evt) => evt.isPublic === true);
   const [filterDiv, setFilterDiv] = useState('all');
-  const [tenureFilter, setTenureFilter] = useState('active'); // 'active' | 'all'
-  const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'all'
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'calendar'
+  const [tenureFilter, setTenureFilter] = useState<'active' | 'all'>('active');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'all'>('upcoming');
+  const [viewMode, setViewMode] = useState<'grid' | 'calendar'>('grid');
   const [eventPage, setEventPage] = useState(1);
-  const [calendarEventPage, setCalendarEventPage] = useState(1);
-  const [rsvpModalEvent, setRsvpModalEvent] = useState(null);
-  const [modalAttendees, setModalAttendees] = useState([]);
+  const [rsvpModalEvent, setRsvpModalEvent] = useState<AppItem | null>(null);
+  const [modalAttendees, setModalAttendees] = useState<EventAttendee[]>([]);
   // ID of the RSVP just submitted in the open modal, shown as a check-in QR
-  const [lastRsvpCode, setLastRsvpCode] = useState(null);
+  const [lastRsvpCode, setLastRsvpCode] = useState<string | null>(null);
 
   // Attendee names for the open RSVP modal come from a public RPC (names and attendance mode only).
   useEffect(() => {
@@ -47,61 +79,9 @@ export function useProgramSection({
       .catch((err) => console.error(err));
     return () => { cancelled = true; };
   }, [rsvpModalEvent?.id]);
-  const [sameDayModalEvents, setSameDayModalEvents] = useState([]);
-  const [copiedEventId, setCopiedEventId] = useState(null);
-  const [currentYear, setCurrentYear] = useState(() => {
-    const firstWithDate = publicEvents.find(e => e.startDate && e.status !== 'Completed') || publicEvents.find(e => e.startDate);
-    if (firstWithDate?.startDate) {
-      const yr = parseInt(firstWithDate.startDate.split('-')[0], 10);
-      if (!isNaN(yr)) return yr;
-    }
-    return new Date().getFullYear();
-  });
-  const [currentMonth, setCurrentMonth] = useState(() => {
-    const nowM = new Date().getMonth();
-    const nowY = new Date().getFullYear();
-    const hasEventThisMonth = publicEvents.some(e => {
-      if (!e.startDate) return false;
-      const parts = e.startDate.split('-');
-      return parseInt(parts[0], 10) === nowY && (parseInt(parts[1], 10) - 1) === nowM;
-    });
-    if (hasEventThisMonth) return nowM;
-    const firstWithDate = publicEvents.find(e => e.startDate && e.status !== 'Completed') || publicEvents.find(e => e.startDate);
-    if (firstWithDate?.startDate) {
-      const mo = parseInt(firstWithDate.startDate.split('-')[1], 10) - 1;
-      if (!isNaN(mo) && mo >= 0 && mo <= 11) return mo;
-    }
-    return nowM;
-  });
-  const [hoveredDate, setHoveredDate] = useState(null);
-
-  // Auto-sync calendar view to active tenure's event dates when tenure changes
-  useEffect(() => {
-    if (!activeTenure?.id) return;
-    const tenureEvents = publicEvents.filter(e => e.tenureId === activeTenure.id && e.startDate);
-    if (tenureEvents.length > 0) {
-      // Find earliest upcoming event, or first event of the tenure
-      const targetEvt = tenureEvents.find(e => e.status !== 'Completed') || tenureEvents[0];
-      if (targetEvt?.startDate) {
-        const parts = targetEvt.startDate.slice(0, 10).split('-');
-        const y = parseInt(parts[0], 10);
-        const m = parseInt(parts[1], 10) - 1;
-        if (!isNaN(y)) setCurrentYear(y);
-        if (!isNaN(m) && m >= 0 && m <= 11) setCurrentMonth(m);
-        return;
-      }
-    }
-    // Fallback: extract year from activeTenure code (e.g. "2026/2027" -> 2026)
-    if (activeTenure.code) {
-      const match = activeTenure.code.match(/\d{4}/);
-      if (match) {
-        const y = parseInt(match[0], 10);
-        if (!isNaN(y)) setCurrentYear(y);
-      }
-    }
-  }, [activeTenure?.id]);
-
-  const lastHandledInitialId = useRef(null);
+  const [sameDayModalEvents, setSameDayModalEvents] = useState<AppItem[]>([]);
+  const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
+  const lastHandledInitialId = useRef<string | null>(null);
 
   const handleCloseEventModal = useCallback(() => {
     setRsvpModalEvent(null);
@@ -151,7 +131,7 @@ export function useProgramSection({
   // Close modal on Escape key
   useEffect(() => {
     if (!rsvpModalEvent) return;
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         handleCloseEventModal();
       }
@@ -160,7 +140,7 @@ export function useProgramSection({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [rsvpModalEvent, handleCloseEventModal]);
 
-  const handleOpenEventModal = (evt, dayEventsList = []) => {
+  const handleOpenEventModal = (evt: AppItem, dayEventsList: AppItem[] = []) => {
     setRsvpModalEvent(evt);
     if (dayEventsList.length > 1) {
       setSameDayModalEvents(dayEventsList.filter(e => e.isPublic === true));
@@ -181,20 +161,20 @@ export function useProgramSection({
     }
   };
 
-  const getEventDirectUrl = (evtId) => {
+  const getEventDirectUrl = (evtId: string) => {
     return `${getPublicBaseUrl()}/?event=${encodeURIComponent(evtId)}#event`;
   };
 
-  const handleCopyEventLink = (evt) => {
+  const handleCopyEventLink = (evt: AppItem | null) => {
     if (!evt) return;
     try {
       navigator.clipboard.writeText(getEventDirectUrl(evt.id));
       setCopiedEventId(evt.id);
       setTimeout(() => setCopiedEventId(null), 2200);
-    } catch (e) { }
+    } catch { /* clipboard unavailable */ }
   };
 
-  const handleShareEventWa = (evt) => {
+  const handleShareEventWa = (evt: AppItem | null) => {
     if (!evt) return;
     const url = getEventDirectUrl(evt.id);
     const dateText = formatWibEventRange(evt.startDate, evt.endDate, evt.date);
@@ -207,15 +187,15 @@ export function useProgramSection({
   const [rsvpName, setRsvpName] = useState('');
   const [rsvpMode, setRsvpMode] = useState('Hadir Onsite');
   const [rsvpNotes, setRsvpNotes] = useState('');
-  const [rsvpErrors, setRsvpErrors] = useState({});
+  const [rsvpErrors, setRsvpErrors] = useState<{ rsvpName?: string }>({});
   const [rsvpSuccess, setRsvpSuccess] = useState(false);
   const [isSubmittingRsvp, setIsSubmittingRsvp] = useState(false);
   const [confirmRsvpOpen, setConfirmRsvpOpen] = useState(false);
 
-  const handleOpenConfirmRsvp = (e) => {
+  const handleOpenConfirmRsvp = (e: FormEvent) => {
     e.preventDefault();
     if (!rsvpModalEvent || isSubmittingRsvp) return;
-    const errs = {};
+    const errs: { rsvpName?: string } = {};
     if (!rsvpName.trim()) errs.rsvpName = 'Nama lengkap wajib diisi';
     setRsvpErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -239,7 +219,8 @@ export function useProgramSection({
       } catch (err) {
         console.error(err);
         setIsSubmittingRsvp(false);
-        setRsvpErrors({ rsvpName: err.code ? err.message : 'Konfirmasi kehadiran gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
+        const error = err as Error & { code?: string };
+        setRsvpErrors({ rsvpName: error.code ? error.message : 'Konfirmasi kehadiran gagal dikirim ke server. Silakan periksa koneksi lalu coba lagi.' });
         return;
       }
     }
@@ -253,7 +234,7 @@ export function useProgramSection({
   };
 
   const scopedEvents = (tenureFilter === 'active' && activeTenure?.id)
-    ?publicEvents.filter((evt) => evt.tenureId === activeTenure.id)
+    ? publicEvents.filter((evt) => evt.tenureId === activeTenure.id)
     : publicEvents;
 
   const scopedDivisions = (tenureFilter === 'active' && activeTenure?.id)
@@ -277,15 +258,6 @@ export function useProgramSection({
     return filterDiv === 'all' || evt.divisionId === filterDiv;
   });
 
-  // Quarter breakdown for Calendar View (Dynamic based on activeTenure)
-  const tenureYear = activeTenure?.code || '';
-  const quarters = [
-    { id: 'Q1', label: tenureYear ? `Q1 ${tenureYear} (Jan - Mar)` : 'Q1 (Jan - Mar)', color: '#0ea5e9', desc: 'Ibadah Awal Tahun, Doa Syafaat & Persekutuan Wilayah' },
-    { id: 'Q2', label: tenureYear ? `Q2 ${tenureYear} (Apr - Jun)` : 'Q2 (Apr - Jun)', color: '#10b981', desc: 'Paskah Bapekkris, Aksi Sosial Diakonia & Fellowship' },
-    { id: 'Q3', label: tenureYear ? `Q3 ${tenureYear} (Jul - Sep)` : 'Q3 (Jul - Sep)', color: '#a855f7', desc: 'Retret Rohani Insan Mandiri, Seminar Karakter & Pembinaan' },
-    { id: 'Q4', label: tenureYear ? `Q4 ${tenureYear} (Okt - Des)` : 'Q4 (Okt - Des)', color: '#ffb800', desc: 'Perayaan Natal Bersama Bapekkris, Ibadah Akhir Tahun & Apresiasi Pelayanan' }
-  ];
-
   return {
     activeTab,
     activeTenure,
@@ -306,7 +278,6 @@ export function useProgramSection({
     handleOpenConfirmRsvp,
     handleOpenEventModal,
     handleShareEventWa,
-    isDark,
     isSubmittingRsvp,
     modalAttendees,
     navigateTo,
@@ -327,7 +298,6 @@ export function useProgramSection({
     scopedDivisions,
     scopedEvents,
     setActiveTab,
-    setCalendarEventPage,
     setConfirmRsvpOpen,
     setEventDraftHidden,
     setEventNotFound,
@@ -341,7 +311,6 @@ export function useProgramSection({
     setViewMode,
     tenureFilter,
     tenures,
-    theme,
     viewMode
   };
 }

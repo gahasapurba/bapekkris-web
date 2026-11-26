@@ -2,7 +2,7 @@ import { CalendarDays, ChevronDown, Filter, LayoutGrid } from 'lucide-react';
 import type { AppItem } from '../../lib/supabase';
 import { PageHeader, cn } from '../../ui';
 import EventCalendarView from './EventCalendarView';
-import { useProgramSection } from './useProgramSection';
+import { useProgramSection, type UseProgramSectionProps } from './useProgramSection';
 import { ProgramSectionContext } from './ProgramSectionContext';
 import DraftEventNotice from './sections/DraftEventNotice';
 import EventNotFoundNotice from './sections/EventNotFoundNotice';
@@ -10,14 +10,8 @@ import EventGrid from './sections/EventGrid';
 import EventDetailModal from './sections/EventDetailModal';
 import RsvpConfirmDialog from './sections/RsvpConfirmDialog';
 
-/**
- * Values the hook exposes. Keys are checked; values stay `any` because the hook is still
- * JavaScript, where TypeScript would infer `useState(null)` as always-null.
- */
-export type ProgramSectionState = { [K in keyof ReturnType<typeof useProgramSection>]: any };
-
-export default function ProgramSection(props: any) {
-  const state: ProgramSectionState = useProgramSection(props);
+export default function ProgramSection(props: UseProgramSectionProps) {
+  const state = useProgramSection(props);
   const {
     activeTab,
     activeTenure,
@@ -35,14 +29,12 @@ export default function ProgramSection(props: any) {
     scopedDivisions,
     scopedEvents,
     setActiveTab,
-    setCalendarEventPage,
     setEventPage,
     setFilterDiv,
     setTenureFilter,
     setViewMode,
     tenureFilter,
     tenures,
-    theme,
     viewMode
   } = state;
 
@@ -57,23 +49,23 @@ export default function ProgramSection(props: any) {
 
   // Divisions for the filter: the browsed tenure, or every tenure grouped by period.
   const divisionOptions = (() => {
-    if (tenureFilter === 'active') return scopedDivisions.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name}</option>);
+    if (tenureFilter === 'active') return scopedDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>);
     const seen = new Set<string>();
-    const groups = (tenures || []).map((t: AppItem) => {
-      const inTenure = divisions.filter((d: AppItem) => d.tenureId === t.id);
-      inTenure.forEach((d: AppItem) => seen.add(d.id));
+    const groups = (tenures || []).map((t) => {
+      const inTenure = divisions.filter((d) => d.tenureId === t.id);
+      inTenure.forEach((d) => seen.add(d.id));
       if (inTenure.length === 0) return null;
       return (
         <optgroup key={t.id} label={`Periode ${t.code} (${t.title || 'Kepengurusan'})`}>
-          {inTenure.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name} ({t.code})</option>)}
+          {inTenure.map((d) => <option key={d.id} value={d.id}>{d.name} ({t.code})</option>)}
         </optgroup>
       );
     }).filter(Boolean);
-    const rest = divisions.filter((d: AppItem) => !seen.has(d.id));
+    const rest = divisions.filter((d) => !seen.has(d.id));
     return (
       <>
         {groups}
-        {rest.length > 0 && <optgroup label="Divisi lainnya">{rest.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name}</option>)}</optgroup>}
+        {rest.length > 0 && <optgroup label="Divisi lainnya">{rest.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</optgroup>}
       </>
     );
   })();
@@ -96,7 +88,7 @@ export default function ProgramSection(props: any) {
               <button type="button" aria-pressed={viewMode === 'grid'} onClick={() => { setViewMode('grid'); resetPage(); }} className={pill(viewMode === 'grid')}>
                 <LayoutGrid size={15} aria-hidden="true" />Daftar
               </button>
-              <button type="button" aria-pressed={viewMode === 'calendar'} onClick={() => { setViewMode('calendar'); setCalendarEventPage(1); }} className={pill(viewMode === 'calendar')}>
+              <button type="button" aria-pressed={viewMode === 'calendar'} onClick={() => setViewMode('calendar')} className={pill(viewMode === 'calendar')}>
                 <CalendarDays size={15} aria-hidden="true" />Kalender
               </button>
             </div>
@@ -140,7 +132,6 @@ export default function ProgramSection(props: any) {
             divisions={divisions}
             forms={forms}
             registrationCounts={registrationCounts}
-            theme={theme}
             activeTenure={activeTenure}
             onSelectEvent={(evt: AppItem, sameDayEvents?: AppItem[]) => handleOpenEventModal(evt, sameDayEvents)}
             isAdmin={false}

@@ -75,14 +75,14 @@ function SubmittedView() {
 
 export default function FormPanel() {
   const {
-    copiedLink, currentForm, divisions, errors, events, fileData, formData, generatingPoster, handleCopyFormLink,
+    copiedLink, currentFields, currentForm, divisions, errors, events, fileData, formData, generatingPoster, handleCopyFormLink,
     handleDownloadQrPoster, handleFileUpload, handleInputBlur, handleInputChange, handleShareFormWa, handleSubmit,
     honeypotVal, isSubmitted, registrationCounts, setFileData, setFormData, setHoneypotVal, setPendingFiles, uploadingFieldId
   } = useDynamicFormContext();
 
   const deadline = getDeadlineStatus(currentForm.deadline);
   const quota = getUnifiedFormQuota(currentForm, events, registrationCounts);
-  const removeKey = (key: string) => (prev: Record<string, unknown>) => { const copy = { ...prev }; delete copy[key]; return copy; };
+  const removeKey = (key: string) => <T,>(prev: Record<string, T>) => { const copy = { ...prev }; delete copy[key]; return copy; };
 
   return (
     <section aria-labelledby="form-title" className="mx-auto w-full max-w-[820px]">
@@ -126,7 +126,7 @@ export default function FormPanel() {
                 <input type="text" name="mandiri_corp_security_check" tabIndex={-1} autoComplete="off" value={honeypotVal} onChange={(e) => setHoneypotVal(e.target.value)} />
               </div>
 
-              {(currentForm.fields || []).map((field: AppItem) => {
+              {currentFields.map((field) => {
                 const error: string | undefined = errors[field.id] || undefined;
                 const inputId = `field-${field.id}`;
                 const errorId = `${inputId}-error`;

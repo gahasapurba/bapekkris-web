@@ -1164,7 +1164,6 @@ function MainApp() {
               divisions={divisions}
               activeTenure={activeTenure}
               tenures={tenures}
-              theme={theme}
               onNavigateOprec={isPageVisible('form') ? () => setCurrentTab('form') : undefined}
               registrationCounts={registrationCounts}
               onAddEventRsvp={handleAddEventRsvp}
@@ -1260,7 +1259,6 @@ function MainApp() {
               events={events}
               registrationCounts={registrationCounts}
               onSubmitSubmission={handleSubmitSubmission}
-              theme={theme}
               initialFormId={activeFormIdFromUrl}
               onSelectFormUrl={(fId) => setCurrentTab('form', fId)}
               activeTenure={activeTenure}

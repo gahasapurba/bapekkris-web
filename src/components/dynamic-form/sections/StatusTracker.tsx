@@ -1,6 +1,7 @@
 import { Lock, Search, X } from 'lucide-react';
 import type { AppItem } from '../../../lib/supabase';
 import { formatWibTimestamp } from '../../../utils/dateUtils';
+import { getFormFields } from '../../../utils/formMeta';
 import { Badge, Card, Input } from '../../../ui';
 import { useDynamicFormContext } from '../DynamicFormContext';
 import { submissionStatus } from '../submissionStatus';
@@ -19,8 +20,8 @@ export default function StatusTracker() {
           <p className="mt-3 flex items-start gap-2 text-[0.86rem] text-muted"><Lock size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-dim" />Demi privasi, pencarian hanya mencocokkan nilai yang persis sama; pencarian sebagian atau nama umum tidak didukung.</p>
           {trackingActiveForms.length > 0 && (
             <ul className="mt-4 flex list-none flex-col gap-1.5 rounded-md border border-line bg-page px-4 py-3 text-[0.86rem]">
-              {trackingActiveForms.map((f: AppItem) => {
-                const keys = (f.fields || []).filter((fld: AppItem) => Boolean(fld.isSearchIndex)).map((fld: AppItem) => fld.label || 'Indeks pencarian');
+              {trackingActiveForms.map((f) => {
+                const keys = getFormFields(f).filter((fld) => Boolean(fld.isSearchIndex)).map((fld) => fld.label || 'Indeks pencarian');
                 return (
                   <li key={f.id} className="text-ink">
                     <strong>{f.title}</strong> <span className="text-muted">— cari dengan {keys.length > 0 ? `${keys.join(', ')} atau ID pendaftaran` : 'ID pendaftaran'}</span>
@@ -48,16 +49,16 @@ export default function StatusTracker() {
             <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-[0.92rem] text-muted">
               Tidak ditemukan pendaftaran dengan kunci “{statusQuery}”. Pastikan Anda memasukkan {keyLabel} persis seperti saat mendaftar.
             </p>
-          ) : matchedSubmissions.map((sub: AppItem) => {
+          ) : matchedSubmissions.map((sub) => {
             const status = submissionStatus(sub.status);
-            const parentForm = forms.find((f: AppItem) => f.id === sub.formId);
+            const parentForm = forms.find((f) => f.id === sub.formId);
             const identity = Object.values(sub.data || {}).slice(0, 3).map(String).filter(Boolean).join(' · ');
             return (
               <div key={sub.id} className="flex flex-col gap-3 rounded-lg border border-line bg-page p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="font-mono text-[0.78rem] text-dim">{sub.id} · {formatWibTimestamp(sub.createdAt || sub.submittedAt).exact || sub.submittedAt || sub.createdAt}</p>
-                    <h3 className="mt-1 font-display text-[1.15rem] font-semibold text-ink">{parentForm?.title || sub.formTitle || 'Formulir'}</h3>
+                    <p className="font-mono text-[0.78rem] text-dim">{sub.id} · {formatWibTimestamp(sub.createdAt).exact || sub.createdAt}</p>
+                    <h3 className="mt-1 font-display text-[1.15rem] font-semibold text-ink">{parentForm?.title || 'Formulir'}</h3>
                   </div>
                   <Badge tone={status.tone}>Status: {status.label}</Badge>
                 </div>
