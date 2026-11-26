@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } fro
 import { EyeOff, Sun, Moon, X } from 'lucide-react';
 import SiteHeader from './components/layout/SiteHeader';
 import AnnouncementBar from './components/layout/AnnouncementBar';
+import OfflineNotice from './components/layout/OfflineNotice';
 import QuickSearch from './components/layout/QuickSearch';
 import HomePage from './components/home/HomePage';
 import SiteFooter from './components/layout/SiteFooter';
@@ -1019,6 +1020,8 @@ function MainApp() {
           onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
         />
       )}
+
+      <OfflineNotice />
 
       {announcementBar?.isActive && !isBannerDismissed && effectiveTab !== 'admin' && effectiveTab !== 'all-hidden' && (
         <AnnouncementBar bar={announcementBar} onCta={(tab) => setCurrentTab(tab)} onDismiss={() => setIsBannerDismissed(true)} />
