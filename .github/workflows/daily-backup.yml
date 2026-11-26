@@ -4,7 +4,7 @@ on:
   schedule:
     # 1. Eksekusi terjadwal sistem setiap hari pukul 02:00 WIB (19:00 UTC)
     - cron: '0 19 * * *'
-  # 2. Eksekusi otomatis di cloud saat Antigravity mengupdate skema atau seed data
+  # 2. Eksekusi otomatis di cloud saat skema atau seed data diperbarui
   push:
     paths:
       - 'supabase_schema.sql'
@@ -49,7 +49,7 @@ jobs:
 
       - name: Run Full Backup Script (DB + Storage)
         env:
-          SUPABASE_MGMT_TOKEN: ${{ secrets.SUPABASE_MGMT_TOKEN }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID || 'zkvjudumhhnwxchhakjl' }}
           TRIGGER_TAG: ${{ steps.meta.outputs.TAG }}
           TRIGGER_LABEL: ${{ steps.meta.outputs.LABEL }}

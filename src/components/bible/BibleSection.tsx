@@ -2,7 +2,9 @@ import { BookOpen, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Loader2
 import { soundFx } from '../../utils/audio';
 import { Button, EmptyState, Input, PageHeader, cn } from '../../ui';
 import type { SendToProjector } from '../../types/content';
+import { BIBLE_BOOKS } from '../../data/bibleBooks';
 import { BIBLE_VERSIONS, useBible } from './useBible';
+import ReadingPlan from './ReadingPlan';
 
 const TESTAMENTS = [{ id: 'ALL', label: 'Semua' }, { id: 'PL', label: 'PL · 39' }, { id: 'PB', label: 'PB · 27' }];
 
@@ -29,6 +31,14 @@ export default function BibleSection(props: { onSendToEasyWorship?: SendToProjec
           </a>
         }
       />
+
+      <ReadingPlan onOpenChapter={(bookId, chapter) => {
+        const target = BIBLE_BOOKS.find((b) => b.id === bookId);
+        if (!target) return;
+        setSelectedBook(target);
+        setSelectedChapter(chapter);
+        document.getElementById('bible-chapter-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }} />
 
       <div className="grid gap-8 lg:grid-cols-[260px_200px_minmax(0,1fr)]">
         <nav aria-label="Daftar kitab" className="flex flex-col gap-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:self-start">
@@ -71,7 +81,7 @@ export default function BibleSection(props: { onSendToEasyWorship?: SendToProjec
         <article aria-labelledby="bible-chapter-title" className="min-w-0">
           <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
             <div>
-              <h2 id="bible-chapter-title" className="font-display text-[clamp(1.8rem,3.5vw,2.4rem)] font-semibold leading-tight text-ink">{book.name} {selectedChapter}</h2>
+              <h2 id="bible-chapter-title" className="scroll-mt-28 font-display text-[clamp(1.8rem,3.5vw,2.4rem)] font-semibold leading-tight text-ink">{book.name} {selectedChapter}</h2>
               <p className="mt-1 text-[0.86rem] text-gold-ink">{BIBLE_VERSIONS.find((v) => v.id === selectedVersion)?.name || selectedVersion} · {book.category}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">

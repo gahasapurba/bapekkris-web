@@ -16,8 +16,8 @@ export default function SongsTab() {
 
   const save = handleSubmit(async (values) => {
     const item = toSongItem({ id: 'song-' + Date.now(), sortOrder: worshipSongs.length }, values);
-    await onAddWorshipSong(item);
     resetToDefaults();
+    await onAddWorshipSong(item);
     showToast(`Lagu "${item.title}" berhasil disimpan!`);
   }, () => showToast('Lengkapi kolom wajib lagu terlebih dahulu', 'error'));
 

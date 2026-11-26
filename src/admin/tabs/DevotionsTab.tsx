@@ -1,11 +1,12 @@
+import { useState } from 'react';
 import { Edit2, Plus, Trash2 } from 'lucide-react';
 import { Badge, Button, Field, Input, Textarea, useFeedback } from '../../ui';
 import { DEFAULT_DEVOTION_AUTHOR, DEFAULT_DEVOTION_THEME, DEVOTION_THEMES } from '../../data/contentOptions';
-import { formatToIndonesianDate, toWibIsoDate } from '../../utils/dateUtils';
+import { INDONESIAN_MONTHS, formatToIndonesianDate, toWibIsoDate } from '../../utils/dateUtils';
 import { devotionSchema } from '../validation/schemas';
 import { toDevotionItem, type DevotionValues } from '../contentItems';
 import { useAdminDraftForm } from '../useAdminDraftForm';
-import { AdminEmpty, AdminList, AdminListRow, AdminPanel, AdminSubsection, IconButton } from '../AdminUi';
+import { AdminEmpty, AdminList, AdminListRow, AdminPanel, AdminSubsection, FilterSelect, IconButton, ListToolbar } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
 import type { AppItem } from '../../lib/supabase';
 
@@ -17,6 +18,8 @@ export function devotionThemeOptions(devotions: AppItem[]): string[] {
 export default function DevotionsTab() {
   const { devotions, onAddDevotion, onDeleteDevotion, setEditingItem, showToast } = useAdminPortal();
   const { confirm } = useFeedback();
+  const [monthFilter, setMonthFilter] = useState('all');
+  const today = toWibIsoDate();
   const emptyDevotion: DevotionValues = {
     devotionDate: toWibIsoDate(), title: '', theme: DEFAULT_DEVOTION_THEME, scriptureRef: '', scriptureText: '', body: '', prayer: '', author: DEFAULT_DEVOTION_AUTHOR
   };
@@ -24,10 +27,14 @@ export default function DevotionsTab() {
 
   const publish = handleSubmit(async (values) => {
     const item = toDevotionItem({ id: 'dev-' + Date.now() }, values);
-    await onAddDevotion(item);
     resetToDefaults();
+    await onAddDevotion(item);
     showToast(`Renungan "${item.title}" berhasil diterbitkan.`);
   }, () => showToast('Lengkapi kolom wajib renungan terlebih dahulu', 'error'));
+
+  const sorted = [...devotions].sort((a, b) => String(b.devotionDate || '').localeCompare(String(a.devotionDate || '')));
+  const months = Array.from(new Set(sorted.map((d) => String(d.devotionDate || '').slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m))));
+  const archive = monthFilter === 'all' ? sorted : sorted.filter((d) => String(d.devotionDate || '').startsWith(monthFilter));
 
   return (
     <AdminPanel title={`Renungan harian (${devotions.length})`} description="Renungan yang terbit tampil di beranda dan halaman Renungan.">
@@ -53,12 +60,18 @@ export default function DevotionsTab() {
       </AdminSubsection>
 
       <div className="flex flex-col gap-3">
-        <h3 className="text-[0.98rem] font-semibold text-ink">Arsip renungan</h3>
-        {devotions.length === 0 ? <AdminEmpty>Belum ada renungan.</AdminEmpty> : (
+        <ListToolbar title={`Arsip renungan (${archive.length})`}>
+          <FilterSelect value={monthFilter} onChange={setMonthFilter} label="Filter bulan">
+            <option value="all">Semua bulan</option>
+            {months.map((m) => <option key={m} value={m}>{INDONESIAN_MONTHS[Number(m.slice(5, 7)) - 1]} {m.slice(0, 4)}</option>)}
+          </FilterSelect>
+        </ListToolbar>
+        <p className="text-[0.84rem] text-muted">Renungan bertanggal mendatang berstatus <strong>terjadwal</strong> dan otomatis tampil untuk jemaat pada tanggalnya.</p>
+        {archive.length === 0 ? <AdminEmpty>{devotions.length === 0 ? 'Belum ada renungan.' : 'Tidak ada renungan pada bulan ini.'}</AdminEmpty> : (
           <AdminList label="Arsip renungan">
-            {devotions.map((dev) => (
+            {archive.map((dev) => (
               <AdminListRow key={dev.id}
-                meta={<><Badge tone="gold">{formatToIndonesianDate(dev.devotionDate)}</Badge>{dev.theme && <Badge tone="neutral">{dev.theme}</Badge>}{dev.scriptureRef && <span>{dev.scriptureRef}</span>}</>}
+                meta={<><Badge tone="gold">{formatToIndonesianDate(dev.devotionDate)}</Badge>{dev.devotionDate > today && <Badge tone="info">Terjadwal</Badge>}{dev.theme && <Badge tone="neutral">{dev.theme}</Badge>}{dev.scriptureRef && <span>{dev.scriptureRef}</span>}</>}
                 title={dev.title} subtitle={dev.author ? `oleh ${dev.author}` : undefined}
                 actions={<>
                   <IconButton label={`Edit renungan ${dev.title}`} onClick={() => setEditingItem({ type: 'devotion', item: { ...dev } })}><Edit2 size={15} aria-hidden="true" /></IconButton>

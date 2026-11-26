@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { formatToIndonesianDate } from '../../utils/dateUtils';
+import { INDONESIAN_MONTHS, formatToIndonesianDate, toWibIsoDate } from '../../utils/dateUtils';
 import { usePageIntent } from '../../lib/pageIntent';
 import type { AppItem } from '../../lib/supabase';
 import type { SendToProjector } from '../../types/content';
@@ -14,24 +14,44 @@ interface UseDevotionsProps {
 export function useDevotions({ devotions = [], onSendToEasyWorship }: UseDevotionsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  // Date picked in the archive that has no devotion yet
+  const [missingDate, setMissingDate] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
 
+  // Devotions dated in the future are scheduled: they appear on their date (WIB). The database
+  // enforces this for visitors; signed-in super admins see them only in the admin portal.
+  const today = toWibIsoDate();
   const sortedDevotions = useMemo(() => {
     const time = (d: AppItem) => new Date(d.devotionDate || d.createdAt || 0).getTime();
-    return [...devotions].sort((a, b) => time(b) - time(a));
-  }, [devotions]);
+    return devotions.filter((d) => !d.devotionDate || d.devotionDate <= today).sort((a, b) => time(b) - time(a));
+  }, [devotions, today]);
 
   const [activeDevotionId, setActiveDevotionId] = useState<string | null>(sortedDevotions[0]?.id || null);
   usePageIntent('renungan', ({ devotionId }) => {
     setSearchQuery('');
     setSelectedTheme('all');
+    setSelectedMonth('all');
+    setMissingDate(null);
     setActiveDevotionId(devotionId);
   });
 
   const activeDevotion = sortedDevotions.find(d => d.id === activeDevotionId) || sortedDevotions[0] || null;
 
   const themesList: string[] = Array.from(new Set(sortedDevotions.map(d => d.theme).filter(Boolean)));
+  /** Months that have devotions, newest first, as { value: 'YYYY-MM', label: 'November 2026' }. */
+  const monthsList = Array.from(new Set(sortedDevotions.map((d) => String(d.devotionDate || '').slice(0, 7)).filter((m) => /^\d{4}-\d{2}$/.test(m))))
+    .map((value) => ({ value, label: `${INDONESIAN_MONTHS[Number(value.slice(5, 7)) - 1]} ${value.slice(0, 4)}` }));
+
+  /** Opens the devotion of a date, or shows that it is still being prepared. */
+  const pickDate = (date: string) => {
+    if (!date) { setMissingDate(null); return; }
+    const found = sortedDevotions.find((d) => d.devotionDate === date);
+    if (found) { setMissingDate(null); setActiveDevotionId(found.id); }
+    else setMissingDate(date);
+  };
+  const selectDevotion = (id: string) => { setMissingDate(null); setActiveDevotionId(id); };
 
   const filteredDevotions = sortedDevotions.filter(d => {
     const q = searchQuery.toLowerCase().trim();
@@ -41,7 +61,8 @@ export function useDevotions({ devotions = [], onSendToEasyWorship }: UseDevotio
       (d.body || '').toLowerCase().includes(q) ||
       (d.author || '').toLowerCase().includes(q);
     const matchesTheme = selectedTheme === 'all' || d.theme === selectedTheme;
-    return matchesSearch && matchesTheme;
+    const matchesMonth = selectedMonth === 'all' || String(d.devotionDate || '').startsWith(selectedMonth);
+    return matchesSearch && matchesTheme && matchesMonth;
   });
 
   const handleCopyText = (devotion: AppItem | null) => {
@@ -214,7 +235,13 @@ export function useDevotions({ devotions = [], onSendToEasyWorship }: UseDevotio
     onSendToEasyWorship,
     searchQuery,
     selectedTheme,
-    setActiveDevotionId,
+    selectDevotion,
+    selectedMonth,
+    setSelectedMonth,
+    monthsList,
+    missingDate,
+    pickDate,
+    today,
     setSearchQuery,
     setSelectedTheme,
     sortedDevotions,
