@@ -4,6 +4,7 @@ import { formatWibTimestamp } from '../../../utils/dateUtils';
 import { Badge, Card, Input } from '../../../ui';
 import { useDynamicFormContext } from '../DynamicFormContext';
 import { submissionStatus } from '../submissionStatus';
+import RegistrationQr from '../../shared/RegistrationQr';
 
 export default function StatusTracker() {
   const { dynamicSearchKeysString, forms, hasConfiguredIndex, isTracking, matchedSubmissions, setStatusQuery, statusQuery, trackingActiveForms, trimmedStatusQuery } = useDynamicFormContext();
@@ -49,13 +50,14 @@ export default function StatusTracker() {
             </p>
           ) : matchedSubmissions.map((sub: AppItem) => {
             const status = submissionStatus(sub.status);
+            const parentForm = forms.find((f: AppItem) => f.id === sub.formId);
             const identity = Object.values(sub.data || {}).slice(0, 3).map(String).filter(Boolean).join(' · ');
             return (
               <div key={sub.id} className="flex flex-col gap-3 rounded-lg border border-line bg-page p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-mono text-[0.78rem] text-dim">{sub.id} · {formatWibTimestamp(sub.createdAt || sub.submittedAt).exact || sub.submittedAt || sub.createdAt}</p>
-                    <h3 className="mt-1 font-display text-[1.15rem] font-semibold text-ink">{forms.find((f: AppItem) => f.id === sub.formId)?.title || sub.formTitle || 'Formulir'}</h3>
+                    <h3 className="mt-1 font-display text-[1.15rem] font-semibold text-ink">{parentForm?.title || sub.formTitle || 'Formulir'}</h3>
                   </div>
                   <Badge tone={status.tone}>Status: {status.label}</Badge>
                 </div>
@@ -63,6 +65,12 @@ export default function StatusTracker() {
                 {sub.adminNotes
                   ? <div className="rounded-md border border-info-line bg-info-tint px-4 py-3"><p className="text-[0.76rem] font-semibold uppercase tracking-[0.1em] text-info">Catatan panitia</p><p className="mt-1 whitespace-pre-line text-ink">{sub.adminNotes}</p></div>
                   : <p className="text-[0.86rem] italic text-dim">Belum ada catatan dari panitia. Silakan cek kembali secara berkala.</p>}
+                {parentForm?.isEventConnected && !['Rejected', 'Ditolak'].includes(sub.status) && (
+                  <details className="group">
+                    <summary className="cursor-pointer text-[0.88rem] font-semibold text-navy-ink">Tampilkan QR check-in acara</summary>
+                    <div className="mt-3 flex justify-center"><RegistrationQr code={sub.id} /></div>
+                  </details>
+                )}
               </div>
             );
           }))}

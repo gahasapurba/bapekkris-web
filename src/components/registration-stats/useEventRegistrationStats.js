@@ -43,7 +43,7 @@ export function useEventRegistrationStats({
     return false;
   }, [connectedForm]);
 
-  // View state: 'stats' | 'luckydraw'
+  // View state: 'stats' | 'checkin' | 'luckydraw'
   const [activeView, setActiveView] = useState('stats');
 
   // Submissions strictly from the connected form
@@ -1016,6 +1016,8 @@ export function useEventRegistrationStats({
 
   return {
     activeAlert,
+    extractParticipantName,
+    initialRsvps,
     activeDiagramFieldId,
     activeView,
     allCandidates,

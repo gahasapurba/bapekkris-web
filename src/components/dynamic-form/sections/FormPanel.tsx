@@ -7,6 +7,7 @@ import { Badge, Button, Card, Input, Select, Textarea, cn } from '../../../ui';
 import { DEFAULT_FILE_ACCEPT, TEXTAREA_MAX_LENGTH, TEXT_MAX_LENGTH } from '../formLimits';
 import { useDynamicFormContext } from '../DynamicFormContext';
 import { PostSubmissionNotes } from './PostSubmissionNotes';
+import RegistrationQr from '../../shared/RegistrationQr';
 
 function Alert({ tone, icon, children }: { tone: 'danger' | 'gold'; icon: ReactNode; children: ReactNode }) {
   return (
@@ -54,6 +55,7 @@ function SubmittedView() {
             </Button>
           </div>
           <p className="max-w-[56ch] text-[0.9rem] text-muted">Simpan ID ini. Anda memerlukannya untuk memantau status seleksi dan catatan panitia di bagian <strong className="text-ink">Cek status pendaftaran</strong>.</p>
+          {currentForm?.isEventConnected && lastSubmittedId && <RegistrationQr code={lastSubmittedId} />}
         </>
       ) : (
         <p className="max-w-[56ch] text-[0.9rem] text-muted">Formulir ini tidak memerlukan pelacakan status. Tim kami akan memproses tanggapan Anda sesuai ketentuan.</p>

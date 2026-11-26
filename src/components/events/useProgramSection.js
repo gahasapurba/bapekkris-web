@@ -33,10 +33,13 @@ export function useProgramSection({
   const [calendarEventPage, setCalendarEventPage] = useState(1);
   const [rsvpModalEvent, setRsvpModalEvent] = useState(null);
   const [modalAttendees, setModalAttendees] = useState([]);
+  // ID of the RSVP just submitted in the open modal, shown as a check-in QR
+  const [lastRsvpCode, setLastRsvpCode] = useState(null);
 
   // Attendee names for the open RSVP modal come from a public RPC (names and attendance mode only).
   useEffect(() => {
     setModalAttendees([]);
+    setLastRsvpCode(null);
     if (!rsvpModalEvent?.id) return undefined;
     let cancelled = false;
     fetchEventAttendees(rsvpModalEvent.id)
@@ -232,6 +235,7 @@ export function useProgramSection({
           notes: rsvpNotes.trim()
         });
         setModalAttendees(prev => [stored, ...prev]);
+        setLastRsvpCode(stored.id);
       } catch (err) {
         console.error(err);
         setIsSubmittingRsvp(false);
@@ -319,6 +323,7 @@ export function useProgramSection({
     rsvpName,
     rsvpNotes,
     rsvpSuccess,
+    lastRsvpCode,
     scopedDivisions,
     scopedEvents,
     setActiveTab,

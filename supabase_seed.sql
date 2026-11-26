@@ -40,7 +40,7 @@
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 11. submissions (Berkas Pendaftaran)
--- INSERT INTO public.submissions (id, form_id, data, files, status, admin_notes)
+-- INSERT INTO public.submissions (id, form_id, data, files, status, admin_notes, checked_in_at)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 12. lucky_draws (Pengundian Doorprize)
@@ -48,7 +48,7 @@
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 12. event_rsvps (Daftar Hadir & RSVP)
--- INSERT INTO public.event_rsvps (id, event_id, attendee_name, attendance_mode, notes, sort_order)
+-- INSERT INTO public.event_rsvps (id, event_id, attendee_name, attendance_mode, notes, sort_order, checked_in_at)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 14. faqs (Tanya Jawab & Panduan)

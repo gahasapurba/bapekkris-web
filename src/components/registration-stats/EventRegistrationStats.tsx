@@ -6,6 +6,7 @@ import { RegistrationStatsContext } from './RegistrationStatsContext';
 import ViewSwitcher from './sections/ViewSwitcher';
 import StatsView from './sections/StatsView';
 import LuckyDrawView from './sections/LuckyDrawView';
+import CheckInView from './sections/CheckInView';
 import LatestWinnersModal from './sections/LatestWinnersModal';
 import ResetDrawConfirmModal from './sections/ResetDrawConfirmModal';
 import DeleteWinnerConfirmModal from './sections/DeleteWinnerConfirmModal';
@@ -153,8 +154,9 @@ export default function EventRegistrationStats(props: any) {
           )}
         </section>
 
-        {isLuckyDrawEnabled && <ViewSwitcher />}
-        {(!isLuckyDrawEnabled || activeView === 'stats') && <StatsView />}
+        <ViewSwitcher />
+        {activeView === 'stats' && <StatsView />}
+        {activeView === 'checkin' && <CheckInView />}
         {isLuckyDrawEnabled && activeView === 'luckydraw' && <LuckyDrawView />}
         {showLatestWinnersModal && latestWinners.length > 0 && <LatestWinnersModal />}
         {resetConfirmOpen && <ResetDrawConfirmModal />}

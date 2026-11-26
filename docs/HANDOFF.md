@@ -149,7 +149,7 @@ Terakhir diperbarui: 26 November 2026 (Fase 3 selesai — seluruh halaman publik
 
 ### Fase 4 — Fitur baru (urut prioritas)
 1. ✅ Ganti password admin: tombol "Ganti password" di top bar Admin Portal → `src/admin/ChangePasswordDialog.tsx` (react-hook-form + `passwordChangeSchema`: min 12 karakter, huruf + angka, beda dari yang lama, konfirmasi sama). `changeAdminPassword` di `supabase.ts` memverifikasi password lama dulu (login ulang) lalu `auth.updateUser`. Diuji Playwright dengan akun admin sementara (7/7) + login API password baru 200 / lama 400.
-2. Check-in QR di lokasi acara (scan ID registrasi → tandai hadir → laporan).
+2. ✅ Check-in QR di lokasi acara. Migration `20261126000000_event_check_in.sql`: kolom `checked_in_at`/`checked_in_by` di `submissions` & `event_rsvps`, RPC `check_in_registration(p_event_id, p_code)` (cocok ID `sub-…`/`rsvp-…` atau field indeks pencarian seperti NIP; atomik; hasil `checked_in`/`already`/`not_found`) dan `undo_check_in`, hanya untuk admin acara. Peserta: QR ID pendaftaran di halaman sukses formulir terhubung acara, setelah RSVP, dan di hasil lacak status (`src/components/shared/RegistrationQr.tsx`). Admin: tab **Check-in** di halaman statistik acara (`registration-stats/sections/CheckInView.tsx` + `QrScanner.tsx`: BarcodeDetector, fallback `jsqr` yang dimuat sesuai kebutuhan), progres hadir, daftar + batal, ekspor CSV. Diuji Playwright 11/11 (RSVP & formulir/NIP).
 3. EasyWorship/Projector lintas perangkat via Supabase Realtime.
 4. SEO: `document.title` per halaman, sitemap, robots.txt, JSON-LD.
 5. PWA (renungan, Alkitab, lirik bisa offline), pengingat acara, pokok doa, pencarian global, analytics ringan.

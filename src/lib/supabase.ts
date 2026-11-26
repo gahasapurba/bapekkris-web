@@ -368,6 +368,7 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       files: row.files || {},
       status: row.status || 'Submitted',
       adminNotes: row.admin_notes || '',
+      checkedInAt: row.checked_in_at || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     })
@@ -420,6 +421,7 @@ export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
       attendanceMode: row.attendance_mode || 'Hadir Onsite',
       notes: row.notes || '',
       sortOrder: Number(row.sort_order || 0),
+      checkedInAt: row.checked_in_at || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     })
@@ -996,6 +998,34 @@ export function assignAdminRole(email: string, role: string, divisionId?: string
 
 export function revokeAdminRole(userId: string) {
   return callRpc('revoke_admin_role', { p_user_id: userId });
+}
+
+// ============================================================================
+// EVENT CHECK-IN (admins of the event only)
+// ============================================================================
+
+export type CheckInStatus = 'checked_in' | 'already' | 'not_found';
+export interface CheckInResult {
+  status: CheckInStatus;
+  kind: 'rsvp' | 'submission' | null;
+  registrationId: string | null;
+  checkedInAt: string | null;
+}
+
+/** Marks a registration (scanned ID or typed search-index value such as NIP) as present. */
+export async function checkInRegistration(eventId: string, code: string): Promise<CheckInResult> {
+  const rows = await callRpc('check_in_registration', { p_event_id: eventId, p_code: code });
+  const row = rows?.[0];
+  return {
+    status: (row?.status as CheckInStatus) || 'not_found',
+    kind: (row?.kind as CheckInResult['kind']) || null,
+    registrationId: row?.registration_id || null,
+    checkedInAt: row?.checked_in_at || null
+  };
+}
+
+export function undoCheckIn(eventId: string, registrationId: string) {
+  return callRpc('undo_check_in', { p_event_id: eventId, p_registration_id: registrationId });
 }
 
 // ============================================================================

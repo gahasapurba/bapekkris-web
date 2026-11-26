@@ -6,6 +6,7 @@ import { getUnifiedEventAttendees } from '../../../utils/quotaUtils';
 import { Badge, Button, ButtonLink, Dialog, Field, Input, Select } from '../../../ui';
 import { downloadIcs, googleCalendarUrl } from '../calendarExport';
 import { useProgramSectionContext } from '../ProgramSectionContext';
+import RegistrationQr from '../../shared/RegistrationQr';
 
 function Fact({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
@@ -30,7 +31,7 @@ export default function EventDetailModal() {
   const {
     copiedEventId, forms, galleries, handleCloseEventModal, handleCopyEventLink, handleOpenConfirmRsvp, handleShareEventWa,
     isSubmittingRsvp, modalAttendees, navigateTo, onNavigateEventStats, onNavigateForm, onNavigateGallery, onNavigateOprec,
-    registrationCounts, rsvpErrors, rsvpModalEvent: evt, rsvpMode, rsvpName, rsvpNotes, rsvpSuccess,
+    registrationCounts, rsvpErrors, rsvpModalEvent: evt, rsvpMode, rsvpName, rsvpNotes, rsvpSuccess, lastRsvpCode,
     setRsvpErrors, setRsvpMode, setRsvpName, setRsvpNotes
   } = useProgramSectionContext();
 
@@ -105,6 +106,7 @@ export default function EventDetailModal() {
                 <CheckCircle2 size={17} aria-hidden="true" />Kehadiran Anda sudah tercatat.
               </p>
             )}
+            {lastRsvpCode && <RegistrationQr code={lastRsvpCode} />}
             <form onSubmit={handleOpenConfirmRsvp} noValidate className="grid gap-4 sm:grid-cols-2">
               <Field label="Nama lengkap" required error={rsvpErrors.rsvpName} className="sm:col-span-2">
                 <Input maxLength={120} value={rsvpName} onChange={(e) => { setRsvpName(e.target.value); if (rsvpErrors.rsvpName) setRsvpErrors((prev: Record<string, string | null>) => ({ ...prev, rsvpName: null })); }} />

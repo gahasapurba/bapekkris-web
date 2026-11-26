@@ -1,5 +1,3 @@
-// Generated from Supabase project zkvjudumhhnwxchhakjl via Management API.
-// Do not edit by hand — regenerate with the command in docs/HANDOFF.md (Fase 2, langkah 1).
 export type Json =
   | string
   | number
@@ -242,6 +240,8 @@ export type Database = {
         Row: {
           attendance_mode: string
           attendee_name: string
+          checked_in_at: string | null
+          checked_in_by: string | null
           created_at: string | null
           event_id: string
           id: string
@@ -252,6 +252,8 @@ export type Database = {
         Insert: {
           attendance_mode?: string
           attendee_name: string
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           created_at?: string | null
           event_id: string
           id: string
@@ -262,6 +264,8 @@ export type Database = {
         Update: {
           attendance_mode?: string
           attendee_name?: string
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           created_at?: string | null
           event_id?: string
           id?: string
@@ -747,6 +751,8 @@ export type Database = {
       submissions: {
         Row: {
           admin_notes: string | null
+          checked_in_at: string | null
+          checked_in_by: string | null
           created_at: string | null
           data: Json | null
           files: Json | null
@@ -757,6 +763,8 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           created_at?: string | null
           data?: Json | null
           files?: Json | null
@@ -767,6 +775,8 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          checked_in_at?: string | null
+          checked_in_by?: string | null
           created_at?: string | null
           data?: Json | null
           files?: Json | null
@@ -936,6 +946,15 @@ export type Database = {
       can_manage_division: { Args: { p_division_id: string }; Returns: boolean }
       can_manage_event: { Args: { p_event_id: string }; Returns: boolean }
       can_manage_form: { Args: { p_form_id: string }; Returns: boolean }
+      check_in_registration: {
+        Args: { p_code: string; p_event_id: string }
+        Returns: {
+          checked_in_at: string
+          kind: string
+          registration_id: string
+          status: string
+        }[]
+      }
       get_accepted_submissions: {
         Args: { p_form_id: string }
         Returns: {
@@ -995,6 +1014,10 @@ export type Database = {
           id: string
           status: string
         }[]
+      }
+      undo_check_in: {
+        Args: { p_event_id: string; p_registration_id: string }
+        Returns: undefined
       }
     }
     Enums: {
