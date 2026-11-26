@@ -102,11 +102,11 @@ export default function RolesTab() {
           <thead>
             <tr>
               <th scope="col" className={thClass}>Jabatan</th>
-              <th scope="col" className={thClass}>Periode</th>
+              <th scope="col" className={`${thClass} hidden md:table-cell`}>Periode</th>
               <th scope="col" className={thClass}>Tingkat</th>
-              <th scope="col" className={thClass}>Penempatan</th>
+              <th scope="col" className={`${thClass} hidden md:table-cell`}>Penempatan</th>
               <th scope="col" className={thClass}>Terisi</th>
-              <th scope="col" className={thClass}>Diperbarui</th>
+              <th scope="col" className={`${thClass} hidden md:table-cell`}>Diperbarui</th>
               <th scope="col" className={thClass}><span className="sr-only">Aksi</span></th>
             </tr>
           </thead>
@@ -129,15 +129,15 @@ export default function RolesTab() {
               return (
                 <tr key={role.id} className="hover:bg-surface-hover">
                   <td className={`${tdClass} font-semibold`}>{role.name}</td>
-                  <td className={tdClass}><Badge>{tObj?.code || tObj?.title || 'Global'}</Badge></td>
+                  <td className={`${tdClass} hidden md:table-cell`}><Badge>{tObj?.code || tObj?.title || 'Global'}</Badge></td>
                   <td className={`${tdClass} whitespace-nowrap`}>{levelInfo?.shortLabel || `Level ${role.level}`}</td>
-                  <td className={`${tdClass} text-[0.82rem]`}>
+                  <td className={`${tdClass} hidden text-[0.82rem] md:table-cell`}>
                     {role.requiresDivision ? <>Divisi{role.requiresSubDivision && ' + sub-divisi'}</> : <span className="text-muted">Global</span>}
                   </td>
                   <td className={tdClass} title={names ? `Terisi oleh: ${names}` : undefined}>
                     <Badge className="whitespace-nowrap" tone={full ? 'danger' : count > 0 ? 'success' : 'neutral'}>{count}{maxQ > 0 ? `/${maxQ}` : ''}{full ? ' · penuh' : maxQ === 0 ? ' · tanpa batas' : ''}</Badge>
                   </td>
-                  <td className={`${tdClass} whitespace-nowrap text-[0.78rem] text-dim`} title={formatLastUpdatedWib(role.updatedAt || role.createdAt)}>{formatWibTimestamp(role.updatedAt || role.createdAt).shortDate || '—'}</td>
+                  <td className={`${tdClass} hidden whitespace-nowrap text-[0.78rem] text-dim md:table-cell`} title={formatLastUpdatedWib(role.updatedAt || role.createdAt)}>{formatWibTimestamp(role.updatedAt || role.createdAt).shortDate || '—'}</td>
                   <td className={`${tdClass} text-right`}>
                     <div className="inline-flex gap-1">
                       <IconButton label={`Edit ${role.name}`} onClick={() => setEditingItem({ type: 'role', item: { ...role } })}><Edit2 size={15} aria-hidden="true" /></IconButton>
