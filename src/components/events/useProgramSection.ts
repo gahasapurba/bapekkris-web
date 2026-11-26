@@ -79,13 +79,11 @@ export function useProgramSection({
       .catch((err) => console.error(err));
     return () => { cancelled = true; };
   }, [rsvpModalEvent?.id]);
-  const [sameDayModalEvents, setSameDayModalEvents] = useState<AppItem[]>([]);
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const lastHandledInitialId = useRef<string | null>(null);
 
   const handleCloseEventModal = useCallback(() => {
     setRsvpModalEvent(null);
-    setSameDayModalEvents([]);
     setRsvpErrors({});
     setRsvpSuccess(false);
     lastHandledInitialId.current = null;
@@ -140,21 +138,8 @@ export function useProgramSection({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [rsvpModalEvent, handleCloseEventModal]);
 
-  const handleOpenEventModal = (evt: AppItem, dayEventsList: AppItem[] = []) => {
+  const handleOpenEventModal = (evt: AppItem) => {
     setRsvpModalEvent(evt);
-    if (dayEventsList.length > 1) {
-      setSameDayModalEvents(dayEventsList.filter(e => e.isPublic === true));
-    } else if (evt?.startDate) {
-      const dateKey = evt.startDate.slice(0, 10);
-      const matches = publicEvents.filter(e => {
-        const s = (e.startDate || '').slice(0, 10);
-        const end = (e.endDate || e.startDate || '').slice(0, 10);
-        return dateKey >= s && dateKey <= end;
-      });
-      setSameDayModalEvents(matches.length > 1 ? matches : []);
-    } else {
-      setSameDayModalEvents([]);
-    }
     lastHandledInitialId.current = evt?.id || null;
     if (onSelectEventUrl && evt?.id) {
       onSelectEventUrl(evt.id);

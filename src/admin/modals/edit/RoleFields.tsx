@@ -1,5 +1,5 @@
 import { LEVEL_OPTIONS, formatLevelOptionLabel } from '../../../utils/memberQuotaUtils';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select } from '../../../ui';
 
 /** Fields of the edit dialog for `role` items. */
@@ -10,7 +10,7 @@ export default function RoleFields() {
     setEditingItem,
     tenureRoles,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

@@ -7,7 +7,7 @@ const selectClass = 'h-10 max-w-full cursor-pointer rounded-full border border-l
 
 export default function StatsView() {
   const {
-    choiceFields, connectedForm, formFields, copySuccess, currentPage, diagramData, dropdownFields, dropdownFilters, event, activeDiagramFieldId,
+    choiceFields, formFields, copySuccess, currentPage, diagramData, dropdownFields, dropdownFilters, event, activeDiagramFieldId,
     filteredSubmissions, formSubmissions, getDropdownOptions, handleCopyLink, handleExportCsv, handleGeneratePoster, handleHeaderSort,
     handleResetFilters, hasActiveFilters, isFormClosed, isGeneratingPoster, isLuckyDrawEnabled, pageSize, paginatedSubmissions,
     qrCodeDataUrl, searchPlaceholder, searchQuery, setActiveDiagramFieldId, setCurrentPage, setDropdownFilters, setPageSize,

@@ -26,7 +26,7 @@ export default function ExecutiveReportModal() {
   const totalRab = reportEvents.reduce((acc, e) => acc + Number(e.totalRab || 0), 0);
   const coreLeaders = reportMembers.filter(m => m.category === 'pembina' || m.category === 'inti' || m.category === 'pimpro');
 
-  const divisionCount = divisions.filter((d: any) => d.tenureId === selectedReportTenureId).length;
+  const divisionCount = divisions.filter((d) => d.tenureId === selectedReportTenureId).length;
   const metric = (label: string, value: string, sub: string) => (
     <div className="rounded-md border border-line bg-subtle p-4">
       <p className="text-[0.74rem] font-semibold uppercase tracking-wide text-dim">{label}</p>
@@ -48,7 +48,7 @@ export default function ExecutiveReportModal() {
           <div className="no-print flex flex-wrap items-center gap-2">
             <select aria-label="Pilih periode laporan" value={selectedReportTenureId} onChange={(e) => setReportTenureId(e.target.value)}
               className="h-10 cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong">
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
             </select>
             <Button icon={<Printer size={15} aria-hidden="true" />} onClick={() => window.print()}>Cetak / simpan PDF</Button>
             <button type="button" onClick={close} aria-label="Tutup" className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-muted hover:bg-subtle hover:text-ink"><X size={18} aria-hidden="true" /></button>
@@ -56,7 +56,7 @@ export default function ExecutiveReportModal() {
         </div>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {metric('Personel', `${reportMembers.length} orang`, `${reportMembers.filter((m: any) => m.category === 'pembina').length} pembina · ${divisionCount} divisi`)}
+          {metric('Personel', `${reportMembers.length} orang`, `${reportMembers.filter((m) => m.category === 'pembina').length} pembina · ${divisionCount} divisi`)}
           {metric('Realisasi kegiatan', `${completedEvents}/${reportEvents.length} (${eventPercent}%)`, `${reportGalleries.length} album dokumentasi`)}
           {metric('Total anggaran', `Rp ${totalRab.toLocaleString('id-ID')}`, `${reportEvents.length} kegiatan`)}
           {metric('Pelayanan firman', `${devotions.length} renungan`, `${worshipSongs.length} kidung & lagu`)}
@@ -78,7 +78,7 @@ export default function ExecutiveReportModal() {
             <tbody>
               {reportEvents.length === 0 ? (
                 <tr><td colSpan={6} className="px-4 py-8 text-center text-muted">Belum ada kegiatan pada periode ini.</td></tr>
-              ) : reportEvents.map((evt: any) => (
+              ) : reportEvents.map((evt) => (
                 <tr key={evt.id}>
                   <td className={`${tdClass} font-semibold`}>{evt.title}</td>
                   <td className={`${tdClass} text-muted`}>{evt.divisionName}</td>
@@ -96,7 +96,7 @@ export default function ExecutiveReportModal() {
           <h3 className="font-display text-[1.1rem] font-semibold text-ink">II. Dewan pembina, pengurus inti & ketua divisi</h3>
           {coreLeaders.length === 0 ? <p className="text-[0.9rem] text-muted">Belum ada susunan pengurus pada periode ini.</p> : (
             <ul className="grid list-none gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {coreLeaders.map((l: any) => (
+              {coreLeaders.map((l) => (
                 <li key={l.id} className="rounded-md border border-line bg-subtle px-3 py-2.5">
                   <p className="text-[0.74rem] font-semibold uppercase tracking-wide text-gold-ink">{l.role}</p>
                   <p className="font-semibold text-ink">{l.name}</p>

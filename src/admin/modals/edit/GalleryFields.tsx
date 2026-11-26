@@ -1,8 +1,11 @@
-import { buildFlexibleDate, formatWibDateTime, parseFlexibleDate } from '../../../utils/dateUtils';
+import { buildFlexibleDate, formatWibDateTime, parseFlexibleDate, type FlexibleDateMode } from '../../../utils/dateUtils';
 import { Link2, Plus, Trash2, Upload } from 'lucide-react';
 import { soundFx } from '../../../utils/audio';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
+
+/** A documentation link attached to a gallery album. */
+interface DocLink { text?: string; url?: string }
 
 /** Fields of the edit dialog for `gallery` items. */
 export default function GalleryFields() {
@@ -19,7 +22,7 @@ export default function GalleryFields() {
     setEditingItem,
     showToast,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -64,9 +67,9 @@ export default function GalleryFields() {
           {(() => {
             const currentParsed = parseFlexibleDate(editingItem.item.date);
             const activeMode = editingItem.item._dateMode || currentParsed.mode;
-            const activeDates = editingItem.item._dates || currentParsed.dates || [currentParsed.date, currentParsed.date];
+            const activeDates: string[] = editingItem.item._dates || currentParsed.dates || [currentParsed.date, currentParsed.date];
 
-            const setMode = (newMode: any) => {
+            const setMode = (newMode: FlexibleDateMode) => {
               const newDateStr = buildFlexibleDate(newMode, {
                 date: editingItem.item._dateVal !== undefined ? editingItem.item._dateVal : currentParsed.date,
                 dates: activeDates,
@@ -86,7 +89,7 @@ export default function GalleryFields() {
               });
             };
 
-            const updateField = (key: any, val: any) => {
+            const updateField = (key: string, val: string | string[]) => {
               const nextDates = key === 'dates' ? val : (editingItem.item._dates || currentParsed.dates || [currentParsed.date]);
               const stateObj = {
                 date: editingItem.item._dateVal !== undefined ? editingItem.item._dateVal : currentParsed.date,
@@ -115,13 +118,13 @@ export default function GalleryFields() {
                     Format & Waktu Pelaksanaan
                   </label>
                   <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                    {[
+                    {([
                       { id: 'date', label: 'Tanggal Lengkap' },
                       { id: 'dates', label: 'Pilih Tanggal' },
                       { id: 'range', label: 'Rentang Tanggal' },
                       { id: 'month', label: 'Bulan & Tahun' },
                       { id: 'year', label: 'Tahun Saja' }
-                    ].map((m) => (
+                    ] as { id: FlexibleDateMode; label: string }[]).map((m) => (
                       <button
                         key={m.id}
                         type="button"
@@ -158,7 +161,7 @@ export default function GalleryFields() {
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                       Pilih dua atau lebih tanggal pelaksanaan kegiatan (otomatis diurutkan secara kronologis):
                     </div>
-                    {activeDates.map((dVal: any, dIdx: any) => (
+                    {activeDates.map((dVal, dIdx) => (
                       <div key={dIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', maxWidth: '100%' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-dim)', minWidth: '65px', flexShrink: 0 }}>
                           Hari ke-{dIdx + 1}:
@@ -176,7 +179,7 @@ export default function GalleryFields() {
                           <button
                             type="button"
                             onClick={() => {
-                              const next = activeDates.filter((_: any, i: any) => i !== dIdx);
+                              const next = activeDates.filter((_, i) => i !== dIdx);
                               updateField('dates', next);
                             }}
                             style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: '6px', flexShrink: 0 }}
@@ -400,7 +403,7 @@ export default function GalleryFields() {
             <button
               type="button"
               onClick={() => {
-                const currentPhotos = (editingItem.item.photos || []).filter((p: any) => typeof p === 'string' && !p.startsWith('blob:'));
+                const currentPhotos = (editingItem.item.photos || []).filter((p: unknown): p is string => typeof p === 'string' && !p.startsWith('blob:'));
                 setEditingItem({ ...editingItem, pendingPhotos: [], item: { ...editingItem.item, photos: currentPhotos } });
               }}
               style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', fontWeight: 700 }}
@@ -414,7 +417,7 @@ export default function GalleryFields() {
             const totalPhotos = (editingItem.item.photos || []).length;
             const isOnlyOne = totalPhotos <= 1;
 
-            return (editingItem.item.photos || []).map((photoUrl: any, pIdx: any) => (
+            return ((editingItem.item.photos || []) as string[]).map((photoUrl, pIdx) => (
               <div key={pIdx} style={{ position: 'relative', width: '68px', height: '52px', borderRadius: '6px', overflow: 'hidden', border: '1px solid var(--border-card)' }}>
                 <img src={photoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <button
@@ -544,14 +547,14 @@ export default function GalleryFields() {
           </button>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {(editingItem.item.docLinks || []).map((lnk: any, lIdx: any) => (
+          {((editingItem.item.docLinks || []) as DocLink[]).map((lnk, lIdx) => (
             <div key={lIdx} style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
               <Input className="min-w-0 flex-1"
                 type="text"
                 aria-label="Label tombol" placeholder="Label tombol"
                 value={lnk.text || ''}
                 onChange={(e) => {
-                  const nextLinks = (editingItem.item.docLinks || []).map((item: any, i: any) => i === lIdx ? { ...item, text: e.target.value } : item);
+                  const nextLinks = ((editingItem.item.docLinks || []) as DocLink[]).map((item, i) => i === lIdx ? { ...item, text: e.target.value } : item);
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, docLinks: nextLinks } });
                 }}
               />
@@ -560,14 +563,14 @@ export default function GalleryFields() {
                 aria-label="https://drive.google.com/" placeholder="https://drive.google.com/..."
                 value={lnk.url || ''}
                 onChange={(e) => {
-                  const nextLinks = (editingItem.item.docLinks || []).map((item: any, i: any) => i === lIdx ? { ...item, url: e.target.value } : item);
+                  const nextLinks = ((editingItem.item.docLinks || []) as DocLink[]).map((item, i) => i === lIdx ? { ...item, url: e.target.value } : item);
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, docLinks: nextLinks } });
                 }}
               />
               <button
                 type="button"
                 onClick={() => {
-                  const nextLinks = (editingItem.item.docLinks || []).filter((_: any, i: any) => i !== lIdx);
+                  const nextLinks = ((editingItem.item.docLinks || []) as DocLink[]).filter((_, i) => i !== lIdx);
                   setEditingItem({ ...editingItem, item: { ...editingItem.item, docLinks: nextLinks } });
                 }}
                 style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', padding: '4px' }}

@@ -1,3 +1,4 @@
+import type { AppItem } from '../../lib/supabase';
 import { useState } from 'react';
 import { ChevronDown, Download, Edit2, Layers, Plus, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
@@ -42,7 +43,7 @@ export default function DivisionsTab() {
   }, () => showToast('Mohon isi Nama Divisi terlebih dahulu', 'error'));
 
   const q = divSearchQuery.toLowerCase().trim();
-  const filtered = (divisions || []).filter((d: any) => {
+  const filtered = (divisions || []).filter((d) => {
     const lead = getDivisionLead(d, members, tenureRoles);
     const matchesSearch = !q || [d.name, d.description, lead.name].some((v) => String(v || '').toLowerCase().includes(q)) ||
       (Array.isArray(d.focusAreas) && d.focusAreas.some((fa: string) => (fa || '').toLowerCase().includes(q)));
@@ -56,8 +57,8 @@ export default function DivisionsTab() {
 
   const exportCsv = () => {
     downloadCsv(`daftar_divisi_bapekkris_${Date.now()}.csv`, ['ID Divisi', 'Nama Divisi', 'Periode', 'Pimpinan', 'Fokus Area', 'Status Rekrutmen', 'Warna'],
-      divisions.map((d: any) => {
-        const t = tenures.find((x: any) => x.id === d.tenureId);
+      divisions.map((d) => {
+        const t = tenures.find((x) => x.id === d.tenureId);
         const fa = Array.isArray(d.focusAreas) ? d.focusAreas.join('; ') : (d.focusAreas || '');
         return [d.id, d.name, t ? t.code || t.title : d.tenureId, getDivisionLead(d, members, tenureRoles).name || '-', fa, d.isRecruiting ? 'Buka' : 'Tutup', d.color || ''];
       }));
@@ -76,7 +77,7 @@ export default function DivisionsTab() {
     subForm.setValue(key, value);
   };
 
-  const addSub = (d: any, currentSubs: any[]) => {
+  const addSub = (d: AppItem, currentSubs: AppItem[]) => {
     const name = (sub.newSubDivDivisionId === d.id ? sub.newSubDivName : '').trim();
     const code = (sub.newSubDivDivisionId === d.id ? sub.newSubDivCode : '').trim().toUpperCase();
     if (!name) { setSubDivError({ divId: d.id, message: 'Nama sub-divisi wajib diisi.' }); showToast('Nama Sub-Divisi wajib diisi', 'error'); return; }
@@ -102,7 +103,7 @@ export default function DivisionsTab() {
           </Field>
           <Field label="Periode" required>
             <Select {...field('newDivTenureId')}>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <div className="md:col-span-2"><Field label="Deskripsi tugas"><Textarea rows={2} {...field('newDivDesc')} /></Field></div>
@@ -116,7 +117,7 @@ export default function DivisionsTab() {
           <SearchBox label="Cari divisi" placeholder="Cari divisi, pimpinan, fokus" value={divSearchQuery} onChange={(v) => { setDivSearchQuery(v); setDivPage(1); }} />
           <FilterSelect label="Saring periode" value={divTenureFilter} onChange={(v) => { setDivTenureFilter(v); setDivPage(1); }}>
             <option value="all">Semua periode</option>
-            {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+            {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring rekrutmen" value={divRecruitFilter} onChange={(v) => { setDivRecruitFilter(v); setDivPage(1); }}>
             <option value="all">Semua rekrutmen</option>
@@ -127,10 +128,10 @@ export default function DivisionsTab() {
 
         {visible.length === 0 ? <AdminEmpty>Tidak ada divisi yang cocok.</AdminEmpty> : (
           <ul className="flex list-none flex-col gap-3">
-            {visible.map((d: any) => {
+            {visible.map((d) => {
               const { leaders } = getDivisionStructure(d, members, tenureRoles);
               const lead = leaders.length === 0 ? getDivisionLead(d, members, tenureRoles) : null;
-              const subs = subDivisions.filter((sd: any) => sd.divisionId === d.id);
+              const subs = subDivisions.filter((sd) => sd.divisionId === d.id);
               const open = expandedDivSubId === d.id;
               const recruiting = Boolean(d.isRecruiting);
               const err = subDivError.divId === d.id ? subDivError.message : '';
@@ -138,10 +139,10 @@ export default function DivisionsTab() {
                 <li key={d.id} className="overflow-hidden rounded-md border border-line bg-surface">
                   <div className="flex flex-wrap items-start justify-between gap-3 p-4">
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{d.name}{d.tenureId && <Badge>{tenures.find((t: any) => t.id === d.tenureId)?.code || d.tenureId}</Badge>}</p>
+                      <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">{d.name}{d.tenureId && <Badge>{tenures.find((t) => t.id === d.tenureId)?.code || d.tenureId}</Badge>}</p>
                       <p className="mt-0.5 text-[0.86rem] text-muted">
                         {leaders.length > 0
-                          ? leaders.map((l: any, i: number) => <span key={l.id || i} className="mr-3">{l.role ? `${l.role}: ` : ''}<strong className="text-ink">{l.name}</strong></span>)
+                          ? leaders.map((l, i) => <span key={l.id || i} className="mr-3">{l.role ? `${l.role}: ` : ''}<strong className="text-ink">{l.name}</strong></span>)
                           : lead?.name ? <>{lead.roleName || 'Pimpinan'}: <strong className="text-ink">{lead.name}</strong></> : 'Belum ada pimpinan'}
                       </p>
                       {d.updatedAt && <p className="mt-0.5 text-[0.76rem] text-dim">{formatLastUpdatedWib(d.updatedAt)}</p>}
@@ -164,7 +165,7 @@ export default function DivisionsTab() {
                       className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-4 py-2.5 text-left text-[0.86rem] text-ink hover:bg-surface-hover">
                       <span className="flex min-w-0 flex-wrap items-center gap-2">
                         <Layers size={15} aria-hidden="true" className="text-gold-ink" /><strong className="font-semibold">Sub-divisi ({subs.length})</strong>
-                        {!open && subs.slice(0, 4).map((s: any) => <Badge key={s.id} tone="gold">{s.name}</Badge>)}
+                        {!open && subs.slice(0, 4).map((s) => <Badge key={s.id} tone="gold">{s.name}</Badge>)}
                         {!open && subs.length > 4 && <span className="text-muted">+{subs.length - 4}</span>}
                       </span>
                       <span className="flex shrink-0 items-center gap-1 text-[0.82rem] font-semibold text-navy-ink">{open ? 'Tutup' : 'Kelola'}<ChevronDown size={15} aria-hidden="true" className={cn('transition-transform', open && 'rotate-180')} /></span>
@@ -181,8 +182,8 @@ export default function DivisionsTab() {
                         </div>
                         {subs.length === 0 ? <p className="text-[0.84rem] text-muted">Belum ada sub-divisi.</p> : (
                           <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
-                            {subs.map((sd: any) => {
-                              const count = (members || []).filter((m: any) => m.subDivisionId === sd.id).length;
+                            {subs.map((sd) => {
+                              const count = (members || []).filter((m) => m.subDivisionId === sd.id).length;
                               return (
                                 <li key={sd.id} className="flex items-center justify-between gap-2 bg-surface px-3 py-2">
                                   <span className="flex flex-wrap items-center gap-2 text-[0.88rem] font-semibold text-ink">{sd.name}{sd.code && <Badge tone="gold">{sd.code}</Badge>}{count > 0 && <span className="text-[0.8rem] font-normal text-muted">{count} anggota</span>}</span>

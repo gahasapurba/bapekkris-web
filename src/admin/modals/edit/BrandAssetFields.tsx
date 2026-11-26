@@ -1,5 +1,5 @@
 import { Image as ImageIcon, Upload } from 'lucide-react';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `brand_asset` items. */
@@ -8,7 +8,7 @@ export default function BrandAssetFields() {
     editingItem,
     handleBrandAssetUpload,
     setEditingItem
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -108,7 +108,7 @@ export default function BrandAssetFields() {
             <span>File baru: <strong>{editingItem.pendingFile.name}</strong> ({editingItem.item.fileSize}) &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
-              onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingFile: null, item: { ...prev.item, fileUrl: prev.originalFileUrl || '' } }) : null)}
+              onClick={() => setEditingItem((prev) => prev ? ({ ...prev, pendingFile: null, item: { ...prev.item, fileUrl: prev.originalFileUrl || '' } }) : null)}
               style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', fontWeight: 700 }}
             >
               ✕ Batalkan
@@ -162,7 +162,7 @@ export default function BrandAssetFields() {
             <span>Preview baru: <strong>{editingItem.pendingPreviewFile.name}</strong> &bull; <span style={{ color: 'var(--mandiri-gold)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
-              onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingPreviewFile: null, item: { ...prev.item, previewUrl: '' } }) : null)}
+              onClick={() => setEditingItem((prev) => prev ? ({ ...prev, pendingPreviewFile: null, item: { ...prev.item, previewUrl: '' } }) : null)}
               style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', fontWeight: 700 }}
             >
               ✕ Batalkan

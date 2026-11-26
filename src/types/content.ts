@@ -34,6 +34,8 @@ export interface FormField {
   placeholder?: string;
   accept?: string;
   options?: string[];
+  /** Options as typed in the form editor (one per line), before they are split into `options`. */
+  rawOptions?: string;
   /** Options filled from data instead of `options`. */
   source?: 'divisions' | 'events' | string;
 }

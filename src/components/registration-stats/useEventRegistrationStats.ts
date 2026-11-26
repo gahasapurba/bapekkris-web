@@ -9,7 +9,7 @@ import type { AppItem } from '../../lib/supabase';
 import type { FormField } from '../../types/content';
 import { getFormFields } from '../../utils/formMeta';
 import { DIAGRAM_COLORS } from './constants';
-import { fieldValue, participantInfo, participantName, winnerNameFrom, type SubmissionData } from './participantInfo';
+import { fieldValue, participantInfo, participantName, winnerNameFrom, type SubmissionData } from '../../utils/participantInfo';
 
 export interface UseEventRegistrationStatsProps {
   eventId: string | null;

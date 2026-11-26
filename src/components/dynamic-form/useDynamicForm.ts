@@ -60,7 +60,7 @@ export function useDynamicForm({
   const activeForms = forms.filter(f => {
     if (f.isOpen === false) return false;
     if (tenureFilter === 'active' && activeTenure?.id) {
-      const fTenure = f.tenureId || f.tenure_id || (f.fields?.[0]?._tenureId) || '';
+      const fTenure = f.tenureId || '';
       return !fTenure || fTenure === activeTenure.id;
     }
     return true;
@@ -165,11 +165,7 @@ export function useDynamicForm({
     setGeneratingPoster(true);
     try {
       const shareUrl = getFormDirectUrl(targetForm.id);
-      const connectedEvent = events.find(e => {
-        const isConn = targetForm.isEventConnected || targetForm.fields?.[0]?._isEventConnected;
-        const evtId = targetForm.eventId || targetForm.fields?.[0]?._eventId;
-        return Boolean(isConn) && String(evtId) === String(e.id);
-      }) || events.find(e => String(e.id) === String(targetForm.eventId));
+      const connectedEvent = targetForm.eventId ? events.find(e => String(e.id) === String(targetForm.eventId)) : undefined;
 
       const poster = await generateFormQrPoster({
         form: targetForm,

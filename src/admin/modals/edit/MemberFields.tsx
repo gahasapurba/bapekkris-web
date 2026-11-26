@@ -1,6 +1,6 @@
 import { LEVEL_OPTIONS, getCategoryFromLevel, getTenureRoles } from '../../../utils/memberQuotaUtils';
 import { Upload } from 'lucide-react';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `member` items. */
@@ -17,7 +17,7 @@ export default function MemberFields() {
     subDivisions,
     tenureRoles,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -288,7 +288,7 @@ export default function MemberFields() {
             <span>Foto baru: <strong>{editingItem.pendingPhoto.name}</strong> &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
             <button
               type="button"
-              onClick={() => setEditingItem((prev: any) => prev ? ({ ...prev, pendingPhoto: null, item: { ...prev.item, image: '' } }) : null)}
+              onClick={() => setEditingItem((prev) => prev ? ({ ...prev, pendingPhoto: null, item: { ...prev.item, image: '' } }) : null)}
               style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', fontWeight: 700 }}
             >
               ✕ Batalkan

@@ -6,6 +6,9 @@ import { AdminEmpty, AdminPanel, AdminSubsection, CheckField, FilterSelect, Icon
 import { useAdminPortal } from '../AdminPortalContext';
 import { formCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
+import { getFormFields } from '../../utils/formMeta';
+import type { AppItem } from '../../lib/supabase';
+import { isFormConnectedToEvent } from '../../utils/quotaUtils';
 
 type NewForm = {
   newFormTitle: string; newFormTenureId: string; newFormCategory: string; newFormDeadline: string; newFormSubtitle: string; newFormNotes: string;
@@ -30,7 +33,7 @@ const SIMPLE_FIELDS = [
   { id: 'f-unit', label: 'Unit Kerja / Cabang Mandiri', type: 'text', placeholder: 'Contoh: Corporate Banking / Region IV', required: true, isSearchIndex: false, isUnique: false },
   { id: 'f-feedback', label: 'Tanggapan / Isian', type: 'textarea', placeholder: 'Tuliskan respon Anda...', required: true, isSearchIndex: false, isUnique: false }
 ];
-const connectedFormOf = (forms: any[], eventId: string) => (forms || []).find((f) => (f.isEventConnected || f.fields?.[0]?._isEventConnected) && String(f.eventId || f.fields?.[0]?._eventId) === String(eventId));
+const connectedFormOf = (forms: AppItem[], eventId: string) => forms.find((f) => isFormConnectedToEvent(f, eventId));
 
 export default function FormsTab() {
   const {
@@ -74,15 +77,15 @@ export default function FormsTab() {
   }, () => showToast('Mohon lengkapi kolom wajib pada form Formulir', 'error'));
 
   const formTenure = nf.newFormTenureId || activeTenure?.id || tenures[0]?.id || '';
-  const eventsForTenure = (events || []).filter((evt: any) => {
-    const t = evt.tenureId || divisions.find((d: any) => d.id === evt.divisionId)?.tenureId;
+  const eventsForTenure = (events || []).filter((evt) => {
+    const t = evt.tenureId || divisions.find((d) => d.id === evt.divisionId)?.tenureId;
     return !formTenure || !t || t === formTenure;
   });
   const conflict = nf.newFormEventId ? connectedFormOf(forms, nf.newFormEventId) : null;
 
   const q = formSearchQuery.trim().toLowerCase();
-  const filtered = forms.filter((f: any) => {
-    const fTenure = f.tenureId || f.tenure_id || f.fields?.[0]?._tenureId || '';
+  const filtered = forms.filter((f) => {
+    const fTenure = f.tenureId || '';
     return (!q || [f.title, f.subtitle, f.category].some((v) => String(v || '').toLowerCase().includes(q))) &&
       (formTenureFilter === 'all' || fTenure === formTenureFilter) && (formCatFilter === 'all' || f.category === formCatFilter) &&
       (formStatusFilter === 'all' || (formStatusFilter === 'open' && Boolean(f.isOpen)) || (formStatusFilter === 'closed' && !f.isOpen));
@@ -90,7 +93,7 @@ export default function FormsTab() {
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
   const page = Math.min(Math.max(1, formPage), pageCount);
   const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const linkOf = (f: any) => `${getPublicBaseUrl()}/?form=${encodeURIComponent(f.id)}#form`;
+  const linkOf = (f: AppItem) => `${getPublicBaseUrl()}/?form=${encodeURIComponent(f.id)}#form`;
 
   return (
     <AdminPanel title={`Formulir (${forms.length})`} description="Buat formulir pendaftaran, atur batas waktu dan kuota, hubungkan ke acara, dan buka atau tutup formulir di situs.">
@@ -104,12 +107,12 @@ export default function FormsTab() {
               const t = e.target.value;
               setValue('newFormTenureId', t);
               if (nf.newFormEventId) {
-                const ev = (events || []).find((x: any) => x.id === nf.newFormEventId);
-                const evT = ev?.tenureId || divisions.find((d: any) => d.id === ev?.divisionId)?.tenureId;
+                const ev = (events || []).find((x) => x.id === nf.newFormEventId);
+                const evT = ev?.tenureId || divisions.find((d) => d.id === ev?.divisionId)?.tenureId;
                 if (evT && evT !== t) { setValue('newFormEventId', ''); showToast('Periode form diubah. Pilihan acara di-reset agar sesuai periode baru.', 'info'); }
               }
             }}>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || `Kepengurusan ${t.code}`}{t.id === activeTenure?.id ? ' (aktif)' : ''}</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || `Kepengurusan ${t.code}`}{t.id === activeTenure?.id ? ' (aktif)' : ''}</option>)}
             </Select>
           </Field>
           <Field label="Kategori" required error={errors.newFormCategory?.message}>
@@ -150,7 +153,7 @@ export default function FormsTab() {
                   <Field label="Acara" required error={errors.newFormEventId?.message || (eventsForTenure.length === 0 ? 'Belum ada acara di periode ini.' : undefined)}>
                     <Select value={nf.newFormEventId} disabled={eventsForTenure.length === 0} onChange={(e) => { setValue('newFormEventId', e.target.value); clearErrors('newFormEventId'); }}>
                       <option value="">Pilih acara</option>
-                      {eventsForTenure.map((evt: any) => {
+                      {eventsForTenure.map((evt) => {
                         const existing = connectedFormOf(forms, evt.id);
                         return <option key={evt.id} value={evt.id}>{evt.title} ({evt.startDate ? formatToIndonesianDate(evt.startDate.split('T')[0]) : (evt.date || 'tanpa tanggal')}){existing ? ` · terhubung ke "${existing.title}"` : ''}</option>;
                       })}
@@ -176,7 +179,7 @@ export default function FormsTab() {
           <SearchBox label="Cari formulir" placeholder="Cari formulir" value={formSearchQuery} onChange={(v) => { setFormSearchQuery(v); setFormPage(1); }} />
           <FilterSelect label="Saring periode" value={formTenureFilter} onChange={(v) => { setFormTenureFilter(v); setFormPage(1); }}>
             <option value="all">Semua periode</option>
-            {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}{t.isActive ? ' (aktif)' : ''}</option>)}
+            {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}{t.isActive ? ' (aktif)' : ''}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring kategori" value={formCatFilter} onChange={(v) => { setFormCatFilter(v); setFormPage(1); }}>
             <option value="all">Semua kategori</option>
@@ -191,10 +194,10 @@ export default function FormsTab() {
 
         {filtered.length === 0 ? <AdminEmpty>{forms.length === 0 ? 'Belum ada formulir.' : 'Tidak ada formulir yang cocok.'}</AdminEmpty> : (
           <ul className="flex list-none flex-col gap-3">
-            {visible.map((f: any) => {
-              const subCount = submissions.filter((s: any) => s.formId === f.id).length;
-              const tenure = tenures.find((t: any) => t.id === f.tenureId);
-              const uniqueCount = (f.fields || []).filter((fld: any) => fld.isUnique).length;
+            {visible.map((f) => {
+              const subCount = submissions.filter((s) => s.formId === f.id).length;
+              const tenure = tenures.find((t) => t.id === f.tenureId);
+              const uniqueCount = getFormFields(f).filter((fld) => fld.isUnique).length;
               const dl = getDeadlineStatus(f.deadline);
               const full = f.isLimited && subCount >= (f.maxQuota || 0);
               return (

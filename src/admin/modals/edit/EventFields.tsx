@@ -1,6 +1,6 @@
 import { formatWibEventRange, toDatetimeLocalValue } from '../../../utils/dateUtils';
 import { EVENT_CATEGORIES } from '../../adminConstants';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `event` items. */
@@ -12,7 +12,7 @@ export default function EventFields() {
     setEditModalError,
     setEditingItem,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

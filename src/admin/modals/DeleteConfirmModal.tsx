@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button, cn } from '../../ui';
 import { useModalBehavior } from '../../ui/useModalBehavior';
 import { AlertCircle, AlertTriangle, CalendarDays, Camera, ClipboardList, FileCheck2, FileText, Image as ImageIcon, Layers, RefreshCw, Sparkles, Users } from 'lucide-react';
-import { useAdminPortal } from '../AdminPortalContext';
+import { useDeleteDialogContext } from '../AdminPortalContext';
 
 export default function DeleteConfirmModal() {
   const {
@@ -26,7 +26,7 @@ export default function DeleteConfirmModal() {
     setDeleteConfirm,
     setEditingItem,
     showToast
-  } = useAdminPortal();
+  } = useDeleteDialogContext();
   const panelRef = useRef<HTMLDivElement>(null);
   const close = () => setDeleteConfirm(null);
   useModalBehavior(panelRef, true, close);
@@ -53,7 +53,7 @@ export default function DeleteConfirmModal() {
                   if (deleteConfirm.type === 'gallery' && onDeleteGallery) onDeleteGallery(deleteConfirm.id);
                   if (deleteConfirm.type === 'tenure' && onDeleteTenure) onDeleteTenure(deleteConfirm.id);
                   if (deleteConfirm.type === 'event_rsvp' && onDeleteEventRsvp) onDeleteEventRsvp(deleteConfirm.id);
-                  if (deleteConfirm.type === 'form' && onDeleteForm) onDeleteForm(deleteConfirm.id, true);
+                  if (deleteConfirm.type === 'form' && onDeleteForm) onDeleteForm(deleteConfirm.id);
                   if (deleteConfirm.type === 'event' && onDeleteEvent) onDeleteEvent(deleteConfirm.id);
                   if (deleteConfirm.type === 'submission' && onDeleteSubmission) onDeleteSubmission(deleteConfirm.id);
                   if (deleteConfirm.type === 'brand_asset' && onDeleteBrandAsset) onDeleteBrandAsset(deleteConfirm.id);
@@ -61,7 +61,7 @@ export default function DeleteConfirmModal() {
                   if (deleteConfirm.type === 'reset_all' && onResetDefault) onResetDefault();
                   if (deleteConfirm.type === 'gallery_photo') {
                     if (editingItem && editingItem.item) {
-                      const nextPhotos = (editingItem.item.photos || []).filter((_: any, i: any) => i !== deleteConfirm.photoIdx);
+                      const nextPhotos = (editingItem.item.photos || []).filter((_: string, i: number) => i !== deleteConfirm.photoIdx);
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, photos: nextPhotos } });
                     }
                   }
@@ -94,7 +94,7 @@ export default function DeleteConfirmModal() {
   return createPortal(
     <div className="fixed inset-0 z-[100005] flex items-center justify-center bg-overlay p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div ref={panelRef} role="alertdialog" aria-modal="true" aria-labelledby="delete-confirm-title" tabIndex={-1}
-        className={cn('flex max-h-[92vh] w-full flex-col gap-4 overflow-y-auto rounded-xl border bg-surface p-6 text-left shadow-card outline-none', deleteConfirm.totalDependentCount > 0 ? 'max-w-[520px]' : 'max-w-[460px]', isReset ? 'border-info-line' : blocked ? 'border-gold-line' : 'border-danger-line')}>
+        className={cn('flex max-h-[92vh] w-full flex-col gap-4 overflow-y-auto rounded-xl border bg-surface p-6 text-left shadow-card outline-none', (deleteConfirm.totalDependentCount ?? 0) > 0 ? 'max-w-[520px]' : 'max-w-[460px]', isReset ? 'border-info-line' : blocked ? 'border-gold-line' : 'border-danger-line')}>
         <div className="flex items-start gap-3">
           <span className={cn('flex size-11 shrink-0 items-center justify-center rounded-full', isReset ? 'bg-info-tint text-info' : blocked ? 'bg-gold-tint text-gold-ink' : 'bg-danger-tint text-danger')}>
             {isReset ? <RefreshCw size={22} aria-hidden="true" /> : blocked ? <AlertCircle size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
@@ -169,10 +169,10 @@ export default function DeleteConfirmModal() {
                 ⚠️ <strong>Proteksi Periode Aktif:</strong> Anda tidak dapat menghapus periode yang sedang aktif. Silakan klik tombol <strong>"Jadikan Aktif"</strong> pada periode lain terlebih dahulu sebelum menghapus periode ini.
               </div>
             </>
-          ) : deleteConfirm.totalDependentCount > 0 ? (
+          ) : (deleteConfirm.totalDependentCount ?? 0) > 0 ? (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                Periode <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih menaungi <strong>{deleteConfirm.totalDependentCount} data kepengurusan</strong>. Harap hapus atau pindahkan data berikut terlebih dahulu:
+                Periode <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih menaungi <strong>{(deleteConfirm.totalDependentCount ?? 0)} data kepengurusan</strong>. Harap hapus atau pindahkan data berikut terlebih dahulu:
               </p>
 
               <div style={{
@@ -186,91 +186,91 @@ export default function DeleteConfirmModal() {
                 textAlign: 'left'
               }}>
                 <div style={{
-                  background: deleteConfirm.divCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.divCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.divCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.divCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <Layers size={18} color={deleteConfirm.divCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <Layers size={18} color={(deleteConfirm.divCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Divisi Terkait</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.divCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.divCount} Divisi
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.divCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.divCount ?? 0)} Divisi
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: deleteConfirm.memCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.memCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.memCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.memCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <Users size={18} color={deleteConfirm.memCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <Users size={18} color={(deleteConfirm.memCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Anggota / Pengurus</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.memCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.memCount} Orang
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.memCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.memCount ?? 0)} Orang
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: deleteConfirm.evtCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.evtCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.evtCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.evtCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <CalendarDays size={18} color={deleteConfirm.evtCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <CalendarDays size={18} color={(deleteConfirm.evtCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Event</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.evtCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.evtCount} Event
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.evtCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.evtCount ?? 0)} Event
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: deleteConfirm.galCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.galCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.galCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.galCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <ImageIcon size={18} color={deleteConfirm.galCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <ImageIcon size={18} color={(deleteConfirm.galCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Galeri Kegiatan</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.galCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.galCount} Album
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.galCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.galCount ?? 0)} Album
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: deleteConfirm.formCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.formCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.formCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.formCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <FileText size={18} color={deleteConfirm.formCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <FileText size={18} color={(deleteConfirm.formCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Formulir Terkait</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.formCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.formCount} Formulir
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.formCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.formCount ?? 0)} Formulir
                     </div>
                   </div>
                 </div>
@@ -315,7 +315,7 @@ export default function DeleteConfirmModal() {
           deleteConfirm.isBlocked ? (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                Divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih menaungi <strong>{deleteConfirm.totalDependentCount} data kepengurusan</strong>. Harap alihkan atau hapus data berikut terlebih dahulu:
+                Divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih menaungi <strong>{(deleteConfirm.totalDependentCount ?? 0)} data kepengurusan</strong>. Harap alihkan atau hapus data berikut terlebih dahulu:
               </p>
 
               <div style={{
@@ -324,47 +324,47 @@ export default function DeleteConfirmModal() {
                 borderRadius: '10px',
                 padding: '12px',
                 display: 'grid',
-                gridTemplateColumns: deleteConfirm.galCount > 0 ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                gridTemplateColumns: (deleteConfirm.galCount ?? 0) > 0 ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
                 gap: '8px',
                 textAlign: 'left'
               }}>
                 <div style={{
-                  background: deleteConfirm.memCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.memCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.memCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.memCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <Users size={18} color={deleteConfirm.memCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <Users size={18} color={(deleteConfirm.memCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Anggota Divisi</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.memCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.memCount} Orang
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.memCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.memCount ?? 0)} Orang
                     </div>
                   </div>
                 </div>
 
                 <div style={{
-                  background: deleteConfirm.evtCount > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
-                  border: deleteConfirm.evtCount > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
+                  background: (deleteConfirm.evtCount ?? 0) > 0 ? 'rgba(244, 63, 94, 0.12)' : 'var(--bg-card)',
+                  border: (deleteConfirm.evtCount ?? 0) > 0 ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid var(--border-card)',
                   borderRadius: '8px',
                   padding: '8px 10px',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  <CalendarDays size={18} color={deleteConfirm.evtCount > 0 ? '#f43f5e' : 'var(--text-muted)'} />
+                  <CalendarDays size={18} color={(deleteConfirm.evtCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)'} />
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Event</div>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: deleteConfirm.evtCount > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
-                      {deleteConfirm.evtCount} Event
+                    <div style={{ fontSize: '0.88rem', fontWeight: 800, color: (deleteConfirm.evtCount ?? 0) > 0 ? '#f43f5e' : 'var(--text-muted)' }}>
+                      {(deleteConfirm.evtCount ?? 0)} Event
                     </div>
                   </div>
                 </div>
 
-                {deleteConfirm.galCount > 0 && (
+                {(deleteConfirm.galCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(244, 63, 94, 0.12)',
                     border: '1px solid rgba(244, 63, 94, 0.3)',
@@ -378,7 +378,7 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Galeri Terkait</div>
                       <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f43f5e' }}>
-                        {deleteConfirm.galCount} Album
+                        {(deleteConfirm.galCount ?? 0)} Album
                       </div>
                     </div>
                   </div>
@@ -424,7 +424,7 @@ export default function DeleteConfirmModal() {
           deleteConfirm.isBlocked ? (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                Sub-divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih memiliki <strong>{deleteConfirm.memCount} personel / anggota</strong> yang ditempatkan di sub-divisi ini.
+                Sub-divisi <strong>"{deleteConfirm.name}"</strong> belum dapat dihapus karena masih memiliki <strong>{(deleteConfirm.memCount ?? 0)} personel / anggota</strong> yang ditempatkan di sub-divisi ini.
               </p>
               <div style={{
                 background: isDark ? 'var(--input-bg)' : '#f8fafc',
@@ -446,7 +446,7 @@ export default function DeleteConfirmModal() {
                   <div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Personel di Sub-Divisi Ini</div>
                     <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#f43f5e' }}>
-                      {deleteConfirm.memCount} Orang
+                      {(deleteConfirm.memCount ?? 0)} Orang
                     </div>
                   </div>
                 </div>
@@ -513,7 +513,7 @@ export default function DeleteConfirmModal() {
                   <div>
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Anggota Aktif di Bawah Divisi Ini</div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f43f5e' }}>
-                      {deleteConfirm.squadCount} Anggota Divisi
+                      {(deleteConfirm.squadCount ?? 0)} Anggota Divisi
                     </div>
                   </div>
                 </div>
@@ -571,7 +571,7 @@ export default function DeleteConfirmModal() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                {deleteConfirm.rsvpCount > 0 && (
+                {(deleteConfirm.rsvpCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(244, 63, 94, 0.12)',
                     border: '1px solid rgba(244, 63, 94, 0.3)',
@@ -585,13 +585,13 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Data RSVP Terdaftar</div>
                       <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#f43f5e' }}>
-                        {deleteConfirm.rsvpCount} Pegawai / Pendaftar
+                        {(deleteConfirm.rsvpCount ?? 0)} Pegawai / Pendaftar
                       </div>
                     </div>
                   </div>
                 )}
 
-                {deleteConfirm.formCount > 0 && (
+                {(deleteConfirm.formCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(255, 184, 0, 0.12)',
                     border: '1px solid rgba(255, 184, 0, 0.3)',
@@ -605,13 +605,13 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Formulir Pendaftaran Terhubung</div>
                       <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--mandiri-gold)' }}>
-                        {deleteConfirm.formCount} Form: {deleteConfirm.connectedFormNames}
+                        {(deleteConfirm.formCount ?? 0)} Form: {deleteConfirm.connectedFormNames}
                       </div>
                     </div>
                   </div>
                 )}
 
-                {deleteConfirm.formSubCount > 0 && (
+                {(deleteConfirm.formSubCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(6, 182, 212, 0.12)',
                     border: '1px solid rgba(6, 182, 212, 0.3)',
@@ -625,13 +625,13 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Berkas Responden Formulir Terdaftar</div>
                       <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--neon-cyan)' }}>
-                        {deleteConfirm.formSubCount} Pengisian Berkas Peserta
+                        {(deleteConfirm.formSubCount ?? 0)} Pengisian Berkas Peserta
                       </div>
                     </div>
                   </div>
                 )}
 
-                {deleteConfirm.luckyDrawCount > 0 && (
+                {(deleteConfirm.luckyDrawCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(168, 85, 247, 0.12)',
                     border: '1px solid rgba(168, 85, 247, 0.3)',
@@ -645,13 +645,13 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Pemenang Undian Doorprize</div>
                       <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#c084fc' }}>
-                        {deleteConfirm.luckyDrawCount} Pemenang Tercatat
+                        {(deleteConfirm.luckyDrawCount ?? 0)} Pemenang Tercatat
                       </div>
                     </div>
                   </div>
                 )}
 
-                {deleteConfirm.galCount > 0 && (
+                {(deleteConfirm.galCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(59, 130, 246, 0.12)',
                     border: '1px solid rgba(59, 130, 246, 0.3)',
@@ -665,7 +665,7 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Dokumentasi Galeri Terhubung</div>
                       <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#60a5fa' }}>
-                        {deleteConfirm.galCount} Album: {deleteConfirm.connectedGalTitles}
+                        {(deleteConfirm.galCount ?? 0)} Album: {deleteConfirm.connectedGalTitles}
                       </div>
                     </div>
                   </div>
@@ -769,7 +769,7 @@ export default function DeleteConfirmModal() {
                 flexDirection: 'column',
                 gap: '8px'
               }}>
-                {deleteConfirm.submissionCount > 0 && (
+                {(deleteConfirm.submissionCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(244, 63, 94, 0.12)',
                     border: '1px solid rgba(244, 63, 94, 0.3)',
@@ -783,13 +783,13 @@ export default function DeleteConfirmModal() {
                     <div>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Data Pengisian Peserta</div>
                       <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#f43f5e' }}>
-                        {deleteConfirm.submissionCount} Respon Terkirim
+                        {(deleteConfirm.submissionCount ?? 0)} Respon Terkirim
                       </div>
                     </div>
                   </div>
                 )}
 
-                {deleteConfirm.eventCount > 0 && (
+                {(deleteConfirm.eventCount ?? 0) > 0 && (
                   <div style={{
                     background: 'rgba(255, 184, 0, 0.12)',
                     border: '1px solid rgba(255, 184, 0, 0.35)',
@@ -820,7 +820,7 @@ export default function DeleteConfirmModal() {
                 textAlign: 'left',
                 lineHeight: 1.45
               }}>
-                💡 <strong>Petunjuk:</strong> {deleteConfirm.eventCount > 0 ? 'Harap putuskan koneksi acara ke formulir ini melalui menu Edit Acara atau Edit Formulir terlebih dahulu. ' : ''}{deleteConfirm.submissionCount > 0 ? 'Buka tab Data Pengisian Form untuk meninjau atau mengekspor respon sebelum membersihkan data pendaftar.' : ''}
+                💡 <strong>Petunjuk:</strong> {(deleteConfirm.eventCount ?? 0) > 0 ? 'Harap putuskan koneksi acara ke formulir ini melalui menu Edit Acara atau Edit Formulir terlebih dahulu. ' : ''}{(deleteConfirm.submissionCount ?? 0) > 0 ? 'Buka tab Data Pengisian Form untuk meninjau atau mengekspor respon sebelum membersihkan data pendaftar.' : ''}
               </div>
             </>
           ) : (
@@ -849,7 +849,7 @@ export default function DeleteConfirmModal() {
           deleteConfirm.isBlocked ? (
             <>
               <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-                Role <strong>"{deleteConfirm.name}"</strong> tidak dapat dihapus karena masih digunakan oleh <strong>{deleteConfirm.dependentCount} personel</strong> pada periode ini.
+                Role <strong>"{deleteConfirm.name}"</strong> tidak dapat dihapus karena masih digunakan oleh <strong>{(deleteConfirm.dependentCount ?? 0)} personel</strong> pada periode ini.
               </p>
               <div style={{
                 maxHeight: '140px',
@@ -866,7 +866,7 @@ export default function DeleteConfirmModal() {
                 flexDirection: 'column',
                 gap: '4px'
               }}>
-                {(deleteConfirm.dependentMembers || []).map((m: any, i: any) => (
+                {(deleteConfirm.dependentMembers || []).map((m, i) => (
                   <div key={m.id || i}>• <strong>{m.name}</strong> ({m.role})</div>
                 ))}
               </div>

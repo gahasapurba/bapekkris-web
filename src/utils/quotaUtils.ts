@@ -7,12 +7,6 @@ import type { RegistrationCounts } from '../lib/supabase';
 
 type Id = string | number;
 
-/** Legacy forms stored the event link inside the first field instead of dedicated columns. */
-interface LegacyEventLinkField {
-  _isEventConnected?: boolean;
-  _eventId?: Id;
-}
-
 /** Fields of an event that quota calculations read. */
 export interface QuotaEvent {
   id: Id;
@@ -28,7 +22,6 @@ export interface QuotaForm {
   isEventConnected?: boolean;
   isLimited?: boolean;
   maxQuota?: number | string;
-  fields?: LegacyEventLinkField[];
 }
 
 interface RegistrationRow {
@@ -62,27 +55,26 @@ export interface FormQuota<E extends QuotaEvent> {
   label: string;
 }
 
+/** Whether the form is the registration form of the event (forms.is_event_connected + event_id). */
+export function isFormConnectedToEvent(form: QuotaForm | null | undefined, eventId: Id | null | undefined): boolean {
+  if (!form?.isEventConnected || !form.eventId || eventId === null || eventId === undefined || eventId === '') return false;
+  return String(form.eventId) === String(eventId);
+}
+
 export function getConnectedFormForEvent<F extends QuotaForm>(
   evt: QuotaEvent | null | undefined,
   forms: F[] = []
 ): F | null {
-  if (!evt || !forms) return null;
-  return forms.find(f => {
-    const isConn = f.isEventConnected || f.fields?.[0]?._isEventConnected;
-    const evtId = f.eventId || f.fields?.[0]?._eventId;
-    return Boolean(isConn) && String(evtId) === String(evt.id);
-  }) || null;
+  if (!evt) return null;
+  return forms.find(f => isFormConnectedToEvent(f, evt.id)) || null;
 }
 
 export function getConnectedEventForForm<E extends QuotaEvent>(
   form: QuotaForm | null | undefined,
   events: E[] = []
 ): E | null {
-  if (!form || !events) return null;
-  const isConn = form.isEventConnected || form.fields?.[0]?._isEventConnected;
-  const evtId = form.eventId || form.fields?.[0]?._eventId;
-  if (!isConn || !evtId) return null;
-  return events.find(e => String(e.id) === String(evtId)) || null;
+  if (!form?.isEventConnected || !form.eventId) return null;
+  return events.find(e => String(e.id) === String(form.eventId)) || null;
 }
 
 const REJECTED_STATUSES = ['Rejected', 'Ditolak'];

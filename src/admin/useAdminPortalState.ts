@@ -1,160 +1,183 @@
-import {
-  useState,
-  useEffect,
-  useRef
-} from 'react';
-import {
-  Lock,
-  ArrowLeft,
-  LogOut,
-  ClipboardList,
-  Download,
-  Globe,
-  RefreshCw,
-  Upload,
-  KeyRound
-} from 'lucide-react';
-import AdminAccountsPanel from '../admin/AdminAccountsPanel';
+// State, list filters, dialogs and handlers of the Admin Portal. AdminPortal.tsx renders it and
+// shares the result with the tabs and modals in src/admin through AdminPortalContext.
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
+import type { AdminProfile, AppItem, AppRecord, RegistrationCounts } from '../lib/supabase';
+import { soundFx } from '../utils/audio';
+import { toWibIsoDate } from '../utils/dateUtils';
+import { useFeedback } from '../ui';
+import { DIVISION_ADMIN_TABS, SYNC_BADGE } from './adminConstants';
 
-import {
-  soundFx
-} from '../utils/audio';
+type Save = (item: AppItem) => unknown;
 
-import {
-  AdminPortalContext
-} from '../admin/AdminPortalContext';
-import AdminLoginForm from '../admin/AdminLoginForm';
-import ChangePasswordDialog from '../admin/ChangePasswordDialog';
-import {
-  Badge,
-  Button,
-  useFeedback
-} from '../ui';
+/** Page on/off switches; `_updatedAt` records the last change. */
+export type PageVisibility = { [page: string]: boolean | string | undefined; _updatedAt?: string };
+type Remove = (id: string) => unknown;
 
-import {
-  SYNC_BADGE,
-  DIVISION_ADMIN_TABS
-} from '../admin/adminConstants';
-import AdminSummaryBar from '../admin/AdminSummaryBar';
-import AdminTabNavigation from '../admin/AdminTabNavigation';
-import VisibilityTab from '../admin/tabs/VisibilityTab';
-import MembersTab from '../admin/tabs/MembersTab';
-import RolesTab from '../admin/tabs/RolesTab';
-import EventsTab from '../admin/tabs/EventsTab';
-import GalleryTab from '../admin/tabs/GalleryTab';
-import DivisionsTab from '../admin/tabs/DivisionsTab';
-import TenureTab from '../admin/tabs/TenureTab';
-import FormsTab from '../admin/tabs/FormsTab';
-import SubmissionsTab from '../admin/tabs/SubmissionsTab';
-import DevotionsTab from '../admin/tabs/DevotionsTab';
-import SongsTab from '../admin/tabs/SongsTab';
-import EasyWorshipTab from '../admin/tabs/EasyWorshipTab';
-import AssetsTab from '../admin/tabs/AssetsTab';
-import FaqsTab from '../admin/tabs/FaqsTab';
-import PrayerRequestsTab from '../admin/tabs/PrayerRequestsTab';
-import VisitorStatsTab from '../admin/tabs/VisitorStatsTab';
-import EditItemModal from '../admin/modals/EditItemModal';
-import DeleteConfirmModal from '../admin/modals/DeleteConfirmModal';
-import ExecutiveReportModal from '../admin/modals/ExecutiveReportModal';
+export interface AdminSessionState {
+  status: 'loading' | 'admin' | 'signed-out' | 'not-admin' | string;
+  profile: AdminProfile | null;
+}
 
-export default function AdminPortal({ 
-  onBack, 
-  tenures = [], 
-  onAddTenure, 
-  onUpdateTenure,
-  onDeleteTenure,
-  divisions = [], 
-  onAddDivision, 
-  onUpdateDivision,
-  onDeleteDivision,
-  applications = [],
-  galleries = [],
-  onAddGallery,
-  onUpdateGallery,
-  onDeleteGallery,
-  members = [],
-  onAddMember,
-  onUpdateMember,
-  onDeleteMember,
-  events = [],
-  onAddEvent,
-  onUpdateEvent,
-  onDeleteEvent,
-  subDivisions = [],
-  onAddSubDivision,
-  onUpdateSubDivision,
-  onDeleteSubDivision,
-  devotions = [],
-  onAddDevotion,
-  onUpdateDevotion,
-  onDeleteDevotion,
-  worshipSongs = [],
-  onAddWorshipSong,
-  onUpdateWorshipSong,
-  onDeleteWorshipSong,
-  easyWorshipSchedules = [],
-  onAddEasyWorshipSchedule,
-  onUpdateEasyWorshipSchedule,
-  onDeleteEasyWorshipSchedule,
-  forms = [],
-  onAddForm,
-  onUpdateForm,
-  onDeleteForm,
-  submissions = [],
-  onUpdateSubmission,
-  onDeleteSubmission,
-  brandAssets = [],
-  onAddBrandAsset,
-  onUpdateBrandAsset,
-  onDeleteBrandAsset,
-  pageVisibility = {
-    navbar: true,
-    home: true,
-    organisasi: true,
-    event: true,
-    program: true,
-    galeri: true,
-    renungan: true,
-    alkitab: true,
-    lagu: true,
-    easyworship: true,
-    assets: true,
-    form: true,
-    oprec: true
-  },
-  onUpdatePageVisibility,
-  activeTenure,
-  onSelectTenure,
-  eventRsvps = [],
-  onDeleteEventRsvp,
-  faqs = [],
-  onAddFaq,
-  onUpdateFaq,
-  onDeleteFaq,
-  announcementBar = {
-    isActive: false,
-    badge: 'INFO TERBARU',
-    message: '',
-    ctaText: '',
-    ctaTab: 'home'
-  },
-  onUpdateAnnouncementBar,
-  roleQuotas = {},
-  tenureRoles = [],
-  onAddTenureRole,
-  onUpdateTenureRole,
-  onDeleteTenureRole,
-  syncStatus = 'synced',
-  onForceSync,
-  onResetDefault,
-  onRestoreBackup,
-  theme = 'dark',
-  luckyDraws = [],
-  registrationCounts,
-  adminSession = { status: 'loading', profile: null },
-  onAdminLogin,
-  onAdminLogout
-}) {
+export interface AdminPortalProps {
+  onBack: () => void;
+  tenures?: AppItem[];
+  onAddTenure: Save;
+  onUpdateTenure: Save;
+  onDeleteTenure: Remove;
+  divisions?: AppItem[];
+  onAddDivision: Save;
+  onUpdateDivision: Save;
+  onDeleteDivision: Remove;
+  applications?: AppItem[];
+  galleries?: AppItem[];
+  onAddGallery: Save;
+  onUpdateGallery: Save;
+  onDeleteGallery: Remove;
+  members?: AppItem[];
+  onAddMember: Save;
+  onUpdateMember: Save;
+  onDeleteMember: Remove;
+  events?: AppItem[];
+  onAddEvent: Save;
+  onUpdateEvent: Save;
+  onDeleteEvent?: Remove;
+  subDivisions?: AppItem[];
+  onAddSubDivision: Save;
+  onUpdateSubDivision: Save;
+  onDeleteSubDivision: Remove;
+  devotions?: AppItem[];
+  onAddDevotion: Save;
+  onUpdateDevotion: Save;
+  onDeleteDevotion: Remove;
+  worshipSongs?: AppItem[];
+  onAddWorshipSong: Save;
+  onDeleteWorshipSong: Remove;
+  easyWorshipSchedules?: AppItem[];
+  onDeleteEasyWorshipSchedule: Remove;
+  forms?: AppItem[];
+  onAddForm: Save;
+  onUpdateForm: Save;
+  onDeleteForm: Remove;
+  submissions?: AppItem[];
+  onUpdateSubmission: Save;
+  onDeleteSubmission?: Remove;
+  brandAssets?: AppItem[];
+  onAddBrandAsset: Save;
+  onUpdateBrandAsset: Save;
+  onDeleteBrandAsset: Remove;
+  pageVisibility?: PageVisibility;
+  onUpdatePageVisibility: (next: PageVisibility) => void;
+  activeTenure?: AppItem | null;
+  onSelectTenure: (tenure: AppItem) => void;
+  eventRsvps?: AppItem[];
+  onDeleteEventRsvp?: Remove;
+  faqs?: AppItem[];
+  onAddFaq: Save;
+  onUpdateFaq: Save;
+  onDeleteFaq: Remove;
+  announcementBar?: AppRecord;
+  onUpdateAnnouncementBar: (next: AppRecord) => void;
+  roleQuotas?: AppRecord;
+  tenureRoles?: AppItem[];
+  onAddTenureRole: Save;
+  onUpdateTenureRole: Save;
+  onDeleteTenureRole: Remove;
+  syncStatus?: keyof typeof SYNC_BADGE;
+  onResetDefault?: () => unknown;
+  onRestoreBackup?: (backup: AppRecord) => Promise<unknown>;
+  theme?: string;
+  luckyDraws?: AppItem[];
+  registrationCounts?: RegistrationCounts;
+  adminSession?: AdminSessionState;
+  onAdminLogin: (email: string, password: string) => Promise<unknown>;
+  onAdminLogout: () => Promise<unknown>;
+}
+
+/** Shared edit dialog: the item being edited plus files picked there (uploaded on save). */
+export interface EditingItem {
+  type: string;
+  item: AppItem;
+  pendingPhoto?: File | null;
+  pendingPhotos?: File[];
+  pendingFile?: File | null;
+  pendingPreviewFile?: File | null;
+  originalFileUrl?: string;
+  photoUrlInput?: string;
+}
+
+/** Delete confirmation; the counts and titles explain why a delete is blocked. */
+export interface DeleteConfirm {
+  type: string;
+  id: string;
+  name: string;
+  isBlocked?: boolean;
+  code?: string;
+  tenureId?: string;
+  reason?: string;
+  category?: string;
+  divName?: string;
+  isOnlyTenure?: boolean;
+  isActiveTenure?: boolean;
+  divCount?: number;
+  memCount?: number;
+  evtCount?: number;
+  galCount?: number;
+  formCount?: number;
+  formSubCount?: number;
+  rsvpCount?: number;
+  luckyDrawCount?: number;
+  squadCount?: number;
+  eventCount?: number;
+  submissionCount?: number;
+  dependentCount?: number;
+  totalDependentCount?: number;
+  dependentMembers?: AppItem[];
+  connectedEventTitle?: string;
+  connectedFormNames?: string;
+  connectedGalTitles?: string;
+  /** Gallery photo removal from the edit dialog. */
+  photoIdx?: number;
+  /** Submission that won a lucky draw (delete blocked). */
+  drawPrize?: string;
+  drawnAt?: string;
+}
+
+const DEFAULT_PAGE_VISIBILITY: PageVisibility = {
+  navbar: true, home: true, organisasi: true, event: true, program: true, galeri: true, renungan: true,
+  alkitab: true, lagu: true, easyworship: true, assets: true, form: true, oprec: true
+};
+const DEFAULT_ANNOUNCEMENT: AppRecord = { isActive: false, badge: 'INFO TERBARU', message: '', ctaText: '', ctaTab: 'home' };
+const SIGNED_OUT_SESSION: AdminSessionState = { status: 'loading', profile: null };
+
+export function useAdminPortalState(props: AdminPortalProps) {
+  const {
+    onBack,
+    tenures = [], onAddTenure, onUpdateTenure, onDeleteTenure,
+    divisions = [], onAddDivision, onUpdateDivision, onDeleteDivision,
+    applications = [],
+    galleries = [], onAddGallery, onUpdateGallery, onDeleteGallery,
+    members = [], onAddMember, onUpdateMember, onDeleteMember,
+    events = [], onAddEvent, onUpdateEvent, onDeleteEvent,
+    subDivisions = [], onAddSubDivision, onUpdateSubDivision, onDeleteSubDivision,
+    devotions = [], onAddDevotion, onUpdateDevotion, onDeleteDevotion,
+    worshipSongs = [], onAddWorshipSong, onDeleteWorshipSong,
+    easyWorshipSchedules = [], onDeleteEasyWorshipSchedule,
+    forms = [], onAddForm, onUpdateForm, onDeleteForm,
+    submissions = [], onUpdateSubmission, onDeleteSubmission,
+    brandAssets = [], onAddBrandAsset, onUpdateBrandAsset, onDeleteBrandAsset,
+    pageVisibility = DEFAULT_PAGE_VISIBILITY, onUpdatePageVisibility,
+    activeTenure = null, onSelectTenure,
+    eventRsvps = [], onDeleteEventRsvp,
+    faqs = [], onAddFaq, onUpdateFaq, onDeleteFaq,
+    announcementBar = DEFAULT_ANNOUNCEMENT, onUpdateAnnouncementBar,
+    roleQuotas = {}, tenureRoles = [], onAddTenureRole, onUpdateTenureRole, onDeleteTenureRole,
+    syncStatus = 'synced', onResetDefault, onRestoreBackup,
+    theme = 'dark',
+    luckyDraws = [],
+    registrationCounts,
+    adminSession = SIGNED_OUT_SESSION,
+    onAdminLogin, onAdminLogout
+  } = props;
   const isDark = theme === 'dark';
   const isAuthenticated = adminSession.status === 'admin';
   const adminProfile = adminSession.profile;
@@ -165,24 +188,23 @@ export default function AdminPortal({
 
   // Notices go through the site-wide toast (src/ui/Toast).
   const { toast: notify } = useFeedback();
-  const showToast = (message, type = 'success') => notify(message, type === 'error' ? 'error' : 'success');
+  const showToast = (message: string, type: 'success' | 'error' | string = 'success') => notify(message, type === 'error' ? 'error' : 'success');
 
   // Half-filled create forms of tabs that are currently closed (useAdminDraftForm)
-  const formDrafts = useRef(new Map());
+  const formDrafts = useRef(new Map<string, unknown>());
 
-  // Admin Dashboard Tabs: 'members' | 'visibility' | 'events' | 'forms' | 'submissions' | 'gallery' | 'assets' | 'divisions' | 'tenure' | 'devotions' | 'songs' | 'easyworship'
-  const [activeTab, setActiveTabState] = useState(() => {
+  const [activeTab, setActiveTabState] = useState<string>(() => {
     try {
       return sessionStorage.getItem('bapekkris_admin_active_tab') || 'members';
-    } catch (e) {
+    } catch {
       return 'members';
     }
   });
-  const setActiveTab = (tabId) => {
+  const setActiveTab = (tabId: string) => {
     setActiveTabState(tabId);
     try {
       sessionStorage.setItem('bapekkris_admin_active_tab', tabId);
-    } catch (e) {}
+    } catch { /* storage unavailable */ }
   };
 
   // Division admins are kept on the tabs their role can manage.
@@ -192,7 +214,6 @@ export default function AdminPortal({
     }
   }, [isAuthenticated, isSuperAdmin, activeTab]);
 
-  // Search & Filter states for Members in Admin
   // List filters: roles
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [roleTenureFilter, setRoleTenureFilter] = useState('all');
@@ -211,8 +232,8 @@ export default function AdminPortal({
   const [eventCatFilter, setEventCatFilter] = useState('all');
   const [eventDivFilter, setEventDivFilter] = useState('all');
   const [eventStatusFilter, setEventStatusFilter] = useState('all');
-  const [eventPublicFilter, setEventPublicFilter] = useState('all'); // 'all' | 'public' | 'draft'
-  const [adminEventViewMode, setAdminEventViewMode] = useState('list'); // 'list' | 'calendar'
+  const [eventPublicFilter, setEventPublicFilter] = useState<'all' | 'public' | 'draft'>('all');
+  const [adminEventViewMode, setAdminEventViewMode] = useState<'list' | 'calendar'>('list');
   const [adminEventPage, setAdminEventPage] = useState(1);
   const [adminRsvpPage, setAdminRsvpPage] = useState(1);
   const [rsvpSearchQuery, setRsvpSearchQuery] = useState('');
@@ -251,27 +272,24 @@ export default function AdminPortal({
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [subCurrentPage, setSubCurrentPage] = useState(1);
 
-  // Pending Upload States (Deferred upload on Save/Submit only, never prematurely on selection)
-
-  // Generic Edit Modal State: { type: 'member'|'division'|'tenure'|'gallery', item: {...} }
-  const [editingItem, setEditingItem] = useState(null);
+  // Item open in the shared edit dialog, with files picked there that upload on save
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
   const [editModalError, setEditModalError] = useState('');
 
-  // Generic Delete Confirmation Modal State: { type: 'member'|'division'|'tenure'|'gallery', id: string, name: string }
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // Pending delete confirmation, with the dependency counts that may block it
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirm | null>(null);
 
-  const [expandedDivSubId, setExpandedDivSubId] = useState(null);
+  const [expandedDivSubId, setExpandedDivSubId] = useState<string | null>(null);
   const [isAdminMobileMenuOpen, setIsAdminMobileMenuOpen] = useState(false);
 
   // Devotions State
-  const [devotionDate, setDevotionDate] = useState(new Date().toISOString().split('T')[0]);
+  const [devotionDate, setDevotionDate] = useState(toWibIsoDate());
   const [devotionTitle, setDevotionTitle] = useState('');
   const [devotionScriptureRef, setDevotionScriptureRef] = useState('');
   const [devotionScriptureText, setDevotionScriptureText] = useState('');
   const [devotionBody, setDevotionBody] = useState('');
   const [devotionPrayer, setDevotionPrayer] = useState('');
   const [devotionAuthor, setDevotionAuthor] = useState('Bapekkris Bank Mandiri');
-  const [devotionTheme, setDevotionTheme] = useState('Integritas & Karakter Kristiani');
 
   // Worship Songs State
   const [songTitle, setSongTitle] = useState('');
@@ -282,8 +300,6 @@ export default function AdminPortal({
   const [songLyrics, setSongLyrics] = useState('');
   const [songYoutube, setSongYoutube] = useState('');
   const [songSearch, setSongSearch] = useState('');
-
-  // EasyWorship Schedules State
 
   // List filters: divisions
   const [divSearchQuery, setDivSearchQuery] = useState('');
@@ -296,14 +312,12 @@ export default function AdminPortal({
   const [tenureStatusFilter, setTenureStatusFilter] = useState('all');
   const [tenurePage, setTenurePage] = useState(1);
 
-  // Recruitment controls
-
   // Submissions filter and drag-and-drop ordering in the form-field editor
   const [selectedSubFilter, setSelectedSubFilter] = useState('all');
-  const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
-  const [dragOverFieldIndex, setDragOverFieldIndex] = useState(null);
+  const [draggedFieldIndex, setDraggedFieldIndex] = useState<number | null>(null);
+  const [dragOverFieldIndex, setDragOverFieldIndex] = useState<number | null>(null);
 
-  const handleMoveField = (fromIndex, toIndex) => {
+  const handleMoveField = (fromIndex: number | null, toIndex: number | null) => {
     if (fromIndex === null || toIndex === null || fromIndex === toIndex) return;
     if (!editingItem || editingItem.type !== 'form' || !editingItem.item?.fields) return;
     const currentFields = [...editingItem.item.fields];
@@ -317,14 +331,14 @@ export default function AdminPortal({
   };
 
   // Helper to initiate tenure deletion with dependency checks and protection validation
-  const handleDeleteTenureClick = (t) => {
-    const isOnlyTenure = (tenures || []).length <= 1;
+  const handleDeleteTenureClick = (t: AppItem) => {
+    const isOnlyTenure = tenures.length <= 1;
     const isActiveTenure = (activeTenure?.id === t.id) || Boolean(t.isActive);
-    const divCount = (divisions || []).filter(d => d.tenureId === t.id).length;
-    const memCount = (members || []).filter(m => m.tenureId === t.id).length;
-    const evtCount = (events || []).filter(e => e.tenureId === t.id).length;
-    const galCount = (galleries || []).filter(g => g.tenureId === t.id).length;
-    const formCount = (forms || []).filter(f => f.tenureId === t.id).length;
+    const divCount = divisions.filter(d => d.tenureId === t.id).length;
+    const memCount = members.filter(m => m.tenureId === t.id).length;
+    const evtCount = events.filter(e => e.tenureId === t.id).length;
+    const galCount = galleries.filter(g => g.tenureId === t.id).length;
+    const formCount = forms.filter(f => f.tenureId === t.id).length;
     const totalDependentCount = divCount + memCount + evtCount + galCount + formCount;
 
     setDeleteConfirm({
@@ -345,10 +359,10 @@ export default function AdminPortal({
   };
 
   // Helper to initiate division deletion with dependency checks
-  const handleDeleteDivisionClick = (d) => {
-    const memCount = (members || []).filter(m => m.divisionId === d.id).length;
-    const evtCount = (events || []).filter(e => e.divisionId === d.id).length;
-    const galCount = (galleries || []).filter(g => g.divisionId === d.id || g.division === d.name).length;
+  const handleDeleteDivisionClick = (d: AppItem) => {
+    const memCount = members.filter(m => m.divisionId === d.id).length;
+    const evtCount = events.filter(e => e.divisionId === d.id).length;
+    const galCount = galleries.filter(g => g.divisionId === d.id || g.division === d.name).length;
     const totalDependentCount = memCount + evtCount + galCount;
 
     setDeleteConfirm({
@@ -364,11 +378,11 @@ export default function AdminPortal({
   };
 
   // Helper to initiate member deletion with Pimpro / leadership checks
-  const handleDeleteMemberClick = (m) => {
+  const handleDeleteMemberClick = (m: AppItem) => {
     const isPimpro = m.category === 'pimpro';
-    const divObj = (divisions || []).find(d => d.id === m.divisionId || d.memberId === m.id || d.leadName === m.name);
+    const divObj = divisions.find(d => d.id === m.divisionId || d.memberId === m.id || d.leadName === m.name);
     const squadCount = isPimpro && m.divisionId 
-      ? (members || []).filter(other => other.category === 'anggota' && other.divisionId === m.divisionId).length 
+      ? members.filter(other => other.category === 'anggota' && other.divisionId === m.divisionId).length 
       : 0;
 
     setDeleteConfirm({
@@ -383,30 +397,28 @@ export default function AdminPortal({
   };
 
   // Helper to initiate event deletion with RSVP, Form, Submission, Lucky Draw, and Gallery dependency checks
-  const handleDeleteEventClick = (evt) => {
-    const relatedRsvps = (eventRsvps || []).filter(r => r.eventId === evt.id);
+  const handleDeleteEventClick = (evt: AppItem) => {
+    const relatedRsvps = eventRsvps.filter(r => r.eventId === evt.id);
     const rsvpCount = relatedRsvps.length;
 
-    // Check connected forms (both direct eventId, isEventConnected, or evt.formId)
-    const connectedForms = (forms || []).filter(f => 
+    // Forms linked to the event from either side (forms.event_id or events.form_id)
+    const connectedForms = forms.filter(f =>
       (f.eventId && String(f.eventId) === String(evt.id)) ||
-      (f.fields?.[0]?._eventId && String(f.fields?.[0]?._eventId) === String(evt.id)) ||
-      (evt.formId && String(evt.formId) === String(f.id)) ||
-      ((f.isEventConnected || f.fields?.[0]?._isEventConnected) && (String(f.eventId) === String(evt.id) || String(f.fields?.[0]?._eventId) === String(evt.id)))
+      (evt.formId && String(evt.formId) === String(f.id))
     );
     const formCount = connectedForms.length;
     const connectedFormIds = connectedForms.map(f => f.id);
 
     // Check connected form submissions
-    const relatedSubs = (submissions || []).filter(s => connectedFormIds.includes(s.formId));
+    const relatedSubs = submissions.filter(s => connectedFormIds.includes(s.formId));
     const formSubCount = relatedSubs.length;
 
     // Check lucky draw winners for this event
-    const relatedLuckyDraws = (luckyDraws || []).filter(ld => ld.eventId === evt.id);
+    const relatedLuckyDraws = luckyDraws.filter(ld => ld.eventId === evt.id);
     const luckyDrawCount = relatedLuckyDraws.length;
 
     // Check connected gallery albums
-    const connectedGals = (galleries || []).filter(g => 
+    const connectedGals = galleries.filter(g => 
       (g.eventId && String(g.eventId) === String(evt.id)) ||
       (evt.galleryId && String(evt.galleryId) === String(g.id))
     );
@@ -430,15 +442,13 @@ export default function AdminPortal({
   };
 
   // Helper to initiate dynamic form deletion with submission and connected event dependency checks
-  const handleDeleteFormClick = (f) => {
-    const subCount = (submissions || []).filter(s => s.formId === f.id).length;
+  const handleDeleteFormClick = (f: AppItem) => {
+    const subCount = submissions.filter(s => s.formId === f.id).length;
     
     // Check if connected to any event
-    const connectedEvents = (events || []).filter(e => 
+    const connectedEvents = events.filter(e =>
       (e.formId && String(e.formId) === String(f.id)) ||
-      (f.eventId && String(f.eventId) === String(e.id)) ||
-      (f.fields?.[0]?._eventId && String(f.fields?.[0]?._eventId) === String(e.id)) ||
-      ((f.isEventConnected || f.fields?.[0]?._isEventConnected) && (String(f.eventId) === String(e.id) || String(f.fields?.[0]?._eventId) === String(e.id)))
+      (f.eventId && String(f.eventId) === String(e.id))
     );
     const eventCount = connectedEvents.length;
     const connectedEventTitles = connectedEvents.map(e => e.title).join(', ');
@@ -457,9 +467,9 @@ export default function AdminPortal({
   };
 
   // Helper to initiate gallery album deletion with connected event dependency checks
-  const handleDeleteGalleryClick = (gal) => {
+  const handleDeleteGalleryClick = (gal: AppItem) => {
     // Check if connected to an event
-    const connectedEvents = (events || []).filter(e => 
+    const connectedEvents = events.filter(e => 
       (gal.eventId && String(e.id) === String(gal.eventId)) ||
       (e.galleryId && String(e.galleryId) === String(gal.id))
     );
@@ -477,13 +487,8 @@ export default function AdminPortal({
     });
   };
 
-  // Escape for the edit, delete and report dialogs is handled by useModalBehavior (stack-aware).
-
-  // Supabase Auth sign-in (form: src/admin/AdminLoginForm.tsx); access requires an admin_profiles row
-  const handleLogin = (email, password) => onAdminLogin(email, password);
-
   // Photo picked in the edit dialog of a member (the create form handles its own photo)
-  const handleMemberPhotoUpload = (e) => {
+  const handleMemberPhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const localPreview = URL.createObjectURL(file);
@@ -492,7 +497,7 @@ export default function AdminPortal({
   };
 
   // Photos picked in the edit dialog of a gallery (the create form handles its own files)
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const localPreviews = files.map(f => URL.createObjectURL(f));
@@ -504,9 +509,8 @@ export default function AdminPortal({
     showToast(`${files.length} foto baru dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
   };
 
-  // Select Brand Asset file or preview - Deferred upload on Save only
   // File picked in the edit dialog of a brand asset (the create form handles its own files)
-  const handleBrandAssetUpload = (e, field = 'fileUrl') => {
+  const handleBrandAssetUpload = (e: ChangeEvent<HTMLInputElement>, field: 'fileUrl' | 'previewUrl' = 'fileUrl') => {
     const file = e.target.files?.[0];
     if (!file) return;
     const localBlobUrl = URL.createObjectURL(file);
@@ -529,9 +533,9 @@ export default function AdminPortal({
   };
 
   // Helper to verify if an external image link is reachable and valid
-  const verifyImageUrl = (url, options = {}) => {
+  const verifyImageUrl = (url: string, options: { requireHttps?: boolean; allowRelative?: boolean } = {}) => {
     const { requireHttps = false, allowRelative = false } = options;
-    return new Promise((resolve) => {
+    return new Promise<{ valid: boolean; error?: string }>((resolve) => {
       if (!url || typeof url !== 'string') {
         return resolve({ valid: false, error: 'URL tidak boleh kosong' });
       }
@@ -542,9 +546,8 @@ export default function AdminPortal({
       if (allowRelative && (trimmed.startsWith('/images/') || trimmed.startsWith('/assets/'))) {
         return resolve({ valid: true });
       }
-      let parsed;
       try {
-        parsed = new URL(trimmed);
+        const parsed = new URL(trimmed);
         if (requireHttps) {
           if (parsed.protocol !== 'https:') {
             return resolve({ valid: false, error: 'Tautan URL foto wajib diawali dengan https://' });
@@ -607,7 +610,7 @@ export default function AdminPortal({
 
     setIsUploadingMedia(true);
     showToast(`Memverifikasi ${urls.length} link foto...`);
-    const validUrls = [];
+    const validUrls: string[] = [];
     for (const u of urls) {
       const check = await verifyImageUrl(u);
       if (!check.valid) {
@@ -635,28 +638,75 @@ export default function AdminPortal({
     showToast(`Berhasil menambahkan ${validUrls.length} link foto ke carousel!`);
   };
 
-  // IF NOT AUTHENTICATED: SHOW LOGIN FORM
-  if (!isAuthenticated) {
-    return (
-      <div className="mx-auto w-full max-w-[440px] px-4 pb-24 pt-8">
-        <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="mb-5">Kembali ke beranda</Button>
-        <div className="rounded-xl border border-line bg-surface p-7 shadow-card md:p-9">
-          <div className="mb-6 text-center">
-            <img src={isDark ? '/assets/mandiri-club-bapekkris-white.png' : '/assets/mandiri-club-bapekkris-original.png'} alt="Bapekkris Bank Mandiri"
-              className="mx-auto mb-5 block h-12 w-auto object-contain" onError={(e) => { e.currentTarget.src = '/assets/mandiri-club-bapekkris-original.png'; }} />
-            <span className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-gold-tint text-gold-ink"><Lock size={20} aria-hidden="true" /></span>
-            <h1 className="font-display text-[1.6rem] font-semibold text-ink">Portal pengurus</h1>
-            <p className="mt-1 text-[0.9rem] text-muted">Masuk untuk mengelola acara, pengurus, renungan, lagu, dan konten lainnya.</p>
-          </div>
-          <AdminLoginForm onLogin={handleLogin} showToast={showToast} />
-        </div>
-      </div>
-    );
-  }
 
-  // IF AUTHENTICATED: SHOW ADMIN DASHBOARD
-    // Everything the extracted tabs and modals (src/admin/*) read from this component.
-  const adminPortalContext = {
+
+  const downloadBackup = () => {
+    const snapshot = {
+      meta: {
+        app: 'Bapekkris Bank Mandiri Portal',
+        exportedAt: new Date().toISOString(),
+        activeTenureId: activeTenure?.id || ''
+      },
+      tenures,
+      divisions,
+      members,
+      events,
+      galleries,
+      devotions,
+      worshipSongs,
+      subDivisions,
+      easyWorshipSchedules,
+      forms,
+      submissions,
+      brandAssets,
+      eventRsvps,
+      luckyDraws,
+      tenureRoles,
+      roleQuotas,
+      faqs,
+      pageVisibility,
+      announcementBar
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Backup_Bapekkris_Bank_Mandiri_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Snapshot Backup Penuh (.json) seluruh 13 tabel berhasil diunduh!');
+  };
+  const restoreBackupFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const parsed = JSON.parse(String(evt.target?.result || '{}'));
+        if (!parsed || typeof parsed !== 'object' || (!Array.isArray(parsed.members) && !Array.isArray(parsed.events))) {
+          showToast('Format file Backup (.json) tidak valid', 'error');
+          return;
+        }
+        await onRestoreBackup?.(parsed);
+        showToast('Seluruh data berhasil dipulihkan dari file Backup & disinkronkan ke Cloud!');
+      } catch {
+        showToast('Gagal membaca file Backup (.json)', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+  const handleLogoutClick = async () => {
+    try {
+      await onAdminLogout();
+    } catch (err) {
+      showToast((err as Error).message || 'Gagal keluar dari sesi admin', 'error');
+    }
+  };
+
+  return {
     formDrafts,
     onAddMember,
     onAddEvent,
@@ -691,7 +741,6 @@ export default function AdminPortal({
     devotionPrayer,
     devotionScriptureRef,
     devotionScriptureText,
-    devotionTheme,
     devotionTitle,
     devotions,
     divPage,
@@ -864,7 +913,6 @@ export default function AdminPortal({
     setTenurePage,
     setTenureSearchQuery,
     setTenureStatusFilter,
-    showExecutiveReportModal,
     showToast,
     songAuthor,
     songCategory,
@@ -886,172 +934,18 @@ export default function AdminPortal({
     tenureStatusFilter,
     tenures,
     theme,
+    isAuthenticated,
+    adminProfile,
+    syncStatus,
+    onBack,
+    onRestoreBackup,
+    isChangePasswordOpen,
+    setIsChangePasswordOpen,
+    showExecutiveReportModal,
+    downloadBackup,
+    restoreBackupFile,
+    handleLogoutClick,
+    onAdminLogin,
     verifyImageUrl,
     worshipSongs
-  };
-
-  const downloadBackup = () => {
-    const snapshot = {
-                meta: {
-                  app: 'Bapekkris Bank Mandiri Portal',
-                  exportedAt: new Date().toISOString(),
-                  activeTenureId: activeTenure?.id || ''
-                },
-                tenures,
-                divisions,
-                members,
-                events,
-                galleries,
-                devotions,
-                worshipSongs,
-                subDivisions,
-                easyWorshipSchedules,
-                forms,
-                submissions,
-                brandAssets,
-                eventRsvps,
-                luckyDraws,
-                tenureRoles,
-                roleQuotas,
-                faqs,
-                pageVisibility,
-                announcementBar
-              };
-              const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json;charset=utf-8;' });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.setAttribute('download', `Backup_Bapekkris_Bank_Mandiri_${new Date().toISOString().slice(0, 10)}.json`);
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              showToast('Snapshot Backup Penuh (.json) seluruh 13 tabel berhasil diunduh!');
-  };
-  const restoreBackupFile = (e) => {
-    const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = async (evt) => {
-                    try {
-                      const parsed = JSON.parse(String(evt.target?.result || '{}'));
-                      if (!parsed || typeof parsed !== 'object' || (!Array.isArray(parsed.members) && !Array.isArray(parsed.events))) {
-                        showToast('Format file Backup (.json) tidak valid', 'error');
-                        return;
-                      }
-                      await onRestoreBackup(parsed);
-                      showToast('Seluruh data berhasil dipulihkan dari file Backup & disinkronkan ke Cloud!');
-                    } catch (err) {
-                      showToast('Gagal membaca file Backup (.json)', 'error');
-                    }
-                  };
-                  reader.readAsText(file);
-                  e.target.value = '';
-  };
-  const handleLogoutClick = async () => {
-    try {
-      await onAdminLogout();
-    } catch (err) {
-      showToast(err.message || 'Gagal keluar dari sesi admin', 'error');
-    }
-  };
-
-  return (
-    <AdminPortalContext.Provider value={adminPortalContext}>
-    <div className="admin-portal-wrapper mx-auto w-full max-w-[1360px] px-4 pb-24 pt-6 md:px-6">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
-        <div className="min-w-0">
-          <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="-ml-3 mb-2">Kembali ke situs</Button>
-          <h1 className="font-display text-[clamp(1.6rem,3vw,2.1rem)] font-semibold leading-tight text-ink">Portal pengurus</h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[0.86rem] text-muted">
-            <span>{adminProfile?.displayName || adminProfile?.email || 'Admin'} · {isSuperAdmin ? 'Super admin' : 'Admin divisi'}</span>
-            <Badge tone={syncStatus === 'synced' ? 'success' : syncStatus === 'error' ? 'danger' : 'gold'}><Globe size={12} aria-hidden="true" />{SYNC_BADGE[syncStatus].label}</Badge>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="sm" variant="secondary" icon={<ClipboardList size={14} aria-hidden="true" />} onClick={() => setShowExecutiveReportModal(true)}>Laporan / LPJ</Button>
-          <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={downloadBackup} title="Unduh cadangan lengkap seluruh data (.json)">Backup</Button>
-          {onRestoreBackup && (
-            <label className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-full border border-line bg-surface px-3.5 text-[0.8rem] font-semibold text-ink hover:border-line-strong focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-navy-ink" title="Pulihkan seluruh data dari file cadangan (.json)">
-              <Upload size={14} aria-hidden="true" />Restore
-              <input type="file" accept=".json,application/json" className="sr-only" onChange={restoreBackupFile} />
-            </label>
-          )}
-          {onResetDefault && (
-            <Button size="sm" variant="secondary" icon={<RefreshCw size={14} aria-hidden="true" />} onClick={() => setDeleteConfirm({ type: 'reset_all', id: 'reset', name: 'Sync Data' })} title="Kosongkan cache lokal dan muat ulang data terbaru">Sinkronkan</Button>
-          )}
-          <Button size="sm" variant="secondary" icon={<KeyRound size={14} aria-hidden="true" />} onClick={() => setIsChangePasswordOpen(true)}>Ganti password</Button>
-          <Button size="sm" variant="danger" icon={<LogOut size={14} aria-hidden="true" />} onClick={handleLogoutClick} className="lg:hidden">Keluar</Button>
-        </div>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-[248px_minmax(0,1fr)]">
-      <AdminTabNavigation onLogout={handleLogoutClick} />
-      <div className="flex min-w-0 flex-col gap-6">
-      <AdminSummaryBar />
-
-      {/* TAB CONTENT: VISIBILITAS HALAMAN & NAVBAR (VIEW / HIDE) */}
-      {activeTab === 'admins' && isSuperAdmin && (
-        <AdminAccountsPanel divisions={divisions} currentUserId={adminProfile?.userId} showToast={showToast} />
-      )}
-
-      {activeTab === 'visibility' && <VisibilityTab />}
-
-      {activeTab === 'prayers' && isSuperAdmin && <PrayerRequestsTab />}
-
-      {activeTab === 'visitors' && isSuperAdmin && <VisitorStatsTab />}
-
-      {/* TAB CONTENT: PENGURUS & ANGGOTA (DENGAN NOMOR WA OPSIONAL) */}
-      {activeTab === 'members' && <MembersTab />}
-
-      {/* TAB CONTENT: STRUKTUR ROLE & JABATAN */}
-      {activeTab === 'roles' && <RolesTab />}
-
-      {/* TAB CONTENT: EVENT (DENGAN TANGGAL MULAI & BERAKHIR) */}
-      {activeTab === 'events' && <EventsTab />}
-
-      {/* TAB CONTENT 0: GALERI KEGIATAN DINAMIS */}
-      {activeTab === 'gallery' && <GalleryTab />}
-
-      {/* TAB CONTENT 1: DIVISI */}
-      {activeTab === 'divisions' && <DivisionsTab />}
-
-      {/* TAB CONTENT 2: TENURE */}
-      {activeTab === 'tenure' && <TenureTab />}
-
-      {/* TAB CONTENT: DYNAMIC FORM ENGINE */}
-      {activeTab === 'forms' && <FormsTab />}
-
-      {/* TAB CONTENT: SUBMISSIONS (DATA PENGISIAN FORM DINAMIS PER FORM + SELEKSI STATUS & 1-CLICK WA) */}
-      {activeTab === 'submissions' && <SubmissionsTab />}
-
-      {/* TAB CONTENT: RENUNGAN HARIAN */}
-      {activeTab === 'devotions' && <DevotionsTab />}
-
-      {/* TAB CONTENT: KIDUNG JEMAAT & LAGU ROHANI */}
-      {activeTab === 'songs' && <SongsTab />}
-
-      {/* TAB CONTENT: JADWAL EASYWORSHIP */}
-      {activeTab === 'easyworship' && <EasyWorshipTab />}
-
-      {/* TAB CONTENT: BRAND ASSETS & TEMPLATES MANAGEMENT */}
-      {activeTab === 'assets' && <AssetsTab />}
-
-      {/* TAB CONTENT: PUSAT PANDUAN & TANYA JAWAB (FAQ) */}
-      {activeTab === 'faqs' && <FaqsTab />}
-
-      {/* EDIT MODAL DIALOG */}
-      {editingItem && <EditItemModal />}
-
-      {/* CONFIRMATION DELETE DIALOG */}
-      {deleteConfirm && <DeleteConfirmModal />}
-
-      {/* PRINT-READY EXECUTIVE REPORT & LPJ MODAL */}
-      {showExecutiveReportModal && <ExecutiveReportModal />}
-      <ChangePasswordDialog open={isChangePasswordOpen} onClose={() => setIsChangePasswordOpen(false)} showToast={showToast} />
-      </div>
-      </div>
-    </div>
-    </AdminPortalContext.Provider>
-  );
-}
+  };}

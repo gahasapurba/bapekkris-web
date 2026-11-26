@@ -27,7 +27,7 @@ const iconButton =
 function countOpenForms(forms: AppItem[], activeTenure?: AppItem | null): number {
   return forms.filter((f) => {
     if (f.isOpen === false || getDeadlineStatus(f.deadline).isExpired) return false;
-    const tenureId = f.tenureId || f.tenure_id || f.fields?.[0]?._tenureId || '';
+    const tenureId = f.tenureId || '';
     return !activeTenure?.id || !tenureId || tenureId === activeTenure.id;
   }).length;
 }

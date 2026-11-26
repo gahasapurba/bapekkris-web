@@ -1,4 +1,4 @@
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `division` items. */
@@ -9,7 +9,7 @@ export default function DivisionFields() {
     editingItem,
     setEditingItem,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

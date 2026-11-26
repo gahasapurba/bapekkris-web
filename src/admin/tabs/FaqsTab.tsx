@@ -26,7 +26,7 @@ export default function FaqsTab() {
   }, () => showToast('Mohon lengkapi seluruh kolom wajib pada form FAQ', 'error'));
 
   const q = faqSearchQuery.trim().toLowerCase();
-  const filtered = faqs.filter((f: any) =>
+  const filtered = faqs.filter((f) =>
     (!q || (f.question || '').toLowerCase().includes(q) || (f.answer || '').toLowerCase().includes(q)) &&
     (faqCatFilter === 'all' || f.category === faqCatFilter));
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
@@ -70,7 +70,7 @@ export default function FaqsTab() {
 
         {filtered.length === 0 ? <AdminEmpty>Tidak ada pertanyaan yang cocok.</AdminEmpty> : (
           <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
-            {visible.map((f: any) => {
+            {visible.map((f) => {
               const published = f.isPublished !== false;
               const askedAt = f.createdAt || f.submittedAt;
               return (

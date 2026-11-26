@@ -37,7 +37,7 @@ export default function SongsTab() {
   };
 
   const q = songSearch.toLowerCase();
-  const visible = worshipSongs.filter((s: any) => !q || (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q));
+  const visible = worshipSongs.filter((s) => !q || (s.title || '').toLowerCase().includes(q) || (s.songNumber || '').toLowerCase().includes(q));
 
   return (
     <AdminPanel title={`Kidung & lagu (${worshipSongs.length})`} description="Songbook KJ, PKJ, NKB, dan lagu pujian yang juga dipakai di Multimedia Live.">
@@ -77,7 +77,7 @@ export default function SongsTab() {
         {worshipSongs.length === 0 ? <AdminEmpty>Belum ada lagu di songbook.</AdminEmpty>
           : visible.length === 0 ? <AdminEmpty>Tidak ada lagu yang cocok.</AdminEmpty> : (
           <AdminList label="Daftar lagu">
-            {visible.map((song: any) => (
+            {visible.map((song) => (
               <AdminListRow key={song.id}
                 meta={<><Badge tone="gold">{song.category}</Badge>{song.songNumber && <span className="font-semibold text-gold-ink">{song.songNumber}</span>}{song.keySignature && <span>Nada {song.keySignature}</span>}</>}
                 title={song.title} subtitle={song.author || undefined}

@@ -1,6 +1,6 @@
 // Reading participant details out of a submission's free-form data (keyed by field id, or by
 // label in older submissions). Shared by the welcome alert, check-in list, lucky draw and winners.
-import type { FormField } from '../../types/content';
+import type { FormField } from '../types/content';
 
 export type SubmissionData = Record<string, unknown>;
 

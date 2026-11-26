@@ -5,7 +5,7 @@ import { Badge, Button, Field, Input, Pagination, Select } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FileButton, FilterSelect, IconButton, ListToolbar, SearchBox } from '../AdminUi';
 import { formatWaPhone } from '../adminConstants';
 import { useAdminPortal } from '../AdminPortalContext';
-import { uploadMediaToCloud } from '../../lib/supabase';
+import { uploadMediaToCloud, type AppItem } from '../../lib/supabase';
 import { memberCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
 
@@ -15,7 +15,7 @@ type MemberForm = {
 };
 
 const PER_PAGE = 12;
-const roleMatches = (m: any, role: any) => {
+const roleMatches = (m: AppItem, role: AppItem) => {
   if (m.roleId && m.roleId === role.id) return true;
   const mRole = String(m.role || '').toLowerCase().trim();
   const rName = String(role?.name || '').toLowerCase().trim();
@@ -40,9 +40,9 @@ export default function MembersTab() {
       const available = rolesOf(v.memTenureId);
       return memberCreateSchema({
         roleCount: available.length,
-        selectedRole: available.find((r: any) => r.id === v.memRoleId) || null,
-        divisionIds: divisions.filter((d: any) => d.tenureId === tid).map((d: any) => d.id),
-        subDivisionIdsOf: (divisionId) => subDivisions.filter((sd: any) => sd.divisionId === divisionId).map((sd: any) => sd.id)
+        selectedRole: available.find((r) => r.id === v.memRoleId) || null,
+        divisionIds: divisions.filter((d) => d.tenureId === tid).map((d) => d.id),
+        subDivisionIdsOf: (divisionId) => subDivisions.filter((sd) => sd.divisionId === divisionId).map((sd) => sd.id)
       });
     },
     { memName: '', memWhatsapp: '', memTenureId: activeTenure?.id || '', memRoleId: '', memDivisionId: '', memSubDivisionId: '', memMotto: '', memImage: '', pendingMemberPhoto: null }
@@ -51,9 +51,9 @@ export default function MembersTab() {
   const err = errors as Record<string, { message?: string } | undefined>;
   const tenureId = tenureOf(fv.memTenureId);
   const roles = rolesOf(fv.memTenureId);
-  const role = roles.find((r: any) => r.id === fv.memRoleId) || null;
-  const divsForTenure = divisions.filter((d: any) => d.tenureId === tenureId);
-  const subsForDiv = subDivisions.filter((sd: any) => sd.divisionId === fv.memDivisionId);
+  const role = roles.find((r) => r.id === fv.memRoleId) || null;
+  const divsForTenure = divisions.filter((d) => d.tenureId === tenureId);
+  const subsForDiv = subDivisions.filter((sd) => sd.divisionId === fv.memDivisionId);
 
   const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -98,7 +98,7 @@ export default function MembersTab() {
         return;
       }
     }
-    const divObj = needsDivision ? divisions.find((d: any) => d.id === f.memDivisionId) : null;
+    const divObj = needsDivision ? divisions.find((d) => d.id === f.memDivisionId) : null;
     const roleName = needsDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj ? `Pimpro ${divObj.name}` : (selectedRole?.name || 'Anggota Divisi');
     onAddMember({
       id: 'mem-' + Date.now(),
@@ -122,17 +122,17 @@ export default function MembersTab() {
     setValue('memDivisionId', f.memDivisionId);
     showToast(`Pengurus/Anggota "${f.memName}" berhasil ditambahkan & tersimpan di Cloud!`);
   }, () => showToast('Mohon lengkapi kolom wajib pada form Personel', 'error'));
-  const tenureMembers = members.filter((m: any) => !tenureId || m.tenureId === tenureId);
-  const tenureObj = tenures.find((t: any) => t.id === tenureId);
+  const tenureMembers = members.filter((m) => !tenureId || m.tenureId === tenureId);
+  const tenureObj = tenures.find((t) => t.id === tenureId);
 
   // --- list
-  const filterRoles = (adminMemTenureFilter === 'all' ? tenures.flatMap((t: any) => getTenureRoles(t.id, roleQuotas, tenureRoles)) : getTenureRoles(adminMemTenureFilter, roleQuotas, tenureRoles))
-    .sort((a: any, b: any) => a.level - b.level || a.sortOrder - b.sortOrder);
+  const filterRoles = (adminMemTenureFilter === 'all' ? tenures.flatMap((t) => getTenureRoles(t.id, roleQuotas, tenureRoles)) : getTenureRoles(adminMemTenureFilter, roleQuotas, tenureRoles))
+    .sort((a, b) => a.level - b.level || a.sortOrder - b.sortOrder);
   const q = adminMemSearch.trim().toLowerCase();
-  const filtered = members.filter((m: any) => {
+  const filtered = members.filter((m) => {
     const matchesSearch = !q || [m.name, m.role, m.title, m.whatsapp].some((v) => String(v || '').toLowerCase().includes(q));
     const matchesCat = adminMemCatFilter === 'all' || (() => {
-      const target = filterRoles.find((r: any) => r.id === adminMemCatFilter);
+      const target = filterRoles.find((r) => r.id === adminMemCatFilter);
       if (!target) return m.roleId === adminMemCatFilter || m.category === adminMemCatFilter;
       if (m.tenureId && target.tenureId && m.tenureId !== target.tenureId) return false;
       if (m.roleId && m.roleId === target.id) return true;
@@ -144,7 +144,7 @@ export default function MembersTab() {
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
   const page = Math.min(Math.max(1, adminMemPage), pageCount);
   const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const yearOf = (tid: string) => { const t = tenures.find((x: any) => x.id === tid); return adminMemTenureFilter === 'all' && t ? ` (${t.code || t.title})` : ''; };
+  const yearOf = (tid?: string | null) => { const t = tenures.find((x) => x.id === tid); return adminMemTenureFilter === 'all' && t ? ` (${t.code || t.title})` : ''; };
 
   return (
     <AdminPanel title={`Pengurus & pelayan (${members.length})`} description="Pimpinan, pembina, ketua divisi, dan anggota pelayan di bagan organisasi, lengkap dengan nomor WhatsApp untuk koordinasi.">
@@ -156,19 +156,19 @@ export default function MembersTab() {
           <Field label="Nomor WhatsApp" hint="Opsional. Contoh: 0812…"><Input type="tel" inputMode="tel" {...field('memWhatsapp')} /></Field>
           <Field label="Periode" required>
             <Select value={tenureId} onChange={(e) => { setValue('memTenureId', e.target.value); setValue('memRoleId', ''); setValue('memDivisionId', ''); clearErrors(['memDivisionId', 'memRole' as never]); }}>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <Field label="Jabatan" required error={err.memRole?.message || (roles.length === 0 ? 'Belum ada role di periode ini. Buat dulu di menu Role & jabatan.' : undefined)}>
             <Select value={role?.id || ''} disabled={roles.length === 0} onChange={(e) => {
-              const r = roles.find((x: any) => x.id === e.target.value);
+              const r = roles.find((x) => x.id === e.target.value);
               setValue('memRoleId', r?.id || '');
               if (r && !r.requiresDivision) setValue('memDivisionId', '');
               clearErrors(['memRole' as never, 'memDivisionId']);
             }}>
               <option value="">Pilih jabatan</option>
-              {roles.map((r: any) => {
-                const lvl = LEVEL_OPTIONS.find((l: any) => l.level === r.level);
+              {roles.map((r) => {
+                const lvl = LEVEL_OPTIONS.find((l) => l.level === r.level);
                 return <option key={r.id} value={r.id}>{r.name} ({lvl?.shortLabel || `Level ${r.level}`} · {r.max > 0 ? `maks ${r.max}` : 'tanpa batas'}{r.requiresDivision ? ' · perlu divisi' : ''})</option>;
               })}
             </Select>
@@ -177,7 +177,7 @@ export default function MembersTab() {
             <Field label="Divisi" required error={err.memDivisionId?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)} hint={`Wajib untuk jabatan ${role.name}.`}>
               <Select value={fv.memDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('memDivisionId', e.target.value); setValue('memSubDivisionId', ''); clearErrors('memDivisionId'); }}>
                 <option value="">Pilih divisi</option>
-                {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {divsForTenure.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </Field>
           )}
@@ -185,7 +185,7 @@ export default function MembersTab() {
             <Field label="Sub-divisi" required error={err.memSubDivisionId?.message || (fv.memDivisionId && subsForDiv.length === 0 ? 'Divisi ini belum punya sub-divisi. Tambahkan di menu Divisi.' : undefined)} hint={!fv.memDivisionId ? 'Pilih divisi terlebih dahulu.' : undefined}>
               <Select value={fv.memSubDivisionId} disabled={!fv.memDivisionId || subsForDiv.length === 0} onChange={(e) => { setValue('memSubDivisionId', e.target.value); clearErrors('memSubDivisionId'); }}>
                 <option value="">Pilih sub-divisi</option>
-                {subsForDiv.map((sd: any) => <option key={sd.id} value={sd.id}>{sd.name}{sd.code ? ` (${sd.code})` : ''}</option>)}
+                {subsForDiv.map((sd) => <option key={sd.id} value={sd.id}>{sd.name}{sd.code ? ` (${sd.code})` : ''}</option>)}
               </Select>
             </Field>
           )}
@@ -194,11 +194,11 @@ export default function MembersTab() {
             <div className="rounded-md border border-line bg-surface p-3 md:col-span-2">
               <p className="mb-2 text-[0.82rem] text-muted"><strong className="text-ink">Kuota {tenureObj?.title || tenureObj?.code || 'periode ini'}</strong> · {tenureMembers.length} personel</p>
               <ul className="flex list-none flex-wrap gap-1.5">
-                {roles.map((r: any) => {
-                  const matched = tenureMembers.filter((m: any) => roleMatches(m, r));
+                {roles.map((r) => {
+                  const matched = tenureMembers.filter((m) => roleMatches(m, r));
                   const full = r.max > 0 && matched.length >= r.max;
                   return (
-                    <li key={r.id} title={matched.length ? `Terisi oleh: ${matched.map((m: any) => m.name).join(', ')}` : undefined}>
+                    <li key={r.id} title={matched.length ? `Terisi oleh: ${matched.map((m) => m.name).join(', ')}` : undefined}>
                       <Badge tone={full ? 'danger' : matched.length ? 'success' : 'neutral'}>{r.name}: {matched.length}{r.max > 0 ? `/${r.max}` : ''}{full ? ' · penuh' : ''}</Badge>
                     </li>
                   );
@@ -227,22 +227,22 @@ export default function MembersTab() {
           <SearchBox label="Cari personel" placeholder="Cari nama atau jabatan" value={adminMemSearch} onChange={(v) => { setAdminMemSearch(v); setAdminMemPage(1); }} />
           <FilterSelect label="Saring periode" value={adminMemTenureFilter} onChange={(v) => { setAdminMemTenureFilter(v); setAdminMemCatFilter('all'); setAdminMemDivFilter('all'); setAdminMemPage(1); }}>
             <option value="all">Semua periode</option>
-            {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+            {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring jabatan" value={adminMemCatFilter} onChange={(v) => { setAdminMemCatFilter(v); setAdminMemPage(1); }}>
             <option value="all">Semua jabatan</option>
-            {filterRoles.map((r: any) => <option key={r.id} value={r.id}>{r.name}{yearOf(r.tenureId)}</option>)}
+            {filterRoles.map((r) => <option key={r.id} value={r.id}>{r.name}{yearOf(r.tenureId)}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring divisi" value={adminMemDivFilter} onChange={(v) => { setAdminMemDivFilter(v); setAdminMemPage(1); }}>
             <option value="all">Semua divisi</option>
-            {(adminMemTenureFilter === 'all' ? divisions : divisions.filter((d: any) => d.tenureId === adminMemTenureFilter)).map((d: any) => <option key={d.id} value={d.id}>{d.name}{yearOf(d.tenureId)}</option>)}
+            {(adminMemTenureFilter === 'all' ? divisions : divisions.filter((d) => d.tenureId === adminMemTenureFilter)).map((d) => <option key={d.id} value={d.id}>{d.name}{yearOf(d.tenureId)}</option>)}
           </FilterSelect>
         </ListToolbar>
         {visible.length === 0 ? <AdminEmpty>Tidak ada personel yang cocok.</AdminEmpty> : (
           <ul className="grid list-none gap-3 lg:grid-cols-2">
-            {visible.map((m: any) => {
+            {visible.map((m) => {
               const roleName = findMatchingRole(m, tenureRoles)?.name || m.role || 'Anggota';
-              const div = (divisions || []).find((d: any) => d.id === m.divisionId);
+              const div = (divisions || []).find((d) => d.id === m.divisionId);
               const subtitle = div?.name && !roleName.toLowerCase().includes(div.name.toLowerCase()) ? `${roleName} · ${div.name}` : roleName;
               return (
                 <li key={m.id} className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface p-3">

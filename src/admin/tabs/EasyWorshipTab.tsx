@@ -13,7 +13,7 @@ export default function EasyWorshipTab() {
         <AdminEmpty>Belum ada jadwal tersimpan. Simpan tata ibadah dari halaman <strong className="text-ink">Multimedia Live</strong>.</AdminEmpty>
       ) : (
         <AdminList label="Jadwal EasyWorship">
-          {easyWorshipSchedules.map((sch: any) => (
+          {easyWorshipSchedules.map((sch) => (
             <AdminListRow key={sch.id}
               meta={<><Badge tone="gold">{sch.serviceDate || 'Ibadah rutin'}</Badge><span>{Array.isArray(sch.playlist) ? `${sch.playlist.length} tayangan` : '1 tayangan'}</span></>}
               title={sch.title} subtitle={sch.description || undefined}

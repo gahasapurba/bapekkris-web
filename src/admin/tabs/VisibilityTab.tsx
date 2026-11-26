@@ -21,7 +21,7 @@ export default function VisibilityTab() {
     { id: 'form', label: 'Registrasi & formulir', desc: 'Pendaftaran retreat, kepanitiaan, kebaktian khusus, dan survei.' },
   ];
 
-  const isPageItemVisible = (id: any) => {
+  const isPageItemVisible = (id: string) => {
     if (id === 'event' || id === 'program') return pageVisibility.event !== false && pageVisibility.program !== false;
     if (id === 'form' || id === 'oprec') return pageVisibility.form !== false && pageVisibility.oprec !== false;
     return pageVisibility[id] !== false;
@@ -30,11 +30,11 @@ export default function VisibilityTab() {
   const visiblePagesCount = pageItems.filter(p => isPageItemVisible(p.id)).length;
   const isNavbarVisible = pageVisibility.navbar !== false;
 
-  const handleToggleKey = (key: any) => {
+  const handleToggleKey = (key: string) => {
     if (!onUpdatePageVisibility) return;
     const currentVal = isPageItemVisible(key);
     const nextVal = !currentVal;
-    const nextState = {
+    const nextState: typeof pageVisibility = {
       ...pageVisibility,
       [key]: nextVal
     };
@@ -43,7 +43,7 @@ export default function VisibilityTab() {
     onUpdatePageVisibility(nextState);
   };
 
-  const handleSetAll = (showPages: any, showNavbar: any) => {
+  const handleSetAll = (showPages: boolean, showNavbar: boolean) => {
     if (!onUpdatePageVisibility) return;
     const nextState: Record<string, boolean> = {
       navbar: showNavbar,

@@ -17,8 +17,10 @@ import EventFields from './edit/EventFields';
 import BrandAssetFields from './edit/BrandAssetFields';
 import FaqFields from './edit/FaqFields';
 import RoleFields from './edit/RoleFields';
-import { useAdminPortal } from '../AdminPortalContext';
+import { useEditDialogContext } from '../AdminPortalContext';
 import { editItemError } from '../validation/schemas';
+import { getFormFields } from '../../utils/formMeta';
+import type { FormField } from '../../types/content';
 
 export default function EditItemModal() {
   const {
@@ -49,7 +51,7 @@ export default function EditItemModal() {
     submissions,
     tenureRoles,
     verifyImageUrl
-  } = useAdminPortal();
+  } = useEditDialogContext();
   const panelRef = useRef<HTMLDivElement>(null);
   const close = () => { setEditingItem(null); setEditModalError(''); };
   useModalBehavior(panelRef, true, close);
@@ -69,8 +71,8 @@ export default function EditItemModal() {
               }
               if (editingItem.type === 'form') {
                 // Validasi Integritas Unik: Periksa apakah ada field isUnique yang memiliki data duplikat di riwayat pengisian responden
-                const formFields = it.fields || [];
-                const uniqueFields = formFields.filter((f: any) => f.isUnique);
+                const formFields = getFormFields(it);
+                const uniqueFields = formFields.filter((f) => f.isUnique);
                 if (uniqueFields.length > 0) {
                   const formSubs = submissions.filter(s => s.formId === it.id);
                   for (const uf of uniqueFields) {
@@ -185,7 +187,7 @@ export default function EditItemModal() {
                   setIsUploadingMedia(false);
                 }
                 const finalResp = editingItem.item.rawResponsibilities !== undefined
-                  ? editingItem.item.rawResponsibilities.split('\n').map((s: any) => s.trim()).filter(Boolean)
+                  ? editingItem.item.rawResponsibilities.split('\n').map((s: string) => s.trim()).filter(Boolean)
                   : (Array.isArray(editingItem.item.responsibilities) ? editingItem.item.responsibilities : []);
                 const { rawResponsibilities, ...cleanItem } = editingItem.item;
                 const finalCat = getCategoryFromLevel(selectedRole?.level ?? 5);
@@ -226,7 +228,7 @@ export default function EditItemModal() {
               }
               if (editingItem.type === 'division' && onUpdateDivision) {
                 const finalFocus = editingItem.item.rawFocusAreas !== undefined
-                  ? editingItem.item.rawFocusAreas.split(',').map((s: any) => s.trim()).filter(Boolean)
+                  ? editingItem.item.rawFocusAreas.split(',').map((s: string) => s.trim()).filter(Boolean)
                   : (Array.isArray(editingItem.item.focusAreas) ? editingItem.item.focusAreas : []);
                 const { rawFocusAreas, ...cleanItem } = editingItem.item;
                 const selMem = members.find(m => m.id === cleanItem.memberId);
@@ -272,7 +274,7 @@ export default function EditItemModal() {
                 // Auto-include any pending photo links entered in the textarea
                 const pendingRawUrls = (editingItem.photoUrlInput || '').trim();
                 if (pendingRawUrls) {
-                  const urls = pendingRawUrls.split(/[\n,]+/).map((s: any) => s.trim()).filter(Boolean);
+                  const urls = pendingRawUrls.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean);
                   for (const u of urls) {
                     const check = await verifyImageUrl(u);
                     if (!check.valid) {
@@ -304,7 +306,7 @@ export default function EditItemModal() {
               }
               if (editingItem.type === 'tenure' && onUpdateTenure) {
                 const finalMisi = editingItem.item.rawMisi !== undefined
-                  ? editingItem.item.rawMisi.split('\n').map((s: any) => s.trim()).filter(Boolean)
+                  ? editingItem.item.rawMisi.split('\n').map((s: string) => s.trim()).filter(Boolean)
                   : (Array.isArray(editingItem.item.misi) ? editingItem.item.misi : []);
                 const { rawMisi, ...cleanItem } = editingItem.item;
                 onUpdateTenure({ ...cleanItem, misi: finalMisi });
@@ -313,7 +315,7 @@ export default function EditItemModal() {
               if (editingItem.type === 'form') {
                 const fields = editingItem.item.fields || [];
                 if (onUpdateForm) {
-                  const cleanFields = fields.map(({ rawOptions, ...rest }: any) => rest);
+                  const cleanFields = fields.map(({ rawOptions, ...rest }: FormField) => rest);
                   const cleanDeadline = editingItem.item.deadline ? toDatetimeLocalSecondsValue(editingItem.item.deadline) : '';
                   const isLimitedVal = editingItem.item.isLimited === true;
                   const maxQuotaVal = isLimitedVal ? (parseInt(editingItem.item.maxQuota, 10) || 0) : 0;
@@ -438,7 +440,7 @@ export default function EditItemModal() {
                   }
                   setIsUploadingMedia(false);
                 }
-                const isValidUrl = (url: any) => /^https?:\/\/.+/i.test(url.trim()) || url.trim().startsWith('/');
+                const isValidUrl = (url: string) => /^https?:\/\/.+/i.test(url.trim()) || url.trim().startsWith('/');
                 if (finalFileUrl && !editingItem.pendingFile && !isValidUrl(finalFileUrl)) {
                   setEditModalError('URL file harus berupa tautan web yang valid (diawali http:// atau https://)');
                   showToast('URL file harus berupa tautan web yang valid', 'error');
@@ -449,7 +451,7 @@ export default function EditItemModal() {
                   showToast('URL preview harus berupa tautan web yang valid', 'error');
                   return;
                 }
-                const isImageFile = (url: any) => /\.(png|jpe?g|svg|webp|gif|avif)($|\?)/i.test(url) || (url || '').startsWith('data:image/');
+                const isImageFile = (url: string) => /\.(png|jpe?g|svg|webp|gif|avif)($|\?)/i.test(url) || (url || '').startsWith('data:image/');
                 const effectiveFileUrl = finalFileUrl || (isImageFile(finalPreviewUrl) ? finalPreviewUrl : '');
                 const effectivePreviewUrl = finalPreviewUrl || (isImageFile(finalFileUrl) ? finalFileUrl : '');
                 if (!effectiveFileUrl) {

@@ -18,7 +18,7 @@ export default function RolesTab() {
   } = useAdminPortal();
 
   const tenureOf = (id: string) => id || activeTenure?.id || tenures[0]?.id || '';
-  const takenNamesIn = (tenureId: string) => (tenureRoles || []).filter((r: any) => r.tenureId === tenureId).map((r: any) => String(r?.name || '').toLowerCase().trim());
+  const takenNamesIn = (tenureId: string) => (tenureRoles || []).filter((r) => r.tenureId === tenureId).map((r) => String(r?.name || '').toLowerCase().trim());
   const { handleSubmit, field, watch, setValue, resetToDefaults, formState: { errors } } = useAdminDraftForm<RoleForm>(
     'role',
     (v) => roleCreateSchema({ takenNames: takenNamesIn(tenureOf(v.newRoleTenureId)) }),
@@ -50,7 +50,7 @@ export default function RolesTab() {
     const message = errs.newRoleName?.message;
     showToast(message === ROLE_NAME_REQUIRED ? 'Mohon isi Nama Jabatan terlebih dahulu' : message || 'Periksa kembali isian role', 'error');
   });
-  const filtered = (tenureRoles || []).filter((r: any) =>
+  const filtered = (tenureRoles || []).filter((r) =>
     (r.name || '').toLowerCase().includes(roleSearchQuery.toLowerCase()) &&
     (roleTenureFilter === 'all' || r.tenureId === roleTenureFilter) &&
     (roleLevelFilter === 'all' || String(r.level) === String(roleLevelFilter)));
@@ -67,12 +67,12 @@ export default function RolesTab() {
           </Field>
           <Field label="Periode" required>
             <Select {...field('newRoleTenureId')}>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <Field label="Tingkat di bagan" required>
             <Select {...field('newRoleLevel', { valueAsNumber: true })}>
-              {LEVEL_OPTIONS.map((lvl: any) => <option key={lvl.level} value={lvl.level}>{formatLevelOptionLabel(lvl, tenureRoles, formTenureId)}</option>)}
+              {LEVEL_OPTIONS.map((lvl) => <option key={lvl.level} value={lvl.level}>{formatLevelOptionLabel(lvl, tenureRoles, formTenureId)}</option>)}
             </Select>
           </Field>
           <Field label="Kuota maksimal" hint={values.newRoleMax > 0 ? `${values.newRoleMax} orang per ${values.newRoleRequiresDivision ? 'divisi' : 'periode'}` : '0 = tanpa batas'}>
@@ -91,11 +91,11 @@ export default function RolesTab() {
           <SearchBox label="Cari role" placeholder="Cari nama jabatan" value={roleSearchQuery} onChange={(v) => { setRoleSearchQuery(v); setRolePage(1); }} />
           <FilterSelect label="Saring periode" value={roleTenureFilter} onChange={(v) => { setRoleTenureFilter(v); setRolePage(1); }}>
             <option value="all">Semua periode</option>
-            {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code}</option>)}
+            {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring tingkat" value={roleLevelFilter} onChange={(v) => { setRoleLevelFilter(v); setRolePage(1); }}>
             <option value="all">Semua tingkat</option>
-            {LEVEL_OPTIONS.map((lvl: any) => <option key={lvl.level} value={String(lvl.level)}>{formatLevelOptionLabel(lvl, tenureRoles, roleTenureFilter === 'all' ? null : roleTenureFilter, true)}</option>)}
+            {LEVEL_OPTIONS.map((lvl) => <option key={lvl.level} value={String(lvl.level)}>{formatLevelOptionLabel(lvl, tenureRoles, roleTenureFilter === 'all' ? null : roleTenureFilter, true)}</option>)}
           </FilterSelect>
         </ListToolbar>
         <AdminTable label="Daftar role">
@@ -113,10 +113,10 @@ export default function RolesTab() {
           <tbody>
             {visible.length === 0 ? (
               <tr><td colSpan={7} className="px-4 py-10 text-center text-muted">Tidak ada role yang cocok.</td></tr>
-            ) : visible.map((role: any) => {
-              const levelInfo = LEVEL_OPTIONS.find((l: any) => l.level === role.level);
-              const tObj = tenures.find((t: any) => t.id === role.tenureId);
-              const matched = members.filter((m: any) => !role.tenureId || m.tenureId === role.tenureId).filter((m: any) => {
+            ) : visible.map((role) => {
+              const levelInfo = LEVEL_OPTIONS.find((l) => l.level === role.level);
+              const tObj = tenures.find((t) => t.id === role.tenureId);
+              const matched = members.filter((m) => !role.tenureId || m.tenureId === role.tenureId).filter((m) => {
                 if (m.roleId && m.roleId === role.id) return true;
                 const mRole = String(m.role || '').toLowerCase().trim();
                 const rName = String(role?.name || '').toLowerCase().trim();
@@ -125,7 +125,7 @@ export default function RolesTab() {
               const count = matched.length;
               const maxQ = Number(role.maxQuota ?? role.max ?? 0);
               const full = maxQ > 0 && count >= maxQ;
-              const names = matched.map((m: any) => m.name).join(', ');
+              const names = matched.map((m) => m.name).join(', ');
               return (
                 <tr key={role.id} className="hover:bg-surface-hover">
                   <td className={`${tdClass} font-semibold`}>{role.name}</td>

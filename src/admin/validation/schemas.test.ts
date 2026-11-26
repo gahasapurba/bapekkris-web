@@ -144,7 +144,7 @@ describe('gallery and form', () => {
     const errors = collectFieldErrors(galleryCreateSchema({ divisionCount: 2, hasSelectedDivision: false }), {
       galTitle: 'Retreat', galDesc: 'Dokumentasi', photoUrlCount: 0, pendingFileCount: 0
     });
-    expect(Object.keys(errors).sort()).toEqual(['galDivision', 'galPhotos']);
+    expect(Object.keys(errors).sort()).toEqual(['galDivisionId', 'galPhotos']);
   });
 
   it('checks quota and event link of a new form', () => {

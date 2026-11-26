@@ -1,5 +1,4 @@
 import { CalendarDays, ChevronDown, Filter, LayoutGrid } from 'lucide-react';
-import type { AppItem } from '../../lib/supabase';
 import { PageHeader, cn } from '../../ui';
 import EventCalendarView from './EventCalendarView';
 import { useProgramSection, type UseProgramSectionProps } from './useProgramSection';
@@ -133,7 +132,7 @@ export default function ProgramSection(props: UseProgramSectionProps) {
             forms={forms}
             registrationCounts={registrationCounts}
             activeTenure={activeTenure}
-            onSelectEvent={(evt: AppItem, sameDayEvents?: AppItem[]) => handleOpenEventModal(evt, sameDayEvents)}
+            onSelectEvent={handleOpenEventModal}
             isAdmin={false}
           />
         )}

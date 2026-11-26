@@ -6,6 +6,7 @@ import { downloadCsv } from '../csv';
 import { useAdminPortal } from '../AdminPortalContext';
 import { tenureCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
+import type { AppItem } from '../../lib/supabase';
 
 type TenureForm = { newTenureCode: string; newTenureTitle: string; newTenureTagline: string; newTenureHeadline: string; newTenureHighlight: string; newTenureVisi: string; newTenureMisi: string };
 const EMPTY_TENURE: TenureForm = { newTenureCode: '', newTenureTitle: '', newTenureTagline: '', newTenureHeadline: '', newTenureHighlight: '', newTenureVisi: '', newTenureMisi: '' };
@@ -34,9 +35,9 @@ export default function TenureTab() {
     showToast(`Periode Kepengurusan "${v.newTenureCode}" beserta Visi Misi berhasil dibuat!`);
   }, () => showToast('Mohon lengkapi field wajib (Kode Tahun & Nama Periode)', 'error'));
 
-  const isActive = (t: any) => activeTenure?.id === t.id || Boolean(t.isActive);
+  const isActive = (t: AppItem) => activeTenure?.id === t.id || Boolean(t.isActive);
   const q = tenureSearchQuery.toLowerCase().trim();
-  const filtered = (tenures || []).filter((t: any) =>
+  const filtered = (tenures || []).filter((t) =>
     (!q || [t.code, t.title, t.themeTagline, t.heroHeadline].some((v) => String(v || '').toLowerCase().includes(q))) &&
     (tenureStatusFilter === 'all' || (tenureStatusFilter === 'active' && isActive(t)) || (tenureStatusFilter === 'archived' && !isActive(t))));
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
@@ -45,7 +46,7 @@ export default function TenureTab() {
 
   const exportCsv = () => {
     downloadCsv(`daftar_periode_bapekkris_${Date.now()}.csv`, ['ID Periode', 'Kode Tahun', 'Nama Periode', 'Tagline', 'Headline', 'Status'],
-      tenures.map((t: any) => [t.id, t.code || '', t.title || '', t.themeTagline || '', t.heroHeadline || '', isActive(t) ? 'Aktif' : 'Arsip']));
+      tenures.map((t) => [t.id, t.code || '', t.title || '', t.themeTagline || '', t.heroHeadline || '', isActive(t) ? 'Aktif' : 'Arsip']));
     showToast('Data periode diunduh sebagai CSV.');
   };
 
@@ -80,7 +81,7 @@ export default function TenureTab() {
         </ListToolbar>
         {visible.length === 0 ? <AdminEmpty>Tidak ada periode yang cocok.</AdminEmpty> : (
           <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
-            {visible.map((t: any) => {
+            {visible.map((t) => {
               const active = activeTenure?.id === t.id;
               return (
                 <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 bg-surface px-4 py-3">

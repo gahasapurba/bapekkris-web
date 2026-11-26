@@ -1,7 +1,7 @@
 import { Trophy } from 'lucide-react';
 import { Badge, Button, Dialog } from '../../../ui';
 import { useRegistrationStats } from '../RegistrationStatsContext';
-import { fieldValue } from '../participantInfo';
+import { fieldValue } from '../../../utils/participantInfo';
 
 /** Shown right after a draw: every new winner with all of their form answers. */
 export default function LatestWinnersModal() {

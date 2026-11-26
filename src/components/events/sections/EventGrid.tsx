@@ -1,14 +1,14 @@
 import { CalendarDays, Camera, Check, ChevronRight, MapPin, Share2, Users } from 'lucide-react';
 import type { AppItem, RegistrationCounts } from '../../../lib/supabase';
 import { formatWibEventRange, isEventPassed } from '../../../utils/dateUtils';
-import { getUnifiedEventAttendees } from '../../../utils/quotaUtils';
+import { getUnifiedEventAttendees, isFormConnectedToEvent } from '../../../utils/quotaUtils';
 import { Badge, Button, Card, EmptyState, Pagination, cn } from '../../../ui';
 import { useProgramSectionContext } from '../ProgramSectionContext';
 
 const EVENTS_PER_PAGE = 8;
 
 function connectedFormOf(evt: AppItem, forms: AppItem[]): AppItem | undefined {
-  return forms.find((f) => (f.isEventConnected || f.fields?.[0]?._isEventConnected) && String(f.eventId || f.fields?.[0]?._eventId) === String(evt.id));
+  return forms.find((f) => isFormConnectedToEvent(f, evt.id));
 }
 
 function Attendance({ evt, forms, registrationCounts }: { evt: AppItem; forms: AppItem[]; registrationCounts?: RegistrationCounts }) {
@@ -62,7 +62,7 @@ export default function EventGrid() {
           const division = divisions.find((d) => d.id === evt.divisionId);
           const completed = evt.status === 'Completed' || isEventPassed(evt.startDate, evt.endDate);
           const form = connectedFormOf(evt, forms);
-          const lucky = form && (form.isLuckyDraw === true || form.fields?.[0]?._isLuckyDraw === true);
+          const lucky = form?.isLuckyDraw === true;
           const gallery = galleries.find((g) => String(g.eventId) === String(evt.id));
           const when = formatWibEventRange(evt.startDate, evt.endDate, evt.date);
           return (

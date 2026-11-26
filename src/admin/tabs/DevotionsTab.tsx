@@ -5,7 +5,7 @@ import { useAdminPortal } from '../AdminPortalContext';
 
 export default function DevotionsTab() {
   const {
-    devotionAuthor, devotionBody, devotionDate, devotionPrayer, devotionScriptureRef, devotionScriptureText, devotionTheme, devotionTitle,
+    devotionAuthor, devotionBody, devotionDate, devotionPrayer, devotionScriptureRef, devotionScriptureText, devotionTitle,
     devotions, onAddDevotion, onDeleteDevotion, setDevotionAuthor, setDevotionBody, setDevotionDate, setDevotionPrayer,
     setDevotionScriptureRef, setDevotionScriptureText, setDevotionTitle, showToast
   } = useAdminPortal();
@@ -27,7 +27,8 @@ export default function DevotionsTab() {
       body: devotionBody.trim(),
       prayer: devotionPrayer.trim(),
       author: devotionAuthor.trim() || 'Bapekkris Bank Mandiri',
-      theme: devotionTheme.trim() || 'Integritas & Karakter Kristiani'
+      // The create form has no theme field yet; every new devotion gets the default theme
+      theme: 'Integritas & Karakter Kristiani'
     });
     setDevotionTitle('');
     setDevotionScriptureRef('');
@@ -58,7 +59,7 @@ export default function DevotionsTab() {
         <h3 className="text-[0.98rem] font-semibold text-ink">Arsip renungan</h3>
         {devotions.length === 0 ? <AdminEmpty>Belum ada renungan.</AdminEmpty> : (
           <AdminList label="Arsip renungan">
-            {devotions.map((dev: any) => (
+            {devotions.map((dev) => (
               <AdminListRow key={dev.id}
                 meta={<><Badge tone="gold">{dev.devotionDate}</Badge>{dev.scriptureRef && <span>{dev.scriptureRef}</span>}</>}
                 title={dev.title} subtitle={dev.author ? `oleh ${dev.author}` : undefined}

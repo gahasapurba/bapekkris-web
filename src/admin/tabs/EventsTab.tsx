@@ -9,6 +9,7 @@ import { useAdminPortal } from '../AdminPortalContext';
 import { EVENT_CATEGORIES as CATEGORIES } from '../adminConstants';
 import { eventCreateSchema } from '../validation/schemas';
 import { useAdminDraftForm } from '../useAdminDraftForm';
+import type { AppItem } from '../../lib/supabase';
 
 type EventForm = {
   eventTitle: string; eventTenureId: string; eventDivId: string; eventCategory: string; eventStartDate: string; eventEndDate: string;
@@ -29,11 +30,11 @@ export default function EventsTab() {
     setEventSearchQuery, setEventStatusFilter, setEventTenureFilter, setRsvpEventFilter, setRsvpModeFilter, setRsvpSearchQuery, showToast, tenures, theme
   } = useAdminPortal();
 
-  const tenureOfEvent = (e: any) => e?.tenureId || divisions.find((d: any) => d.id === e?.divisionId)?.tenureId || '';
-  const divisionsOf = (tenureId: string) => divisions.filter((d: any) => d.tenureId === (tenureId || activeTenure?.id || ''));
+  const tenureOfEvent = (e: AppItem | null | undefined) => e?.tenureId || divisions.find((d) => d.id === e?.divisionId)?.tenureId || '';
+  const divisionsOf = (tenureId: string) => divisions.filter((d) => d.tenureId === (tenureId || activeTenure?.id || ''));
   const { handleSubmit, field, watch, setValue, setError, clearErrors, resetToDefaults, formState: { errors } } = useAdminDraftForm<EventForm>(
     'event',
-    (v) => eventCreateSchema({ divisionIds: divisionsOf(v.eventTenureId).map((d: any) => d.id) }),
+    (v) => eventCreateSchema({ divisionIds: divisionsOf(v.eventTenureId).map((d) => d.id) }),
     {
       eventTitle: '', eventTenureId: activeTenure?.id || '', eventDivId: '', eventCategory: '', eventStartDate: '', eventEndDate: '',
       eventLocation: '', eventKpi: '', eventRab: '', eventStatus: 'Upcoming', eventIsLimited: false, eventMaxQuota: '', eventIsPublic: false, eventDesc: ''
@@ -58,7 +59,7 @@ export default function EventsTab() {
   };
 
   const createEvent = handleSubmit((f) => {
-    const divObj = divisions.find((d: any) => d.id === f.eventDivId);
+    const divObj = divisions.find((d) => d.id === f.eventDivId);
     const sDate = toDatetimeLocalValue(f.eventStartDate) || toWibIsoDate();
     const eDate = toDatetimeLocalValue(f.eventEndDate) || sDate;
     const category = f.eventCategory.trim();
@@ -94,7 +95,7 @@ export default function EventsTab() {
 
   // events list
   const q = eventSearchQuery.trim().toLowerCase();
-  const filtered = events.filter((evt: any) =>
+  const filtered = events.filter((evt) =>
     (!q || [evt.title, evt.location, evt.description, evt.category || evt.badge].some((v) => String(v || '').toLowerCase().includes(q))) &&
     (eventTenureFilter === 'all' || tenureOfEvent(evt) === eventTenureFilter) &&
     (eventCatFilter === 'all' || (evt.category || evt.badge) === eventCatFilter) &&
@@ -106,11 +107,11 @@ export default function EventsTab() {
   const visible = filtered.slice((page - 1) * EVENTS_PER_PAGE, page * EVENTS_PER_PAGE);
 
   // RSVPs
-  const tenureObj = eventTenureFilter !== 'all' ? tenures.find((t: any) => t.id === eventTenureFilter) : null;
-  const rsvpEvents = events.filter((e: any) => eventTenureFilter === 'all' || tenureOfEvent(e) === eventTenureFilter);
+  const tenureObj = eventTenureFilter !== 'all' ? tenures.find((t) => t.id === eventTenureFilter) : null;
+  const rsvpEvents = events.filter((e) => eventTenureFilter === 'all' || tenureOfEvent(e) === eventTenureFilter);
   const rq = rsvpSearchQuery.trim().toLowerCase();
-  const rsvps = eventRsvps.filter((r: any) => {
-    const evt = events.find((e: any) => e.id === r.eventId);
+  const rsvps = eventRsvps.filter((r) => {
+    const evt = events.find((e) => e.id === r.eventId);
     if (eventTenureFilter !== 'all' && (!evt || tenureOfEvent(evt) !== eventTenureFilter)) return false;
     if (rsvpEventFilter !== 'all' && r.eventId !== rsvpEventFilter) return false;
     const mode = String(r.attendanceMode || '').toLowerCase();
@@ -122,12 +123,12 @@ export default function EventsTab() {
   const rPageCount = Math.ceil(rsvps.length / RSVPS_PER_PAGE) || 1;
   const rPage = Math.min(Math.max(1, adminRsvpPage), rPageCount);
   const rVisible = rsvps.slice((rPage - 1) * RSVPS_PER_PAGE, rPage * RSVPS_PER_PAGE);
-  const titleOf = (r: any) => events.find((e: any) => e.id === r.eventId)?.title || r.eventTitle || 'Kegiatan';
+  const titleOf = (r: AppItem) => events.find((e) => e.id === r.eventId)?.title || r.eventTitle || 'Kegiatan';
   const rsvpFiltered = rsvpSearchQuery || rsvpEventFilter !== 'all' || rsvpModeFilter !== 'all';
 
   const exportRsvp = () => {
     downloadCsv(`daftar_hadir_rsvp_bapekkris_${Date.now()}.csv`, ['ID RSVP', 'ID Event', 'Nama Kegiatan', 'Nama Peserta', 'Mode Kehadiran', 'Catatan', 'Waktu Konfirmasi'],
-      rsvps.map((r: any) => [r.id, r.eventId, titleOf(r), r.attendeeName, r.attendanceMode, r.notes || '', formatWibTimestamp(r.createdAt || r.submittedAt).exact || r.submittedAt || r.createdAt || '']));
+      rsvps.map((r) => [r.id, r.eventId, titleOf(r), r.attendeeName, r.attendanceMode, r.notes || '', formatWibTimestamp(r.createdAt || r.submittedAt).exact || r.submittedAt || r.createdAt || '']));
     showToast(`Berhasil mengunduh ${rsvps.length} data RSVP ke CSV!`);
   };
 
@@ -141,13 +142,13 @@ export default function EventsTab() {
             </Field>
             <Field label="Periode" required>
               <Select value={formTenure} onChange={(e) => { setValue('eventTenureId', e.target.value); setValue('eventDivId', ''); clearErrors('eventDivId'); }}>
-                {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
+                {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
               </Select>
             </Field>
             <Field label="Divisi penyelenggara" required error={errors.eventDivId?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
               <Select value={ev.eventDivId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('eventDivId', e.target.value); clearErrors('eventDivId'); }}>
                 <option value="">Pilih divisi</option>
-                {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {divsForTenure.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </Field>
             <Field label="Kategori" required error={errors.eventCategory?.message}>
@@ -210,14 +211,14 @@ export default function EventsTab() {
             <SearchBox label="Cari acara" placeholder="Cari nama atau lokasi" value={eventSearchQuery} onChange={(v) => { setEventSearchQuery(v); setAdminEventPage(1); }} />
           </ListToolbar>
           <div className="flex flex-wrap gap-2">
-            <FilterSelect label="Saring publikasi" value={eventPublicFilter} onChange={(v) => { setEventPublicFilter(v); setAdminEventPage(1); }}>
+            <FilterSelect label="Saring publikasi" value={eventPublicFilter} onChange={(v) => { setEventPublicFilter(v as typeof eventPublicFilter); setAdminEventPage(1); }}>
               <option value="all">Semua publikasi</option>
-              <option value="public">Publik ({events.filter((e: any) => e.isPublic === true).length})</option>
-              <option value="draft">Draf ({events.filter((e: any) => !e.isPublic).length})</option>
+              <option value="public">Publik ({events.filter((e) => e.isPublic === true).length})</option>
+              <option value="draft">Draf ({events.filter((e) => !e.isPublic).length})</option>
             </FilterSelect>
             <FilterSelect label="Saring periode" value={eventTenureFilter} onChange={(v) => { setEventTenureFilter(v); setEventDivFilter('all'); setAdminEventPage(1); setAdminRsvpPage(1); }}>
               <option value="all">Semua periode</option>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
             </FilterSelect>
             <FilterSelect label="Saring kategori" value={eventCatFilter} onChange={(v) => { setEventCatFilter(v); setAdminEventPage(1); }}>
               <option value="all">Semua kategori</option>
@@ -225,8 +226,8 @@ export default function EventsTab() {
             </FilterSelect>
             <FilterSelect label="Saring divisi" value={eventDivFilter} onChange={(v) => { setEventDivFilter(v); setAdminEventPage(1); }}>
               <option value="all">Semua divisi</option>
-              {(eventTenureFilter === 'all' ? divisions : divisions.filter((d: any) => d.tenureId === eventTenureFilter)).map((d: any) => {
-                const t = tenures.find((x: any) => x.id === d.tenureId);
+              {(eventTenureFilter === 'all' ? divisions : divisions.filter((d) => d.tenureId === eventTenureFilter)).map((d) => {
+                const t = tenures.find((x) => x.id === d.tenureId);
                 return <option key={d.id} value={d.id}>{d.name}{t ? ` (${t.code || t.title})` : ''}</option>;
               })}
             </FilterSelect>
@@ -238,12 +239,12 @@ export default function EventsTab() {
 
           {adminEventViewMode === 'calendar' ? (
             <EventCalendarView events={filtered} divisions={divisions} forms={forms} registrationCounts={registrationCounts}
-              activeTenure={eventTenureFilter !== 'all' ? tenures.find((t: any) => t.id === eventTenureFilter) : activeTenure}
-              onSelectEvent={(evt: any) => setEditingItem({ type: 'event', item: { ...evt } })} onEditEvent={(evt: any) => setEditingItem({ type: 'event', item: { ...evt } })} isAdmin />
+              activeTenure={eventTenureFilter !== 'all' ? tenures.find((t) => t.id === eventTenureFilter) : activeTenure}
+              onSelectEvent={(evt) => setEditingItem({ type: 'event', item: { ...evt } })} onEditEvent={(evt) => setEditingItem({ type: 'event', item: { ...evt } })} isAdmin />
           ) : filtered.length === 0 ? <AdminEmpty>{events.length === 0 ? 'Belum ada acara.' : 'Tidak ada acara yang cocok. Coba ubah pencarian atau filter.'}</AdminEmpty> : (
             <ul className="grid list-none gap-3 lg:grid-cols-2">
-              {visible.map((evt: any) => {
-                const div = divisions.find((d: any) => d.id === evt.divisionId);
+              {visible.map((evt) => {
+                const div = divisions.find((d) => d.id === evt.divisionId);
                 const att = getUnifiedEventAttendees(evt, forms, registrationCounts);
                 const draft = evt.isPublic !== true;
                 const limited = evt.isLimited && Number(evt.maxQuota) > 0;
@@ -299,7 +300,7 @@ export default function EventsTab() {
             <SearchBox className="sm:w-72" label="Cari RSVP" placeholder="Cari nama, catatan, acara" value={rsvpSearchQuery} onChange={(v) => { setRsvpSearchQuery(v); setAdminRsvpPage(1); }} />
             <FilterSelect label="Saring acara" value={rsvpEventFilter} onChange={(v) => { setRsvpEventFilter(v); setAdminRsvpPage(1); }} className="max-w-[260px]">
               <option value="all">Semua acara ({rsvpEvents.length})</option>
-              {rsvpEvents.map((ev: any) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
+              {rsvpEvents.map((ev) => <option key={ev.id} value={ev.id}>{ev.title}</option>)}
             </FilterSelect>
             <FilterSelect label="Saring mode kehadiran" value={rsvpModeFilter} onChange={(v) => { setRsvpModeFilter(v); setAdminRsvpPage(1); }}>
               <option value="all">Semua mode</option>
@@ -312,7 +313,7 @@ export default function EventsTab() {
             <AdminEmpty>{eventTenureFilter !== 'all' ? `Belum ada RSVP pada acara periode ${tenureObj?.code || tenureObj?.title || 'terpilih'}.` : 'Belum ada RSVP.'}</AdminEmpty>
           ) : (
             <ul className="grid list-none gap-2 lg:grid-cols-2">
-              {rVisible.map((r: any) => (
+              {rVisible.map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface px-4 py-3">
                   <div className="min-w-0">
                     <p className="truncate text-[0.78rem] font-semibold text-navy-ink">{titleOf(r)}</p>

@@ -29,7 +29,7 @@ export default function AssetsTab() {
   // The schema checks the typed URLs plus whether a file is waiting to be uploaded.
   const { handleSubmit, field, watch, setValue, getValues, clearErrors, resetToDefaults, formState: { errors, isSubmitting } } = useAdminDraftForm<AssetForm>(
     'asset',
-    z.preprocess((x: any) => ({ ...x, hasPendingAssetFile: Boolean(x?.pendingAssetFile), hasPendingPreviewFile: Boolean(x?.pendingPreviewFile) }), brandAssetCreateSchema),
+    z.preprocess((x) => { const v = x as AssetForm; return { ...v, hasPendingAssetFile: Boolean(v.pendingAssetFile), hasPendingPreviewFile: Boolean(v.pendingPreviewFile) }; }, brandAssetCreateSchema),
     EMPTY_ASSET
   );
   const v = watch();
@@ -103,7 +103,7 @@ export default function AssetsTab() {
   }, () => showToast('Mohon lengkapi seluruh kolom wajib pada form Asset', 'error'));
 
   const q = assetSearchQuery.trim().toLowerCase();
-  const filtered = brandAssets.filter((a: any) =>
+  const filtered = brandAssets.filter((a) =>
     (!q || [a.title, a.description, a.badge, a.fileType].some((v) => String(v || '').toLowerCase().includes(q))) &&
     (assetCatFilter === 'all' || a.category === assetCatFilter));
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
@@ -180,7 +180,7 @@ export default function AssetsTab() {
         </ListToolbar>
         {filtered.length === 0 ? <AdminEmpty>{brandAssets.length === 0 ? 'Belum ada aset.' : 'Tidak ada aset yang cocok.'}</AdminEmpty> : (
           <ul className="grid list-none gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {visible.map((item: any) => (
+            {visible.map((item) => (
               <li key={item.id} className="flex flex-col gap-3 rounded-md border border-line bg-surface p-4">
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone="gold">{item.category || 'Logo & Brand'}</Badge>

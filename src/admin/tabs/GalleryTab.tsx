@@ -32,14 +32,14 @@ export default function GalleryTab() {
     showToast, tenures, verifyImageUrl
   } = useAdminPortal();
 
-  const divisionsOf = (tid: string) => divisions.filter((d: any) => d.tenureId === (tid || activeTenure?.id || ''));
+  const divisionsOf = (tid: string) => divisions.filter((d) => d.tenureId === (tid || activeTenure?.id || ''));
   const { handleSubmit, field, watch, setValue, setError, clearErrors, resetToDefaults, formState: { errors, isSubmitting } } = useAdminDraftForm<GalleryForm>(
     'gallery',
     (v) => {
       const divs = divisionsOf(v.galTenureId);
       return z.preprocess(
-        (x: any) => ({ ...x, photoUrlCount: splitPhotoUrls(x?.galPhotos || '').length, pendingFileCount: (x?.pendingGalFiles || []).length }),
-        galleryCreateSchema({ divisionCount: divs.length, hasSelectedDivision: divs.some((d: any) => d.id === v.galDivisionId) })
+        (x) => { const v = x as GalleryForm; return { ...v, photoUrlCount: splitPhotoUrls(v.galPhotos || '').length, pendingFileCount: (v.pendingGalFiles || []).length }; },
+        galleryCreateSchema({ divisionCount: divs.length, hasSelectedDivision: divs.some((d) => d.id === v.galDivisionId) })
       );
     },
     {
@@ -68,7 +68,7 @@ export default function GalleryTab() {
 
   const createGallery = handleSubmit(async (f) => {
     const targetTenureId = f.galTenureId || activeTenure?.id || '';
-    const selectedDiv = divisionsOf(f.galTenureId).find((d: any) => d.id === f.galDivisionId);
+    const selectedDiv = divisionsOf(f.galTenureId).find((d) => d.id === f.galDivisionId);
     const urlPhotos = splitPhotoUrls(f.galPhotos);
     // Linked photos must be reachable images before the album is published
     if (urlPhotos.length > 0) {
@@ -114,8 +114,8 @@ export default function GalleryTab() {
   }, () => showToast('Mohon lengkapi kolom wajib pada form Galeri', 'error'));
 
   const q = gallerySearchQuery.trim().toLowerCase();
-  const filtered = galleries.filter((g: any) => {
-    const gTenure = g.tenureId || divisions.find((d: any) => d.id === g.divisionId || d.name === g.division)?.tenureId;
+  const filtered = galleries.filter((g) => {
+    const gTenure = g.tenureId || divisions.find((d) => d.id === g.divisionId || d.name === g.division)?.tenureId;
     return (!q || (g.title || '').toLowerCase().includes(q) || (g.description || '').toLowerCase().includes(q)) &&
       (galleryTenureFilter === 'all' || gTenure === galleryTenureFilter) &&
       (galleryDivFilter === 'all' || g.divisionId === galleryDivFilter || g.division === galleryDivFilter);
@@ -133,23 +133,23 @@ export default function GalleryTab() {
           </Field>
           <Field label="Periode" required>
             <Select value={tenureId} onChange={(e) => { setValue('galTenureId', e.target.value); setValue('galDivisionId', ''); }}>
-              {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
+              {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <div className="md:col-span-2">
             <FlexibleDateField mode={v.galDateMode} onModeChange={(m) => setValue('galDateMode', m)}
               value={v.galDate} onChange={(patch) => setValue('galDate', { ...v.galDate, ...patch })} />
           </div>
-          <Field label="Divisi penyelenggara" required error={(errors as any).galDivision?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
-            <Select value={v.galDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('galDivisionId', e.target.value); clearErrors('galDivision' as never); }}>
+          <Field label="Divisi penyelenggara" required error={errors.galDivisionId?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
+            <Select value={v.galDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('galDivisionId', e.target.value); clearErrors('galDivisionId'); }}>
               <option value="">Pilih divisi</option>
-              {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              {divsForTenure.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </Select>
           </Field>
           <Field label="Hubungkan ke acara" hint="Opsional. Album akan tampil di halaman acara tersebut.">
             <Select {...field('galEventId')}>
               <option value="">Tidak terhubung</option>
-              {(events || []).filter((ev: any) => !v.galTenureId || ev.tenureId === v.galTenureId).map((ev: any) => <option key={ev.id} value={ev.id}>{ev.title}{ev.date ? ` (${ev.date})` : ''}</option>)}
+              {(events || []).filter((ev) => !v.galTenureId || ev.tenureId === v.galTenureId).map((ev) => <option key={ev.id} value={ev.id}>{ev.title}{ev.date ? ` (${ev.date})` : ''}</option>)}
             </Select>
           </Field>
           <div className="md:col-span-2">
@@ -200,21 +200,21 @@ export default function GalleryTab() {
           <SearchBox label="Cari album" placeholder="Cari judul atau deskripsi" value={gallerySearchQuery} onChange={(v) => { setGallerySearchQuery(v); setAdminGalleryPage(1); }} />
           <FilterSelect label="Saring periode" value={galleryTenureFilter} onChange={(v) => { setGalleryTenureFilter(v); setGalleryDivFilter('all'); setAdminGalleryPage(1); }}>
             <option value="all">Semua periode</option>
-            {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+            {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring divisi" value={galleryDivFilter} onChange={(v) => { setGalleryDivFilter(v); setAdminGalleryPage(1); }}>
             <option value="all">Semua divisi</option>
-            {(galleryTenureFilter === 'all' ? divisions : divisions.filter((d: any) => d.tenureId === galleryTenureFilter)).map((d: any) => {
-              const t = tenures.find((x: any) => x.id === d.tenureId);
+            {(galleryTenureFilter === 'all' ? divisions : divisions.filter((d) => d.tenureId === galleryTenureFilter)).map((d) => {
+              const t = tenures.find((x) => x.id === d.tenureId);
               return <option key={d.id} value={d.id}>{d.name}{t ? ` (${t.code || t.title})` : ''}</option>;
             })}
           </FilterSelect>
         </ListToolbar>
         {filtered.length === 0 ? <AdminEmpty>{galleries.length === 0 ? 'Belum ada album.' : 'Tidak ada album yang cocok.'}</AdminEmpty> : (
           <ul className="flex list-none flex-col divide-y divide-line overflow-hidden rounded-md border border-line">
-            {visible.map((g: any) => {
-              const div = divisions.find((d: any) => d.id === g.divisionId)?.name || g.divisionName || g.division || 'Umum';
-              const evt = g.eventId ? (events || []).find((e: any) => String(e.id) === String(g.eventId)) : null;
+            {visible.map((g) => {
+              const div = divisions.find((d) => d.id === g.divisionId)?.name || g.divisionName || g.division || 'Umum';
+              const evt = g.eventId ? (events || []).find((e) => String(e.id) === String(g.eventId)) : null;
               const cover = Array.isArray(g.photos) && g.photos[0];
               return (
                 <li key={g.id} className="flex items-center justify-between gap-3 bg-surface px-4 py-3">

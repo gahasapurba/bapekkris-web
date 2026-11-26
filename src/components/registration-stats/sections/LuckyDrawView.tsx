@@ -7,7 +7,7 @@ const selectClass = 'h-10 max-w-full cursor-pointer rounded-full border border-l
 
 export default function LuckyDrawView() {
   const {
-    allCandidates, connectedForm, formFields, countdown, drawCount, dropdownFields, eligiblePool, eventWinners, filteredWinners, getDropdownOptions,
+    allCandidates, formFields, countdown, drawCount, dropdownFields, eligiblePool, eventWinners, filteredWinners, getDropdownOptions,
     handleDrawCountChange, handleExportWinnersCsv, handleResetWinnerFilters, handleRunLuckyDraw, handleWinnerHeaderSort, hasActiveWinnerFilters,
     isRolling, paginatedWinners, prizeName, rollingName, selectedDrawFieldId, setPrizeName, setResetConfirmOpen, setSelectedDrawFieldId,
     setWinnerCurrentPage, setWinnerDropdownFilters, setWinnerPageSize, setWinnerPrizeFilter, setWinnerSearchQuery, setWinnerToDelete,

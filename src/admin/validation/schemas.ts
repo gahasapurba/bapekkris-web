@@ -237,9 +237,9 @@ export function galleryCreateSchema({ divisionCount, hasSelectedDivision }: { di
     })
     .superRefine((v, ctx) => {
       if (divisionCount === 0) {
-        ctx.addIssue({ code: 'custom', path: ['galDivision'], message: 'Divisi masih kosong pada periode ini. Silakan buat divisi baru terlebih dahulu di tab Divisi.' });
+        ctx.addIssue({ code: 'custom', path: ['galDivisionId'], message: 'Divisi masih kosong pada periode ini. Silakan buat divisi baru terlebih dahulu di tab Divisi.' });
       } else if (!hasSelectedDivision) {
-        ctx.addIssue({ code: 'custom', path: ['galDivision'], message: 'Divisi penyelenggara wajib dipilih' });
+        ctx.addIssue({ code: 'custom', path: ['galDivisionId'], message: 'Divisi penyelenggara wajib dipilih' });
       }
       if (v.pendingFileCount === 0 && v.photoUrlCount === 0) {
         ctx.addIssue({ code: 'custom', path: ['galPhotos'], message: 'Wajib memilih salah satu: unggah file foto dari komputer ATAU masukkan tautan foto yang valid' });

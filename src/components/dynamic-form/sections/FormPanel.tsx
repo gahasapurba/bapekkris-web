@@ -21,7 +21,7 @@ function Alert({ tone, icon, children }: { tone: 'danger' | 'gold'; icon: ReactN
 /** Options of a choice field: static, or the tenure's divisions / public events. */
 function optionsOf(field: AppItem, form: AppItem, divisions: AppItem[], events: AppItem[]): string[] {
   if (field.source === 'divisions') {
-    const tenureId = form?.tenureId || form?.tenure_id;
+    const tenureId = form?.tenureId;
     const inTenure = tenureId ? divisions.filter((d) => d.tenureId === tenureId) : divisions;
     return (inTenure.length > 0 ? inTenure : divisions).map((d) => d.name);
   }

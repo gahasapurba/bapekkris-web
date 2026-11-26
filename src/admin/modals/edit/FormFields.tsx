@@ -1,8 +1,10 @@
 import { formatDeadlineWib, formatToIndonesianDate, toDatetimeLocalSecondsValue } from '../../../utils/dateUtils';
 import { ArrowDown, ArrowUp, GripVertical, Layers, Plus, Trash2 } from 'lucide-react';
 import { useFeedback } from '../../../ui';
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
+import { getFormFields } from '../../../utils/formMeta';
+import { isFormConnectedToEvent } from '../../../utils/quotaUtils';
 
 /** Fields of the edit dialog for `form` items. */
 export default function FormFields() {
@@ -21,7 +23,7 @@ export default function FormFields() {
     showToast,
     submissions,
     tenures
-  } = useAdminPortal();
+  } = useEditDialogContext();
   const { toast, confirm } = useFeedback();
 
   return (
@@ -307,11 +309,7 @@ export default function FormFields() {
                 }
 
                 return filteredEvents.map((evt) => {
-                  const existingConnectedForm = (forms || []).find((f) =>
-                    f.id !== editingItem.item.id &&
-                    (f.isEventConnected || f.fields?.[0]?._isEventConnected) &&
-                    String(f.eventId || f.fields?.[0]?._eventId) === String(evt.id)
-                  );
+                  const existingConnectedForm = forms.find((f) => f.id !== editingItem.item.id && isFormConnectedToEvent(f, evt.id));
                   return (
                     <option key={evt.id} value={evt.id}>
                       {evt.title} ({evt.startDate ? formatToIndonesianDate(evt.startDate.split('T')[0]) : (evt.date || 'Tanpa Tanggal')})
@@ -324,11 +322,7 @@ export default function FormFields() {
 
             {(() => {
               if (!editingItem.item.eventId) return null;
-              const conflictForm = (forms || []).find((f) =>
-                f.id !== editingItem.item.id &&
-                (f.isEventConnected || f.fields?.[0]?._isEventConnected) &&
-                String(f.eventId || f.fields?.[0]?._eventId) === String(editingItem.item.eventId)
-              );
+              const conflictForm = forms.find((f) => f.id !== editingItem.item.id && isFormConnectedToEvent(f, editingItem.item.eventId));
               if (!conflictForm) return null;
               return (
                 <div
@@ -428,7 +422,7 @@ export default function FormFields() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto', paddingRight: '4px' }}>
-          {(editingItem.item.fields || []).map((fld: any, idx: any) => (
+          {getFormFields(editingItem.item).map((fld, idx) => (
             <div
               key={fld.id || idx}
               draggable
@@ -534,7 +528,7 @@ export default function FormFields() {
                   value={fld.label || ''}
                   aria-label="Label pertanyaan" placeholder="Label pertanyaan"
                   onChange={(e) => {
-                    const nextFields = editingItem.item.fields.map((item: any, i: any) =>
+                    const nextFields = getFormFields(editingItem.item).map((item, i) =>
                       i === idx ? { ...item, label: e.target.value } : item
                     );
                     setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
@@ -552,7 +546,7 @@ export default function FormFields() {
                   }
                   onChange={(e) => {
                     const selectedVal = e.target.value;
-                    const nextFields = editingItem.item.fields.map((item: any, i: any) => {
+                    const nextFields = getFormFields(editingItem.item).map((item, i) => {
                       if (i === idx) {
                         if (selectedVal === 'select_division') {
                           return {
@@ -593,7 +587,7 @@ export default function FormFields() {
                     type="checkbox"
                     checked={Boolean(fld.required)}
                     onChange={(e) => {
-                      const nextFields = editingItem.item.fields.map((item: any, i: any) =>
+                      const nextFields = getFormFields(editingItem.item).map((item, i) =>
                         i === idx ? { ...item, required: e.target.checked } : item
                       );
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
@@ -625,7 +619,7 @@ export default function FormFields() {
                       type="checkbox"
                       checked={Boolean(fld.isSearchIndex)}
                       onChange={(e) => {
-                        const nextFields = editingItem.item.fields.map((item: any, i: any) =>
+                        const nextFields = getFormFields(editingItem.item).map((item, i) =>
                           i === idx ? { ...item, isSearchIndex: e.target.checked } : item
                         );
                         setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
@@ -682,7 +676,7 @@ export default function FormFields() {
                           return;
                         }
                       }
-                      const nextFields = editingItem.item.fields.map((item: any, i: any) =>
+                      const nextFields = getFormFields(editingItem.item).map((item, i) =>
                         i === idx ? { ...item, isUnique: nextVal } : item
                       );
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
@@ -709,7 +703,7 @@ export default function FormFields() {
                           if (!ok) return;
                         }
 
-                        const nextFields = editingItem.item.fields.filter((_: any, i: any) => i !== idx);
+                        const nextFields = getFormFields(editingItem.item).filter((_, i) => i !== idx);
                         setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });
                       }}
                       style={{
@@ -740,7 +734,7 @@ export default function FormFields() {
                     onChange={(e) => {
                       const textVal = e.target.value;
                       const opts = textVal.split(',').map(s => s.trim()).filter(Boolean);
-                      const nextFields = editingItem.item.fields.map((item: any, i: any) =>
+                      const nextFields = getFormFields(editingItem.item).map((item, i) =>
                         i === idx ? { ...item, options: opts, rawOptions: textVal } : item
                       );
                       setEditingItem({ ...editingItem, item: { ...editingItem.item, fields: nextFields } });

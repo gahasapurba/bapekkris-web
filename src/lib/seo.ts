@@ -2,6 +2,7 @@
 // buildPageMeta is pure (unit-tested); useDocumentMeta applies the result to document.head.
 
 import { useEffect } from 'react';
+import type { AppItem } from './supabase';
 
 export const SITE_NAME = 'Bapekkris Bank Mandiri';
 export const SITE_URL = 'https://bapekkris-mandiri.netlify.app';
@@ -9,7 +10,7 @@ const DEFAULT_DESCRIPTION =
   'Website resmi Bapekkris (Badan Pembinaan Kerohanian Kristen) PT Bank Mandiri (Persero) Tbk: persekutuan, ibadah, renungan harian, Alkitab, kidung pujian, dan pelayanan kasih insan Mandiri.';
 const DEFAULT_IMAGE = `${SITE_URL}/assets/mandiri-club-bapekkris-original.png`;
 
-type Item = Record<string, any>;
+type Item = AppItem;
 
 export interface PageMeta {
   title: string;

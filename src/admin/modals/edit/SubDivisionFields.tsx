@@ -1,4 +1,4 @@
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `sub_division` items. */
@@ -7,7 +7,7 @@ export default function SubDivisionFields() {
     editingItem,
     isDark,
     setEditingItem
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -1,249 +1,12 @@
-import { createContext, useContext, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
-import type { AppItem } from '../lib/supabase';
-
-type AnyFn = (...args: any[]) => any;
+import { createContext, useContext } from 'react';
+import type { useAdminPortalState } from './useAdminPortalState';
 
 /**
- * State and handlers of the Admin Portal, shared with the tabs and modals in src/admin.
- *
- * AdminPortal.jsx owns the data, list filters, dialogs and handlers shared by several tabs. Each
- * tab's create form lives in the tab itself (react-hook-form via useAdminDraftForm); half-filled
- * values are kept in `formDrafts` while the tab is closed.
+ * State and handlers of the Admin Portal (src/admin/useAdminPortalState.ts), shared with the tabs
+ * and modals in src/admin. Each tab's create form lives in the tab itself (react-hook-form via
+ * useAdminDraftForm); half-filled values are kept in `formDrafts` while the tab is closed.
  */
-export interface AdminPortalContextValue {
-  /** Half-filled create forms parked while their tab is closed (see useAdminDraftForm). */
-  formDrafts: MutableRefObject<Map<string, unknown>>;
-  activeTab: any;
-  activeTenure: any;
-  adminEventPage: any;
-  adminEventViewMode: any;
-  adminFaqPage: any;
-  adminGalleryPage: any;
-  adminMemCatFilter: any;
-  adminMemDivFilter: any;
-  adminMemPage: any;
-  adminMemSearch: any;
-  adminMemTenureFilter: any;
-  adminRsvpPage: any;
-  announcementBar: any;
-  applications: AppItem[];
-  assetCatFilter: any;
-  assetPage: any;
-  assetSearchQuery: any;
-  brandAssets: AppItem[];
-  deleteConfirm: any;
-  devotionAuthor: any;
-  devotionBody: any;
-  devotionDate: any;
-  devotionPrayer: any;
-  devotionScriptureRef: any;
-  devotionScriptureText: any;
-  devotionTheme: any;
-  devotionTitle: any;
-  devotions: AppItem[];
-  divPage: any;
-  divRecruitFilter: any;
-  divSearchQuery: any;
-  divTenureFilter: any;
-  divisions: AppItem[];
-  dragOverFieldIndex: any;
-  draggedFieldIndex: any;
-  easyWorshipSchedules: AppItem[];
-  editModalError: any;
-  editingItem: any;
-  eventCatFilter: any;
-  eventDivFilter: any;
-  eventPublicFilter: any;
-  eventRsvps: AppItem[];
-  eventSearchQuery: any;
-  eventStatusFilter: any;
-  eventTenureFilter: any;
-  events: AppItem[];
-  expandedDivSubId: any;
-  faqCatFilter: any;
-  faqSearchQuery: any;
-  faqs: AppItem[];
-  formCatFilter: any;
-  formPage: any;
-  formSearchQuery: any;
-  formStatusFilter: any;
-  formTenureFilter: any;
-  forms: AppItem[];
-  galleries: AppItem[];
-  galleryDivFilter: any;
-  gallerySearchQuery: any;
-  galleryTenureFilter: any;
-  handleAddPhotoLinkToEditModal: AnyFn;
-  handleBrandAssetUpload: AnyFn;
-  handleDeleteDivisionClick: AnyFn;
-  handleDeleteEventClick: AnyFn;
-  handleDeleteFormClick: AnyFn;
-  handleDeleteGalleryClick: AnyFn;
-  handleDeleteMemberClick: AnyFn;
-  handleDeleteTenureClick: AnyFn;
-  handleMemberPhotoUpload: AnyFn;
-  handleMoveField: AnyFn;
-  handlePhotoUpload: AnyFn;
-  isAdminMobileMenuOpen: any;
-  isDark: any;
-  isSuperAdmin: any;
-  isUploadingMedia: any;
-  luckyDraws: AppItem[];
-  members: AppItem[];
-  onAddDevotion: AnyFn;
-  onAddFaq: AnyFn;
-  onAddMember: AnyFn;
-  onAddEvent: AnyFn;
-  onAddGallery: AnyFn;
-  onAddBrandAsset: AnyFn;
-  onAddTenureRole: AnyFn;
-  onAddDivision: AnyFn;
-  onAddTenure: AnyFn;
-  onAddForm: AnyFn;
-  onAddSubDivision: AnyFn;
-  onAddWorshipSong: AnyFn;
-  onDeleteBrandAsset: AnyFn;
-  onDeleteDevotion: AnyFn;
-  onDeleteDivision: AnyFn;
-  onDeleteEasyWorshipSchedule: AnyFn;
-  onDeleteEvent?: AnyFn;
-  onDeleteEventRsvp?: AnyFn;
-  onDeleteFaq: AnyFn;
-  onDeleteForm: AnyFn;
-  onDeleteGallery: AnyFn;
-  onDeleteMember: AnyFn;
-  onDeleteSubDivision: AnyFn;
-  onDeleteSubmission?: AnyFn;
-  onDeleteTenure: AnyFn;
-  onDeleteTenureRole: AnyFn;
-  onDeleteWorshipSong: AnyFn;
-  onResetDefault: AnyFn;
-  onSelectTenure: AnyFn;
-  onUpdateAnnouncementBar: AnyFn;
-  onUpdateBrandAsset: AnyFn;
-  onUpdateDevotion: AnyFn;
-  onUpdateDivision: AnyFn;
-  onUpdateEvent: AnyFn;
-  onUpdateFaq: AnyFn;
-  onUpdateForm: AnyFn;
-  onUpdateGallery: AnyFn;
-  onUpdateMember: AnyFn;
-  onUpdatePageVisibility: AnyFn;
-  onUpdateSubDivision: AnyFn;
-  onUpdateSubmission: AnyFn;
-  onUpdateTenure: AnyFn;
-  onUpdateTenureRole: AnyFn;
-  pageVisibility: any;
-  registrationCounts: any;
-  reportTenureId: any;
-  roleLevelFilter: any;
-  rolePage: any;
-  roleQuotas: any;
-  roleSearchQuery: any;
-  roleTenureFilter: any;
-  rsvpEventFilter: any;
-  rsvpModeFilter: any;
-  rsvpSearchQuery: any;
-  selectedSubFilter: any;
-  setActiveTab: AnyFn;
-  setAdminEventPage: Dispatch<SetStateAction<any>>;
-  setAdminEventViewMode: Dispatch<SetStateAction<any>>;
-  setAdminFaqPage: Dispatch<SetStateAction<any>>;
-  setAdminGalleryPage: Dispatch<SetStateAction<any>>;
-  setAdminMemCatFilter: Dispatch<SetStateAction<any>>;
-  setAdminMemDivFilter: Dispatch<SetStateAction<any>>;
-  setAdminMemPage: Dispatch<SetStateAction<any>>;
-  setAdminMemSearch: Dispatch<SetStateAction<any>>;
-  setAdminMemTenureFilter: Dispatch<SetStateAction<any>>;
-  setAdminRsvpPage: Dispatch<SetStateAction<any>>;
-  setAssetCatFilter: Dispatch<SetStateAction<any>>;
-  setAssetPage: Dispatch<SetStateAction<any>>;
-  setAssetSearchQuery: Dispatch<SetStateAction<any>>;
-  setDeleteConfirm: Dispatch<SetStateAction<any>>;
-  setDevotionAuthor: Dispatch<SetStateAction<any>>;
-  setDevotionBody: Dispatch<SetStateAction<any>>;
-  setDevotionDate: Dispatch<SetStateAction<any>>;
-  setDevotionPrayer: Dispatch<SetStateAction<any>>;
-  setDevotionScriptureRef: Dispatch<SetStateAction<any>>;
-  setDevotionScriptureText: Dispatch<SetStateAction<any>>;
-  setDevotionTitle: Dispatch<SetStateAction<any>>;
-  setDivPage: Dispatch<SetStateAction<any>>;
-  setDivRecruitFilter: Dispatch<SetStateAction<any>>;
-  setDivSearchQuery: Dispatch<SetStateAction<any>>;
-  setDivTenureFilter: Dispatch<SetStateAction<any>>;
-  setDragOverFieldIndex: Dispatch<SetStateAction<any>>;
-  setDraggedFieldIndex: Dispatch<SetStateAction<any>>;
-  setEditModalError: Dispatch<SetStateAction<any>>;
-  setEditingItem: Dispatch<SetStateAction<any>>;
-  setEventCatFilter: Dispatch<SetStateAction<any>>;
-  setEventDivFilter: Dispatch<SetStateAction<any>>;
-  setEventPublicFilter: Dispatch<SetStateAction<any>>;
-  setEventSearchQuery: Dispatch<SetStateAction<any>>;
-  setEventStatusFilter: Dispatch<SetStateAction<any>>;
-  setEventTenureFilter: Dispatch<SetStateAction<any>>;
-  setExpandedDivSubId: Dispatch<SetStateAction<any>>;
-  setFaqCatFilter: Dispatch<SetStateAction<any>>;
-  setFaqSearchQuery: Dispatch<SetStateAction<any>>;
-  setFormCatFilter: Dispatch<SetStateAction<any>>;
-  setFormPage: Dispatch<SetStateAction<any>>;
-  setFormSearchQuery: Dispatch<SetStateAction<any>>;
-  setFormStatusFilter: Dispatch<SetStateAction<any>>;
-  setFormTenureFilter: Dispatch<SetStateAction<any>>;
-  setGalleryDivFilter: Dispatch<SetStateAction<any>>;
-  setGallerySearchQuery: Dispatch<SetStateAction<any>>;
-  setGalleryTenureFilter: Dispatch<SetStateAction<any>>;
-  setIsAdminMobileMenuOpen: Dispatch<SetStateAction<any>>;
-  setIsUploadingMedia: Dispatch<SetStateAction<any>>;
-  setReportTenureId: Dispatch<SetStateAction<any>>;
-  setRoleLevelFilter: Dispatch<SetStateAction<any>>;
-  setRolePage: Dispatch<SetStateAction<any>>;
-  setRoleSearchQuery: Dispatch<SetStateAction<any>>;
-  setRoleTenureFilter: Dispatch<SetStateAction<any>>;
-  setRsvpEventFilter: Dispatch<SetStateAction<any>>;
-  setRsvpModeFilter: Dispatch<SetStateAction<any>>;
-  setRsvpSearchQuery: Dispatch<SetStateAction<any>>;
-  setSelectedSubFilter: Dispatch<SetStateAction<any>>;
-  setShowExecutiveReportModal: Dispatch<SetStateAction<any>>;
-  setSongAuthor: Dispatch<SetStateAction<any>>;
-  setSongCategory: Dispatch<SetStateAction<any>>;
-  setSongKey: Dispatch<SetStateAction<any>>;
-  setSongLyrics: Dispatch<SetStateAction<any>>;
-  setSongNumber: Dispatch<SetStateAction<any>>;
-  setSongSearch: Dispatch<SetStateAction<any>>;
-  setSongTitle: Dispatch<SetStateAction<any>>;
-  setSongYoutube: Dispatch<SetStateAction<any>>;
-  setSubCurrentPage: Dispatch<SetStateAction<any>>;
-  setSubSearchQuery: Dispatch<SetStateAction<any>>;
-  setSubStatusFilter: Dispatch<SetStateAction<any>>;
-  setSubTenureFilter: Dispatch<SetStateAction<any>>;
-  setTenurePage: Dispatch<SetStateAction<any>>;
-  setTenureSearchQuery: Dispatch<SetStateAction<any>>;
-  setTenureStatusFilter: Dispatch<SetStateAction<any>>;
-  showExecutiveReportModal: any;
-  showToast: AnyFn;
-  songAuthor: any;
-  songCategory: any;
-  songKey: any;
-  songLyrics: any;
-  songNumber: any;
-  songSearch: any;
-  songTitle: any;
-  songYoutube: any;
-  subCurrentPage: any;
-  subDivisions: AppItem[];
-  subSearchQuery: any;
-  subStatusFilter: any;
-  subTenureFilter: any;
-  submissions: AppItem[];
-  tenurePage: any;
-  tenureRoles: AppItem[];
-  tenureSearchQuery: any;
-  tenureStatusFilter: any;
-  tenures: AppItem[];
-  theme: any;
-  verifyImageUrl: AnyFn;
-  worshipSongs: AppItem[];
-}
+export type AdminPortalContextValue = ReturnType<typeof useAdminPortalState>;
 
 export const AdminPortalContext = createContext<AdminPortalContextValue | null>(null);
 
@@ -251,4 +14,20 @@ export function useAdminPortal(): AdminPortalContextValue {
   const value = useContext(AdminPortalContext);
   if (!value) throw new Error('useAdminPortal must be used inside AdminPortal');
   return value;
+}
+
+/** Context for the edit dialog and its field components, which only render while an item is open. */
+export function useEditDialogContext() {
+  const context = useAdminPortal();
+  const { editingItem } = context;
+  if (!editingItem) throw new Error('The edit dialog rendered without an item');
+  return { ...context, editingItem };
+}
+
+/** Context for the delete confirmation, which only renders while a delete is pending. */
+export function useDeleteDialogContext() {
+  const context = useAdminPortal();
+  const { deleteConfirm } = context;
+  if (!deleteConfirm) throw new Error('The delete dialog rendered without a pending delete');
+  return { ...context, deleteConfirm };
 }

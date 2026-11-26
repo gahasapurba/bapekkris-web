@@ -6,6 +6,10 @@ import type { BadgeTone } from '../../ui/Badge';
 import { AdminEmpty, AdminPanel, FilterSelect, IconButton, SearchBox } from '../AdminUi';
 import { downloadCsv } from '../csv';
 import { useAdminPortal } from '../AdminPortalContext';
+import { getFormFields } from '../../utils/formMeta';
+import { participantName } from '../../utils/participantInfo';
+import type { FormField, SubmittedFile } from '../../types/content';
+import type { AppItem } from '../../lib/supabase';
 
 const PER_PAGE = 5;
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
@@ -24,19 +28,20 @@ export default function SubmissionsTab() {
     subTenureFilter, submissions, tenures
   } = useAdminPortal();
 
-  const formTitle = (s: any) => forms.find((f: any) => f.id === s?.formId)?.title || s?.formTitle || 'Formulir';
-  const formTenure = (s: any) => s?.tenureId || forms.find((f: any) => f.id === s?.formId)?.tenureId || '';
-  const labelFor = (k: string, schema: any[] = []) => {
-    const m = schema.find((f: any) => f.id === k || f.id === `f-${k}`);
+  const formOf = (s: AppItem) => forms.find((f) => f.id === s.formId);
+  const formTitle = (s: AppItem) => formOf(s)?.title || 'Formulir';
+  const formTenure = (s: AppItem) => formOf(s)?.tenureId || '';
+  const labelFor = (k: string, schema: FormField[] = []) => {
+    const m = schema.find((f) => f.id === k || f.id === `f-${k}`);
     if (m?.label) return m.label;
-    for (const f of forms) { const x = f.fields?.find((fld: any) => fld.id === k || fld.id === `f-${k}`); if (x?.label) return x.label; }
+    for (const f of forms) { const x = getFormFields(f).find((fld) => fld.id === k || fld.id === `f-${k}`); if (x?.label) return x.label; }
     return k.replace(/^f-/, '').replace(/([A-Z])/g, ' $1').trim();
   };
-  const phoneOf = (data: Record<string, any> = {}) => { for (const [k, v] of Object.entries(data)) if (/wa|whatsapp|phone|telp|hp/i.test(k) && v) return formatWaPhone(v); return ''; };
-  const nameOf = (s: any) => { const d = s?.data || {}; return d['f-fullName'] || d['f-teamName'] || d['f-name'] || d['f-captainName'] || d.fullName || 'Peserta'; };
+  const phoneOf = (data: Record<string, unknown> = {}) => { for (const [k, v] of Object.entries(data)) if (/wa|whatsapp|phone|telp|hp/i.test(k) && v) return formatWaPhone(String(v)); return ''; };
+  const nameOf = (s: AppItem) => participantName(s.data, getFormFields(formOf(s))) || 'Peserta';
 
   const q = subSearchQuery.trim().toLowerCase();
-  const filtered = submissions.filter((s: any) =>
+  const filtered = submissions.filter((s) =>
     (subTenureFilter === 'all' || formTenure(s) === subTenureFilter) &&
     (selectedSubFilter === 'all' || s.formId === selectedSubFilter) &&
     (subStatusFilter === 'all' || (s.status || 'Submitted') === subStatusFilter) &&
@@ -44,15 +49,15 @@ export default function SubmissionsTab() {
   const pageCount = Math.ceil(filtered.length / PER_PAGE) || 1;
   const page = Math.min(Math.max(1, subCurrentPage), pageCount);
   const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const countOf = (st: string) => submissions.filter((s: any) => (s.status || 'Submitted') === st).length;
+  const countOf = (st: string) => submissions.filter((s) => (s.status || 'Submitted') === st).length;
 
   const exportCsv = () => {
     if (filtered.length === 0) { showToast('Tidak ada data pengisian untuk diexport.', 'error'); return; }
-    const keys = Array.from(new Set(filtered.flatMap((s: any) => s.data ? Object.keys(s.data) : ['fullName', 'nip', 'unitSquad', 'div1', 'div2', 'whatsapp', 'email', 'motivation']))) as string[];
+    const keys = Array.from(new Set(filtered.flatMap((s) => s.data ? Object.keys(s.data) : ['fullName', 'nip', 'unitSquad', 'div1', 'div2', 'whatsapp', 'email', 'motivation']))) as string[];
     downloadCsv(`data_pengisian_form_bapekkris_${Date.now()}.csv`,
       ['ID Berkas', 'Judul Formulir', 'Status Seleksi', 'Catatan Admin', 'Waktu Submit', ...keys.map((k) => labelFor(k).toUpperCase() === k ? k : labelFor(k)), 'Lampiran File'],
-      filtered.map((s: any) => [s.id, formTitle(s), s.status || 'Submitted', s.adminNotes || '', formatWibTimestamp(s.createdAt || s.submittedAt).exact || s.submittedAt || s.createdAt || '',
-        ...keys.map((k) => (s.data ? s.data[k] ?? '' : s[k] ?? '')), s.files ? Object.values(s.files as Record<string, any>).map((f) => f.name).join('; ') : '']));
+      filtered.map((s) => [s.id, formTitle(s), s.status || 'Submitted', s.adminNotes || '', formatWibTimestamp(s.createdAt || s.submittedAt).exact || s.submittedAt || s.createdAt || '',
+        ...keys.map((k) => (s.data ? s.data[k] ?? '' : s[k] ?? '')), s.files ? Object.values(s.files as Record<string, SubmittedFile>).map((f) => f.name).join('; ') : '']));
     showToast(`Berhasil mengunduh ${filtered.length} data pengisian ke CSV!`);
   };
 
@@ -65,11 +70,11 @@ export default function SubmissionsTab() {
         <SearchBox className="sm:w-72" label="Cari pendaftar" placeholder="Cari nama, ID, NIP, divisi" value={subSearchQuery} onChange={(v) => { setSubSearchQuery(v); setSubCurrentPage(1); }} />
         <FilterSelect label="Saring periode" value={subTenureFilter} onChange={(v) => { setSubTenureFilter(v); setSelectedSubFilter('all'); setSubCurrentPage(1); }}>
           <option value="all">Semua periode</option>
-          {tenures.map((t: any) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
+          {tenures.map((t) => <option key={t.id} value={t.id}>Periode {t.code || t.title}</option>)}
         </FilterSelect>
         <FilterSelect label="Saring formulir" value={selectedSubFilter} onChange={(v) => { setSelectedSubFilter(v); setSubCurrentPage(1); }} className="max-w-[260px]">
           <option value="all">Semua formulir</option>
-          {(subTenureFilter === 'all' ? forms : forms.filter((f: any) => f.tenureId === subTenureFilter)).map((f: any) => <option key={f.id} value={f.id}>{f.title}</option>)}
+          {(subTenureFilter === 'all' ? forms : forms.filter((f) => f.tenureId === subTenureFilter)).map((f) => <option key={f.id} value={f.id}>{f.title}</option>)}
         </FilterSelect>
       </div>
       <div role="group" aria-label="Saring status" className="-mt-1 flex flex-wrap gap-1.5">
@@ -84,15 +89,15 @@ export default function SubmissionsTab() {
 
       {filtered.length === 0 ? <AdminEmpty>{submissions.length === 0 ? 'Belum ada data pendaftaran.' : 'Tidak ada data yang cocok dengan filter.'}</AdminEmpty> : (
         <ul className="flex list-none flex-col gap-3">
-          {visible.map((sub: any) => {
+          {visible.map((sub) => {
             const status = sub.status || 'Submitted';
             const meta = STATUS[status] || STATUS.Submitted;
             const name = nameOf(sub);
             const wa = phoneOf(sub.data);
             const title = formTitle(sub);
-            const schema = forms.find((f: any) => f.id === sub.formId)?.fields || [];
+            const schema = getFormFields(formOf(sub));
             const keys = Object.keys(sub.data || {});
-            const ordered = [...schema.map((f: any) => f.id).filter((id: string) => keys.includes(id)), ...keys.filter((k) => !schema.some((f: any) => f.id === k))];
+            const ordered = [...schema.map((f) => f.id).filter((id: string) => keys.includes(id)), ...keys.filter((k) => !schema.some((f) => f.id === k))];
             return (
               <li key={sub.id} className="flex flex-col gap-3 rounded-md border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -118,7 +123,7 @@ export default function SubmissionsTab() {
                     )}
                     {onDeleteSubmission && (
                       <IconButton label={`Hapus berkas ${name}`} tone="danger" onClick={() => {
-                        const won = (luckyDraws || []).find((ld: any) => ld.submissionId === sub.id);
+                        const won = (luckyDraws || []).find((ld) => ld.submissionId === sub.id);
                         setDeleteConfirm(won
                           ? { type: 'submission', id: sub.id, name: `Berkas ${name}`, isBlocked: true, drawPrize: won.prizeName, drawnAt: won.drawnAt }
                           : { type: 'submission', id: sub.id, name: `Berkas ${name}` });
@@ -139,7 +144,7 @@ export default function SubmissionsTab() {
                     );
                   })}
                 </dl>
-                {sub.files && Object.entries(sub.files as Record<string, any>).map(([k, f]) => (
+                {sub.files && Object.entries(sub.files as Record<string, SubmittedFile>).map(([k, f]) => (
                   <a key={k} href={f.dataUrl} download={f.name} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-[0.86rem] font-semibold text-navy-ink hover:underline">
                     <Paperclip size={14} aria-hidden="true" />{f.name} ({f.size})
                   </a>

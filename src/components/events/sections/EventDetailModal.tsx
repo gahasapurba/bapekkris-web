@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { BarChart3, CalendarPlus, CalendarX, Camera, Check, CheckCircle2, ExternalLink, Link2, Lock, MapPin, Send, Share2, Tag, Users, Building2 } from 'lucide-react';
 import type { AppItem } from '../../../lib/supabase';
 import { formatDeadlineWib, formatWibEventRange, getDeadlineStatus, isEventPassed } from '../../../utils/dateUtils';
-import { getUnifiedEventAttendees } from '../../../utils/quotaUtils';
+import { getUnifiedEventAttendees, isFormConnectedToEvent } from '../../../utils/quotaUtils';
 import { Badge, Button, ButtonLink, Dialog, Field, Input, Select } from '../../../ui';
 import { downloadIcs, googleCalendarUrl } from '../calendarExport';
 import { useProgramSectionContext } from '../ProgramSectionContext';
@@ -39,10 +39,7 @@ export default function EventDetailModal() {
   const when = formatWibEventRange(evt.startDate, evt.endDate, evt.date);
   const attendance = getUnifiedEventAttendees(evt, forms, registrationCounts);
   const rsvpCount = Number(registrationCounts?.events?.[evt.id] || 0);
-  const connectedForm: AppItem | undefined = forms.find((f) => {
-    const connected = f.isEventConnected || f.fields?.[0]?._isEventConnected;
-    return Boolean(connected) && String(f.eventId || f.fields?.[0]?._eventId) === String(evt.id);
-  });
+  const connectedForm: AppItem | undefined = forms.find((f) => isFormConnectedToEvent(f, evt.id));
   const gallery: AppItem | undefined = galleries.find((g) => String(g.eventId) === String(evt.id));
   const category = evt.kategori || evt.category || evt.badge;
 

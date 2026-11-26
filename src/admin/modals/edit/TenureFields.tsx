@@ -1,4 +1,4 @@
-import { useAdminPortal } from '../../AdminPortalContext';
+import { useEditDialogContext } from '../../AdminPortalContext';
 import { Input, Textarea } from '../../../ui';
 
 /** Fields of the edit dialog for `tenure` items. */
@@ -6,7 +6,7 @@ export default function TenureFields() {
   const {
     editingItem,
     setEditingItem
-  } = useAdminPortal();
+  } = useEditDialogContext();
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -68,7 +68,7 @@ import { isEventPassed } from './utils/dateUtils';
 import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
 import { buildPageMeta, useDocumentMeta } from './lib/seo';
 import { useTrackPageView } from './lib/analytics';
-import { deriveRegistrationCounts } from './utils/quotaUtils';
+import { deriveRegistrationCounts, isFormConnectedToEvent } from './utils/quotaUtils';
 
 const EMPTY_ROLE_QUOTAS = {};
 
@@ -112,22 +112,8 @@ function getSubmissionFileUrls(files) {
 // Returns the other forms currently connected to an event, disconnected from it.
 function detachFormsFromEvent(forms, eventId, exceptFormId, updatedAt) {
   return forms
-    .filter(f => {
-      if (f.id === exceptFormId) return false;
-      const isSameEvent = String(f.eventId || f.fields?.[0]?._eventId) === String(eventId);
-      const isConnected = f.isEventConnected || f.fields?.[0]?._isEventConnected;
-      return isSameEvent && isConnected;
-    })
-    .map(f => ({
-      ...f,
-      isEventConnected: false,
-      eventId: '',
-      isLuckyDraw: false,
-      fields: Array.isArray(f.fields)
-        ? f.fields.map((fld, idx) => (idx === 0 ? { ...fld, _isEventConnected: false, _eventId: '', _isLuckyDraw: false } : fld))
-        : f.fields,
-      updatedAt
-    }));
+    .filter(f => f.id !== exceptFormId && isFormConnectedToEvent(f, eventId))
+    .map(f => ({ ...f, isEventConnected: false, eventId: '', isLuckyDraw: false, updatedAt }));
 }
 
 const DEFAULT_PAGE_VISIBILITY = {
