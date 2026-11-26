@@ -4,6 +4,7 @@ import { formatToIndonesianDate, formatWibEventRange } from '../../utils/dateUti
 import { getUnifiedEventAttendees } from '../../utils/quotaUtils';
 import { Badge, Card, type BadgeTone } from '../../ui';
 import { Container, Section, SectionHeading, truncate } from './shared';
+import { isUpcomingEvent, sortEventsForList } from '../../utils/eventOrder';
 
 const EVENT_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   Ongoing: { label: 'Sedang berlangsung', tone: 'success' },
@@ -23,7 +24,7 @@ interface Props {
 }
 
 export function AgendaAndDevotions({ events, devotions, forms, registrationCounts, periodLabel, showEvents, showDevotions, go }: Props) {
-  const upcoming = showEvents ? events.slice(0, 3) : [];
+  const upcoming = showEvents ? sortEventsForList(events).filter(isUpcomingEvent).slice(0, 3) : [];
   const latest = showDevotions ? devotions.slice(0, 3) : [];
   if (upcoming.length === 0 && latest.length === 0) return null;
   return (

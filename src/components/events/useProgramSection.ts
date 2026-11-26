@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { fetchEventAttendees, type AppItem, type RegistrationCounts } from '../../lib/supabase';
 import { formatWibEventRange } from '../../utils/dateUtils';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
+import { sortEventsForList } from '../../utils/eventOrder';
 import { useAppNavigate } from '../../lib/appNavigation';
 
 export interface RsvpInput {
@@ -232,7 +233,7 @@ export function useProgramSection({
     }
   }, [tenureFilter, activeTenure?.id, divisions]);
 
-  const filteredEvents = scopedEvents.filter((evt) => {
+  const filteredEvents = sortEventsForList(scopedEvents).filter((evt) => {
     const matchesDiv = filterDiv === 'all' || evt.divisionId === filterDiv;
     const matchesTab = activeTab === 'all' || (activeTab === 'upcoming' && evt.status !== 'Completed');
     return matchesDiv && matchesTab;
