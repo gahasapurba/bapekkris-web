@@ -1,15 +1,16 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
-import { BIBLE_SONG_COLLECTION } from '../../data/hymnalLibrary';
+import { mergeSongLibrary } from '../../lib/songLibrary';
+import type { SendToProjector, Song } from '../../types/content';
+
+interface UseWorshipSongsProps {
+  songs?: Song[];
+  onSendToEasyWorship?: SendToProjector;
+}
 
 /** Hymnal + custom songs, filters and actions of the songbook; markup in WorshipSongSection.tsx. */
-export function useWorshipSongs({
-  songs = [],
-  theme,
-  onSendToEasyWorship
-}) {
-  const isDark = theme === 'dark';
+export function useWorshipSongs({ songs = [], onSendToEasyWorship }: UseWorshipSongsProps) {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [copied, setCopied] = useState(false);
@@ -20,24 +21,10 @@ export function useWorshipSongs({
     setDisplayLimit(80);
   }, [searchQuery, selectedCategory]);
 
-  // Kombinasi Pustaka Himne Kanonik (KJ, PKJ, NKB, PW) dengan lagu kustom dari Supabase (jika ada)
-  const songList = useMemo(() => {
-    const list = [...BIBLE_SONG_COLLECTION];
-    (songs || []).forEach(customSong => {
-      const idx = list.findIndex(s => 
-        (customSong.id && s.id === customSong.id) ||
-        (customSong.songNumber && s.songNumber?.toLowerCase() === customSong.songNumber?.toLowerCase())
-      );
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...customSong };
-      } else {
-        list.push(customSong);
-      }
-    });
-    return list.sort((a, b) => (a.songNumber || a.title || '').localeCompare(b.songNumber || b.title || ''));
-  }, [songs]);
+  // Built-in hymnal (KJ, PKJ, NKB, PW) with the custom songs from Supabase
+  const songList = useMemo(() => mergeSongLibrary(songs), [songs]);
 
-  const [activeSongId, setActiveSongId] = useState(songList[0]?.id || null);
+  const [activeSongId, setActiveSongId] = useState<string | null>(songList[0]?.id || null);
   // Opened from site search: show the hymn with no filter hiding it
   usePageIntent('lagu', ({ songId }) => {
     setSelectedCategory('ALL');
@@ -48,9 +35,10 @@ export function useWorshipSongs({
   const activeSong = songList.find(s => s.id === activeSongId) || songList[0] || null;
 
   const categoryCounts = useMemo(() => {
-    const counts = { ALL: songList.length };
+    const counts: Record<string, number> = { ALL: songList.length };
     songList.forEach(s => {
-      counts[s.category] = (counts[s.category] || 0) + 1;
+      const category = s.category || 'Lainnya';
+      counts[category] = (counts[category] || 0) + 1;
     });
     return counts;
   }, [songList]);
@@ -69,7 +57,7 @@ export function useWorshipSongs({
     });
   }, [songList, searchQuery, selectedCategory]);
 
-  const handleCopySong = (song) => {
+  const handleCopySong = (song: Song | null) => {
     if (!song) return;
     const text = `🎵 *${song.songNumber ? `${song.songNumber} - ` : ''}${song.title}*\nNada Dasar: ${song.keySignature || '-'}\nKategori: ${song.category || 'Lagu Rohani'}\n\n${song.lyrics}\n\n_Bapekkris Bank Mandiri_\nhttps://bapekkris-mandiri.netlify.app/#lagu`;
     try {
@@ -77,10 +65,10 @@ export function useWorshipSongs({
       soundFx.playClick();
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (e) {}
+    } catch { /* clipboard unavailable */ }
   };
 
-  const handleSendToProjector = (song) => {
+  const handleSendToProjector = (song: Song | null) => {
     if (!onSendToEasyWorship || !song) return;
     soundFx.playClick();
     onSendToEasyWorship({

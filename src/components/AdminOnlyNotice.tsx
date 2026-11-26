@@ -1,7 +1,13 @@
 import { Lock, ArrowLeft } from 'lucide-react';
 
 /** Shown in place of admin-only pages (such as live registration stats) to visitors without an admin session. */
-export default function AdminOnlyNotice({ isLoading = false, onLogin, onBack }) {
+interface AdminOnlyNoticeProps {
+  isLoading?: boolean;
+  onLogin: () => void;
+  onBack: () => void;
+}
+
+export default function AdminOnlyNotice({ isLoading = false, onLogin, onBack }: AdminOnlyNoticeProps) {
   return (
     <section style={{ maxWidth: '480px', margin: '60px auto', padding: '0 16px', width: '100%' }}>
       <div

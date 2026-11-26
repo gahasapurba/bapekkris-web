@@ -12,7 +12,7 @@ import { registerSW } from 'virtual:pwa-register';
 // Not registered in development so the dev server always serves fresh modules.
 if (import.meta.env.PROD) registerSW({ immediate: true });
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>

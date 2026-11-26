@@ -5,13 +5,13 @@ import type { AppItem } from '../../lib/supabase';
 import { formatWibDateTime } from '../../utils/dateUtils';
 import { Badge, Button, EmptyState, Input, PageHeader, Pagination, cn } from '../../ui';
 import { useModalBehavior } from '../../ui/useModalBehavior';
-import { useGallery } from './useGallery';
+import { useGallery, type GalleryState, type UseGalleryProps } from './useGallery';
 
 const PER_PAGE = 6;
 const overlayBtn = 'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.25)] bg-[rgba(10,14,24,0.6)] px-3 text-[0.8rem] font-semibold text-white hover:bg-[rgba(10,14,24,0.85)] focus-visible:outline-2 focus-visible:outline-white';
 const arrowBtn = 'absolute top-1/2 -translate-y-1/2 inline-flex size-11 cursor-pointer items-center justify-center rounded-full border-0 bg-[rgba(10,14,24,0.55)] text-white hover:bg-[rgba(10,14,24,0.85)] focus-visible:outline-2 focus-visible:outline-white';
 
-function Lightbox({ state }: { state: Record<string, any> }) {
+function Lightbox({ state }: { state: GalleryState }) {
   const { activeEvent: album, copiedGalleryId, currentPhotoUrl, eventPhotos, getDownloadPhotoUrl, handleCopyGalleryLink, handleShareGalleryWa, nextPhoto, prevPhoto, safePhotoIdx, setIsLightboxOpen } = state;
   const panelRef = useRef<HTMLDivElement>(null);
   const close = () => setIsLightboxOpen(false);
@@ -40,8 +40,8 @@ function Lightbox({ state }: { state: Record<string, any> }) {
   );
 }
 
-export default function GallerySection(props: any) {
-  const state = useGallery(props) as Record<string, any>;
+export default function GallerySection(props: UseGalleryProps) {
+  const state = useGallery(props);
   const {
     galleries, divisions, events, activeTenure, tenures, onNavigateEvent, onSelectGalleryUrl, navigateTo, copiedGalleryId, setCurrentPhotoIdx, searchQuery, setSearchQuery,
     divFilter, setDivFilter, tenureFilter, setTenureFilter, isLightboxOpen, setIsLightboxOpen, galleryPage, setGalleryPage, galleryNotFound, setGalleryNotFound,
@@ -49,7 +49,7 @@ export default function GallerySection(props: any) {
     getDownloadPhotoUrl, handleCopyGalleryLink, handleShareGalleryWa, handleSelectGallery
   } = state;
 
-  const connectedEvent = (g: AppItem): AppItem | undefined => g.eventId ? events.find((e: AppItem) => String(e.id) === String(g.eventId) && e.isPublic === true) : undefined;
+  const connectedEvent = (g: AppItem): AppItem | undefined => g.eventId ? events.find((e) => String(e.id) === String(g.eventId) && e.isPublic === true) : undefined;
   const openEvent = (evt: AppItem) => (onNavigateEvent ? onNavigateEvent(evt.id) : navigateTo(`/?event=${encodeURIComponent(evt.id)}#event`));
   const resetPaging = () => { setCurrentPhotoIdx(0); setGalleryPage(1); };
   const pill = (active: boolean) => cn('inline-flex h-9 cursor-pointer items-center rounded-full border-0 px-4 text-[0.84rem] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-navy-ink',
@@ -58,19 +58,19 @@ export default function GallerySection(props: any) {
   const divisionOptions = (() => {
     if (tenureFilter === 'active') {
       return scopedDivisions.length > 0
-        ? scopedDivisions.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name}</option>)
+        ? scopedDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)
         : uniqueDivisions.map((name: string) => <option key={name} value={name}>{name}</option>);
     }
     const seen = new Set<string>();
-    const groups = tenures.map((t: AppItem) => {
-      const inTenure = divisions.filter((d: AppItem) => d.tenureId === t.id);
-      inTenure.forEach((d: AppItem) => seen.add(d.id));
+    const groups = tenures.map((t) => {
+      const inTenure = divisions.filter((d) => d.tenureId === t.id);
+      inTenure.forEach((d) => seen.add(d.id));
       return inTenure.length === 0 ? null : (
-        <optgroup key={t.id} label={`Periode ${t.code} (${t.title || 'Kepengurusan'})`}>{inTenure.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name} ({t.code})</option>)}</optgroup>
+        <optgroup key={t.id} label={`Periode ${t.code} (${t.title || 'Kepengurusan'})`}>{inTenure.map((d) => <option key={d.id} value={d.id}>{d.name} ({t.code})</option>)}</optgroup>
       );
     }).filter(Boolean);
-    const rest = divisions.filter((d: AppItem) => !seen.has(d.id));
-    return <>{groups}{rest.length > 0 && <optgroup label="Divisi lainnya">{rest.map((d: AppItem) => <option key={d.id} value={d.id}>{d.name}</option>)}</optgroup>}</>;
+    const rest = divisions.filter((d) => !seen.has(d.id));
+    return <>{groups}{rest.length > 0 && <optgroup label="Divisi lainnya">{rest.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</optgroup>}</>;
   })();
 
   const pageCount = Math.ceil(filteredGalleries.length / PER_PAGE) || 1;

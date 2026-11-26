@@ -1,20 +1,18 @@
 import { BookOpen, Check, ChevronLeft, ChevronRight, Copy, ExternalLink, Loader2, MessageCircle, MonitorPlay, Minus, Plus, Search } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 import { Button, EmptyState, Input, PageHeader, cn } from '../../ui';
+import type { SendToProjector } from '../../types/content';
 import { BIBLE_VERSIONS, useBible } from './useBible';
-
-interface Book { id: string; name: string; abbr: string; testament: string; category: string; chapters: number }
-interface Verse { verse: number; text: string }
 
 const TESTAMENTS = [{ id: 'ALL', label: 'Semua' }, { id: 'PL', label: 'PL · 39' }, { id: 'PB', label: 'PB · 27' }];
 
-export default function BibleSection(props: any) {
+export default function BibleSection(props: { onSendToEasyWorship?: SendToProjector }) {
   const {
     selectedBook, setSelectedBook, selectedChapter, setSelectedChapter, selectedVersion, setSelectedVersion, searchBookQuery, setSearchBookQuery,
     testamentFilter, setTestamentFilter, copiedVerse, fontSize, setFontSize, isLoadingVerses, filteredBooks, currentVerses,
     handleCopyVerse, handleShareWa, handleSendVerseToEasyWorship, onSendToEasyWorship
-  } = useBible(props) as Record<string, any>;
-  const book: Book = selectedBook;
+  } = useBible(props);
+  const book = selectedBook;
   const pill = (active: boolean) => cn('h-8 cursor-pointer rounded-full border-0 px-3 text-[0.8rem] font-semibold transition-colors',
     active ? 'bg-action text-on-action' : 'bg-transparent text-muted hover:bg-subtle hover:text-ink');
   const verseAction = 'inline-flex h-7 cursor-pointer items-center gap-1 rounded-full border border-line bg-surface px-2.5 text-[0.74rem] font-semibold text-muted hover:border-line-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-navy-ink';
@@ -42,7 +40,7 @@ export default function BibleSection(props: any) {
             <Input type="search" aria-label="Cari kitab" placeholder="Cari kitab" value={searchBookQuery} onChange={(e) => setSearchBookQuery(e.target.value)} className="pl-10" />
           </div>
           <ul className="flex max-h-64 list-none flex-col overflow-y-auto rounded-lg border border-line bg-surface lg:max-h-none lg:flex-1">
-            {filteredBooks.map((b: Book) => {
+            {filteredBooks.map((b) => {
               const selected = book.id === b.id;
               return (
                 <li key={b.id}>
@@ -74,7 +72,7 @@ export default function BibleSection(props: any) {
           <header className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
             <div>
               <h2 id="bible-chapter-title" className="font-display text-[clamp(1.8rem,3.5vw,2.4rem)] font-semibold leading-tight text-ink">{book.name} {selectedChapter}</h2>
-              <p className="mt-1 text-[0.86rem] text-gold-ink">{BIBLE_VERSIONS.find((v: { id: string }) => v.id === selectedVersion)?.name || selectedVersion} · {book.category}</p>
+              <p className="mt-1 text-[0.86rem] text-gold-ink">{BIBLE_VERSIONS.find((v) => v.id === selectedVersion)?.name || selectedVersion} · {book.category}</p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div role="group" aria-label="Versi terjemahan" className="inline-flex gap-1 rounded-full border border-line bg-surface p-1">
@@ -96,7 +94,7 @@ export default function BibleSection(props: any) {
             <EmptyState className="mt-8" icon={<BookOpen size={22} />} title="Ayat belum dapat dimuat" description="Periksa koneksi internet, atau coba versi terjemahan lain." />
           ) : (
             <ol className="mt-6 flex max-w-[72ch] list-none flex-col gap-2">
-              {currentVerses.map((v: Verse) => (
+              {currentVerses.map((v) => (
                 <li key={v.verse} className="group relative flex gap-4 rounded-md px-2 py-1.5 hover:bg-surface focus-within:bg-surface">
                   <span className="w-7 shrink-0 pt-1 text-right font-display text-[0.9rem] font-semibold text-gold-ink" aria-label={`Ayat ${v.verse}`}>{v.verse}</span>
                   <div className="min-w-0 flex-1">
@@ -113,9 +111,9 @@ export default function BibleSection(props: any) {
           )}
 
           <nav aria-label="Pasal sebelumnya dan berikutnya" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-5">
-            <Button variant="secondary" disabled={selectedChapter <= 1} onClick={() => setSelectedChapter((c: number) => Math.max(1, c - 1))} icon={<ChevronLeft size={16} aria-hidden="true" />}>Sebelumnya</Button>
+            <Button variant="secondary" disabled={selectedChapter <= 1} onClick={() => setSelectedChapter((c) => Math.max(1, c - 1))} icon={<ChevronLeft size={16} aria-hidden="true" />}>Sebelumnya</Button>
             <span className="text-[0.86rem] font-semibold text-gold-ink">{book.name} {selectedChapter} / {book.chapters}</span>
-            <Button variant="secondary" disabled={selectedChapter >= book.chapters} onClick={() => setSelectedChapter((c: number) => Math.min(book.chapters, c + 1))} iconRight={<ChevronRight size={16} aria-hidden="true" />}>Berikutnya</Button>
+            <Button variant="secondary" disabled={selectedChapter >= book.chapters} onClick={() => setSelectedChapter((c) => Math.min(book.chapters, c + 1))} iconRight={<ChevronRight size={16} aria-hidden="true" />}>Berikutnya</Button>
           </nav>
         </article>
       </div>

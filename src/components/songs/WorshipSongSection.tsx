@@ -1,9 +1,13 @@
 import { Check, ChevronRight, Copy, MonitorPlay, Music, Search } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 import { Badge, Button, EmptyState, Input, PageHeader, cn } from '../../ui';
+import type { SendToProjector, Song } from '../../types/content';
 import { useWorshipSongs } from './useWorshipSongs';
 
-interface Song { id: string; songNumber?: string; title: string; category?: string; keySignature?: string; author?: string; lyrics?: string }
+interface WorshipSongSectionProps {
+  songs?: Song[];
+  onSendToEasyWorship?: SendToProjector;
+}
 
 const CATEGORIES = [
   { id: 'ALL', label: 'Semua' },
@@ -13,12 +17,12 @@ const CATEGORIES = [
   { id: 'Praise & Worship', label: 'Praise & Worship' }
 ];
 
-export default function WorshipSongSection(props: any) {
+export default function WorshipSongSection(props: WorshipSongSectionProps) {
   const {
     selectedCategory, setSelectedCategory, searchQuery, setSearchQuery, copied, displayLimit, setDisplayLimit, songList,
     activeSong, setActiveSongId, categoryCounts, filteredSongs, handleCopySong, handleSendToProjector, onSendToEasyWorship
-  } = useWorshipSongs(props) as Record<string, any>;
-  const song: Song | null = activeSong;
+  } = useWorshipSongs(props);
+  const song = activeSong;
 
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 pb-24 md:px-6">
@@ -53,7 +57,7 @@ export default function WorshipSongSection(props: any) {
               ) : (
                 <div className="flex max-h-[420px] flex-col overflow-y-auto rounded-lg border border-line bg-surface lg:max-h-[calc(100vh-11rem)]">
                   <ul className="list-none divide-y divide-line">
-                    {filteredSongs.slice(0, displayLimit).map((s: Song) => {
+                    {filteredSongs.slice(0, displayLimit).map((s) => {
                       const selected = song?.id === s.id;
                       return (
                         <li key={s.id}>

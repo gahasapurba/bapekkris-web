@@ -1,7 +1,18 @@
 // Bible book catalogue shared by the Bible reader, EasyWorship and site search.
 
 // Complete 66 Books of the Holy Bible with Indonesian and English designations
-export const BIBLE_BOOKS = [
+export interface BibleBook {
+  id: string;
+  name: string;
+  en: string;
+  abbr: string;
+  testament: 'PL' | 'PB';
+  category: string;
+  chapters: number;
+  slug: string;
+}
+
+export const BIBLE_BOOKS: BibleBook[] = [
   // Perjanjian Lama (39 Kitab)
   { id: 'GEN', name: 'Kejadian', en: 'Genesis', abbr: 'Kej', testament: 'PL', category: 'Taurat', chapters: 50, slug: 'kejadian' },
   { id: 'EXO', name: 'Keluaran', en: 'Exodus', abbr: 'Kel', testament: 'PL', category: 'Taurat', chapters: 40, slug: 'keluaran' },

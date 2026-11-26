@@ -3,22 +3,22 @@ import type { AppItem } from '../../lib/supabase';
 import { formatWibEventRange } from '../../utils/dateUtils';
 import { findMatchingRole } from '../../utils/memberQuotaUtils';
 import { Badge, Button, ButtonLink, Dialog } from '../../ui';
-import { formatWaNumber } from './useOrganization';
+import { formatWaNumber, type OrganizationState } from './useOrganization';
 
 interface MemberDialogProps {
   member: AppItem;
   roleName: string;
-  state: Record<string, any>;
+  state: OrganizationState;
 }
 
 export function MemberDialog({ member, roleName, state }: MemberDialogProps) {
   const { activeTenure, copiedPhone, currentTenureRoles, divisions, events, handleCloseModal, handleCopyPhone, handleDownloadVCard, isEventPageVisible, onNavigateProgram, setSelectedMember, subDivisions } = state;
-  const division = divisions.find((d: AppItem) => d.id === member.divisionId);
-  const subDivision = subDivisions.find((sd: AppItem) => sd.id === member.subDivisionId);
+  const division = divisions.find((d) => d.id === member.divisionId);
+  const subDivision = subDivisions.find((sd) => sd.id === member.subDivisionId);
   const role = findMatchingRole(member, currentTenureRoles);
   const inDivisionRole = role ? Boolean(role.requiresDivision) : (member.category === 'pimpro' || member.category === 'anggota');
   const relatedEvents: AppItem[] = isEventPageVisible && inDivisionRole && member.divisionId
-    ? events.filter((e: AppItem) => e.isPublic === true && (!activeTenure?.id || e.tenureId === activeTenure.id)
+    ? events.filter((e) => e.isPublic === true && (!activeTenure?.id || e.tenureId === activeTenure.id)
       && (e.divisionId === member.divisionId || (member.division && (e.division === member.division || e.divisionName === member.division)))).slice(0, 5)
     : [];
   const responsibilities: string[] = Array.isArray(member.responsibilities) ? member.responsibilities : [];

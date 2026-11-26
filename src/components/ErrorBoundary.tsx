@@ -1,17 +1,24 @@
-import React from 'react';
+import React, { type ErrorInfo, type ReactNode } from 'react';
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
 
-export default class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children?: ReactNode;
+  /** Navigates back to a safe tab; without it the page reloads at the site root. */
+  onResetTab?: () => void;
+}
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
 
-  static getDerivedStateFromError(error) {
+export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, errorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Unhandled React Error in tab:', error, errorInfo);
   }
 

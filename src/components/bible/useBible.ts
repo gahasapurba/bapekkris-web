@@ -1,7 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
 import { usePageIntent } from '../../lib/pageIntent';
+import type { SendToProjector } from '../../types/content';
+
+export interface Verse { verse: number; text: string }
+/** Chapters of one downloaded book, keyed by chapter number ("1", "2", ...). */
+type ChapterMap = Record<string, { verse: number; text?: string }[]>;
+
+interface UseBibleProps {
+  onSendToEasyWorship?: SendToProjector;
+}
 
 export const BIBLE_VERSIONS = [
   { id: 'TB', name: 'TB (Terjemahan Baru)', short: 'TB', source: 'LAI' },
@@ -10,11 +19,7 @@ export const BIBLE_VERSIONS = [
 ];
 
 /** State, verse loading (with cache) and actions of the Bible reader; markup in BibleSection.tsx. */
-export function useBible({
-  theme,
-  onSendToEasyWorship
-}) {
-  const isDark = theme === 'dark';
+export function useBible({ onSendToEasyWorship }: UseBibleProps) {
   const [selectedBook, setSelectedBook] = useState(BIBLE_BOOKS.find(b => b.id === 'JHN') || BIBLE_BOOKS[0]);
   const [selectedChapter, setSelectedChapter] = useState(3);
   // Opened from site search ("Yoh 3")
@@ -27,17 +32,17 @@ export function useBible({
   const [selectedVersion, setSelectedVersion] = useState('TB');
   const [searchBookQuery, setSearchBookQuery] = useState('');
   const [testamentFilter, setTestamentFilter] = useState('ALL');
-  const [copiedVerse, setCopiedVerse] = useState(null);
+  const [copiedVerse, setCopiedVerse] = useState<number | null>(null);
   const [fontSize, setFontSize] = useState(16); // px
 
   // Downloaded Terjemahan Baru books by book id ({ "1": [...verses], ... }) and verses per version/chapter
-  const bookCacheRef = React.useRef({});
-  const [apiVerses, setApiVerses] = useState({});
-  const apiVersesRef = React.useRef(apiVerses);
+  const bookCacheRef = useRef<Record<string, ChapterMap>>({});
+  const [apiVerses, setApiVerses] = useState<Record<string, Verse[]>>({});
+  const apiVersesRef = useRef(apiVerses);
   apiVersesRef.current = apiVerses;
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
     if (apiVersesRef.current[cacheKey]) {
       setIsLoadingVerses(false);
@@ -46,7 +51,7 @@ export function useBible({
 
     const controller = new AbortController();
     const { signal } = controller;
-    const cleanVerses = (list) => (Array.isArray(list) ? list : []).map(v => ({ verse: v.verse, text: (v.text || '').trim() }));
+    const cleanVerses = (list: unknown): Verse[] => (Array.isArray(list) ? list : []).map((v: { verse: number; text?: string }) => ({ verse: v.verse, text: (v.text || '').trim() }));
 
     const loadEnglish = async () => {
       const bookQuery = selectedBook.en || selectedBook.name;
@@ -57,7 +62,7 @@ export function useBible({
 
     // Terjemahan Baru (LAI) text from the open alkitab-api dataset: jsDelivr first, GitHub raw as fallback
     const loadTerjemahanBaru = async () => {
-      let chapters = bookCacheRef.current[selectedBook.id];
+      let chapters: ChapterMap | undefined = bookCacheRef.current[selectedBook.id];
       if (!chapters) {
         const slug = selectedBook.slug || selectedBook.name.toLowerCase().replace(/[\s-]+/g, '_');
         const dir = (selectedBook.testament || 'PL').toLowerCase();
@@ -72,7 +77,7 @@ export function useBible({
             chapters = (await res.json())?.chapters;
             if (chapters) break;
           } catch (err) {
-            if (err.name === 'AbortError') throw err;
+            if ((err as Error).name === 'AbortError') throw err;
           }
         }
         if (!chapters) throw new Error(`Kitab ${selectedBook.name} tidak dapat dimuat dari server Alkitab`);
@@ -86,7 +91,7 @@ export function useBible({
       .then((verses) => {
         if (verses.length > 0) setApiVerses(prev => ({ ...prev, [cacheKey]: verses }));
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         if (err.name !== 'AbortError') console.error('Alkitab fetch error:', err);
       })
       .finally(() => {
@@ -107,13 +112,10 @@ export function useBible({
 
   const currentVerses = useMemo(() => {
     const cacheKey = `${selectedVersion}-${selectedBook.name}-${selectedChapter}`;
-    if (apiVerses[cacheKey] && apiVerses[cacheKey].length > 0) {
-      return apiVerses[cacheKey];
-    }
-    return [];
+    return apiVerses[cacheKey] || [];
   }, [selectedBook, selectedChapter, selectedVersion, apiVerses]);
 
-  const handleCopyVerse = (v) => {
+  const handleCopyVerse = (v: Verse) => {
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
     const text = `📖 ${ref} (${selectedVersion})\n"${v.text}"\n(Alkitab Digital Bapekkris Bank Mandiri)`;
     try {
@@ -121,16 +123,16 @@ export function useBible({
       soundFx.playClick();
       setCopiedVerse(v.verse);
       setTimeout(() => setCopiedVerse(null), 2200);
-    } catch (e) {}
+    } catch { /* clipboard unavailable */ }
   };
 
-  const handleShareWa = (v) => {
+  const handleShareWa = (v: Verse) => {
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse}`;
     const text = `📖 *${ref} (${selectedVersion})*\n"${v.text}"\n\n_Bapekkris Bank Mandiri_\nhttps://bapekkris-mandiri.netlify.app/#alkitab`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleSendVerseToEasyWorship = (v) => {
+  const handleSendVerseToEasyWorship = (v: Verse) => {
     if (!onSendToEasyWorship) return;
     soundFx.playClick();
     const ref = `${selectedBook.name} ${selectedChapter}:${v.verse} (${selectedVersion})`;

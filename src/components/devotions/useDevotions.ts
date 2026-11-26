@@ -1,29 +1,28 @@
+import { useMemo, useState } from 'react';
 import { formatToIndonesianDate } from '../../utils/dateUtils';
 import { usePageIntent } from '../../lib/pageIntent';
+import type { AppItem } from '../../lib/supabase';
+import type { SendToProjector } from '../../types/content';
 import { soundFx } from '../../utils/audio';
-import { useMemo, useState } from 'react';
+
+interface UseDevotionsProps {
+  devotions?: AppItem[];
+  onSendToEasyWorship?: SendToProjector;
+}
 
 /** State, data and handlers of DailyDevotionSection; the markup lives in DailyDevotionSection.tsx and ./sections. */
-export function useDevotions({
-  devotions = [],
-  theme,
-  onNavigate,
-  onSendToEasyWorship
-}) {
-  const isDark = theme === 'dark';
+export function useDevotions({ devotions = [], onSendToEasyWorship }: UseDevotionsProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('all');
   const [copied, setCopied] = useState(false);
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
 
-  // Murni 100% data dari Supabase tanpa fallback dummy
   const sortedDevotions = useMemo(() => {
-    return [...(devotions || [])].sort((a, b) => {
-      return new Date(b.devotionDate || b.createdAt || 0) - new Date(a.devotionDate || a.createdAt || 0);
-    });
+    const time = (d: AppItem) => new Date(d.devotionDate || d.createdAt || 0).getTime();
+    return [...devotions].sort((a, b) => time(b) - time(a));
   }, [devotions]);
 
-  const [activeDevotionId, setActiveDevotionId] = useState(sortedDevotions[0]?.id || null);
+  const [activeDevotionId, setActiveDevotionId] = useState<string | null>(sortedDevotions[0]?.id || null);
   usePageIntent('renungan', ({ devotionId }) => {
     setSearchQuery('');
     setSelectedTheme('all');
@@ -32,7 +31,7 @@ export function useDevotions({
 
   const activeDevotion = sortedDevotions.find(d => d.id === activeDevotionId) || sortedDevotions[0] || null;
 
-  const themesList = Array.from(new Set(sortedDevotions.map(d => d.theme).filter(Boolean)));
+  const themesList: string[] = Array.from(new Set(sortedDevotions.map(d => d.theme).filter(Boolean)));
 
   const filteredDevotions = sortedDevotions.filter(d => {
     const q = searchQuery.toLowerCase().trim();
@@ -45,7 +44,7 @@ export function useDevotions({
     return matchesSearch && matchesTheme;
   });
 
-  const handleCopyText = (devotion) => {
+  const handleCopyText = (devotion: AppItem | null) => {
     if (!devotion) return;
     const text = `📖 *RENUNGAN HARIAN BAPEKKRIS BANK MANDIRI*\n📅 ${formatToIndonesianDate(devotion.devotionDate)}\n\n✨ *${devotion.title}*\n📜 Nats: ${devotion.scriptureRef}\n"${devotion.scriptureText || ''}"\n\n${devotion.body}\n\n🙏 *Doa:*\n${devotion.prayer || ''}\n\n✍️ Oleh: ${devotion.author || 'Bapekkris Bank Mandiri'}\n🔗 https://bapekkris-mandiri.netlify.app/#renungan`;
     
@@ -59,7 +58,7 @@ export function useDevotions({
     }
   };
 
-  const handleShareWhatsApp = (devotion) => {
+  const handleShareWhatsApp = (devotion: AppItem | null) => {
     if (!devotion) return;
     soundFx.playClick();
     const text = `📖 *RENUNGAN HARIAN BAPEKKRIS BANK MANDIRI*\n📅 ${formatToIndonesianDate(devotion.devotionDate)}\n\n✨ *${devotion.title}*\n📜 Nats: ${devotion.scriptureRef}\n"${devotion.scriptureText || ''}"\n\n${devotion.body?.slice(0, 400)}...\n\n🙏 *Doa:*\n${devotion.prayer || ''}\n\n✍️ Oleh: ${devotion.author || 'Bapekkris Bank Mandiri'}\n\nBaca selengkapnya di:\nhttps://bapekkris-mandiri.netlify.app/#renungan`;
@@ -67,7 +66,7 @@ export function useDevotions({
     window.open(waUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleDownloadCard = async (devotion) => {
+  const handleDownloadCard = async (devotion: AppItem | null) => {
     if (!devotion || isGeneratingCard) return;
     setIsGeneratingCard(true);
     soundFx.playClick();
@@ -79,6 +78,7 @@ export function useDevotions({
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D tidak tersedia');
 
       // Background Gradient
       const grad = ctx.createLinearGradient(0, 0, width, height);
@@ -210,7 +210,6 @@ export function useDevotions({
     handleCopyText,
     handleDownloadCard,
     handleShareWhatsApp,
-    isDark,
     isGeneratingCard,
     onSendToEasyWorship,
     searchQuery,

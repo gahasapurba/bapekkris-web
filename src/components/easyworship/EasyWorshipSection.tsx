@@ -3,11 +3,9 @@ import { ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartp
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
 import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn } from '../../ui';
+import type { ProjectorItem, Song } from '../../types/content';
 import { useEasyWorship } from './useEasyWorship';
 import RemoteProjectorDialog from './RemoteProjectorDialog';
-
-interface Item { id: string; type: string; title: string; subtitle?: string; text?: string }
-interface Slide { label: string; text: string }
 
 /** Projection backgrounds, identical to the projector window (ProjectorDisplay). */
 const SCREEN_BG: Record<string, string> = {
@@ -17,14 +15,14 @@ const SCREEN_BG: Record<string, string> = {
   cathedral: 'linear-gradient(135deg, #040914 0%, #002244 45%, #003d79 80%, #040914 100%)'
 };
 
-export default function EasyWorshipSection(props: any) {
+export default function EasyWorshipSection(props: { songs?: Song[]; initialItem?: ProjectorItem | null }) {
   const {
     playlist, setPlaylist, activeItem, setActiveItemId, slides, activeSlideIndex, setActiveSlideIndex, liveState, isAddModalOpen, setIsAddModalOpen,
     addTab, setAddTab, songSearchQuery, setSongSearchQuery, selectedBibleBook, setSelectedBibleBook, selectedBibleChapter, setSelectedBibleChapter,
     selectedBibleVerse, setSelectedBibleVerse, customTitle, setCustomTitle, customText, setCustomText, toastMsg, filteredAvailableSongs,
     broadcastLiveState, handleGoLive, handleToggleBlackout, handleToggleClearText, handleToggleLogo, handleOpenProjectorWindow, handleSavePlaylist, handleAddItemToPlaylist,
     roomCode, connectedScreens, startRemoteRoom, stopRemoteRoom
-  } = useEasyWorship(props) as Record<string, any>;
+  } = useEasyWorship(props);
   const [isRemoteOpen, setIsRemoteOpen] = useState(false);
 
   const goSlide = (index: number) => { setActiveSlideIndex(index); handleGoLive(activeItem, index); };
@@ -61,7 +59,7 @@ export default function EasyWorshipSection(props: any) {
             <p className="px-4 py-10 text-center text-[0.9rem] text-muted">Tata ibadah masih kosong. Tambahkan item, atau kirim lagu/ayat dari halaman Kidung dan Alkitab.</p>
           ) : (
             <ol className="flex-1 list-none overflow-y-auto">
-              {playlist.map((item: Item, i: number) => {
+              {playlist.map((item, i) => {
                 const selected = activeItem?.id === item.id;
                 return (
                   <li key={item.id} className={cn('flex items-center gap-2 border-b border-line pr-2', selected ? 'bg-navy-tint' : 'hover:bg-subtle')}>
@@ -73,7 +71,7 @@ export default function EasyWorshipSection(props: any) {
                         <span className="block truncate text-[0.76rem] text-dim">{item.subtitle || item.type}</span>
                       </span>
                     </button>
-                    <button type="button" aria-label={`Hapus ${item.title} dari tata ibadah`} onClick={() => setPlaylist((prev: Item[]) => prev.filter((p) => p.id !== item.id))}
+                    <button type="button" aria-label={`Hapus ${item.title} dari tata ibadah`} onClick={() => setPlaylist((prev) => prev.filter((p) => p.id !== item.id))}
                       className="shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-2 text-dim hover:bg-danger-tint hover:text-danger"><Trash2 size={14} aria-hidden="true" /></button>
                   </li>
                 );
@@ -88,7 +86,7 @@ export default function EasyWorshipSection(props: any) {
             <p className="text-[0.8rem] text-dim">Klik slide untuk langsung menayangkannya.</p>
           </div>
           <ol className="flex flex-1 list-none flex-col gap-2 overflow-y-auto p-3">
-            {slides.map((s: Slide, i: number) => {
+            {slides.map((s, i) => {
               const live = activeSlideIndex === i;
               return (
                 <li key={i}>
@@ -170,9 +168,9 @@ export default function EasyWorshipSection(props: any) {
               <Input type="search" aria-label="Cari lagu" placeholder="Judul atau nomor, mis. KJ 001" value={songSearchQuery} onChange={(e) => setSongSearchQuery(e.target.value)} data-autofocus />
               <ul className="flex max-h-64 list-none flex-col divide-y divide-line overflow-y-auto rounded-md border border-line">
                 {filteredAvailableSongs.length === 0 && <li className="px-4 py-6 text-center text-[0.88rem] text-muted">Tidak ada lagu yang cocok. Gunakan tab Teks bebas.</li>}
-                {filteredAvailableSongs.map((s: any) => (
+                {filteredAvailableSongs.map((s) => (
                   <li key={s.id}>
-                    <button type="button" onClick={() => handleAddItemToPlaylist({ id: `ew-${Date.now()}`, type: 'song', title: `${s.songNumber ? `${s.songNumber} - ` : ''}${s.title}`, subtitle: s.category || 'Lagu Pujian', text: s.lyrics || s.text || '' })}
+                    <button type="button" onClick={() => handleAddItemToPlaylist({ id: `ew-${Date.now()}`, type: 'song', title: `${s.songNumber ? `${s.songNumber} - ` : ''}${s.title}`, subtitle: s.category || 'Lagu Pujian', text: s.lyrics || '' })}
                       className="flex w-full cursor-pointer items-center justify-between gap-3 border-0 bg-transparent px-4 py-2.5 text-left hover:bg-subtle focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-navy-ink">
                       <span className="text-[0.9rem] text-ink">{s.songNumber && <span className="mr-2 font-semibold text-gold-ink">{s.songNumber}</span>}{s.title}</span>
                       <span className="shrink-0 text-[0.74rem] text-dim">{s.category}</span>
@@ -185,7 +183,7 @@ export default function EasyWorshipSection(props: any) {
           {addTab === 'bible' && (
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-[1.6fr_1fr_1fr] gap-3">
-                <Field label="Kitab"><Select value={selectedBibleBook.id} onChange={(e) => setSelectedBibleBook(BIBLE_BOOKS.find((b: any) => b.id === e.target.value) || BIBLE_BOOKS[0])}>{BIBLE_BOOKS.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>
+                <Field label="Kitab"><Select value={selectedBibleBook.id} onChange={(e) => setSelectedBibleBook(BIBLE_BOOKS.find((b) => b.id === e.target.value) || BIBLE_BOOKS[0])}>{BIBLE_BOOKS.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</Select></Field>
                 <Field label="Pasal"><Input type="number" min={1} value={selectedBibleChapter} onChange={(e) => setSelectedBibleChapter(Number(e.target.value) || 1)} /></Field>
                 <Field label="Ayat"><Input placeholder="mis. 1-3" value={selectedBibleVerse} onChange={(e) => setSelectedBibleVerse(e.target.value)} /></Field>
               </div>

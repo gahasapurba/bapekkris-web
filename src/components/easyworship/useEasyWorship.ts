@@ -1,11 +1,40 @@
 import { useState, useEffect, useMemo } from 'react';
-import { createRoomCode, useProjectorRoomOperator } from '../../lib/projectorSync';
+import { createRoomCode, useProjectorRoomOperator, type ProjectorLiveState } from '../../lib/projectorSync';
+import { mergeSongLibrary } from '../../lib/songLibrary';
+import type { ProjectorItem, Song } from '../../types/content';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
-import { BIBLE_SONG_COLLECTION } from '../../data/hymnalLibrary';
+
+/** One entry of the service order. */
+export interface PlaylistItem {
+  id: string;
+  type: string;
+  title: string;
+  subtitle?: string;
+  text: string;
+}
+
+export interface Slide { index: number; label: string; text: string }
+
+interface UseEasyWorshipProps {
+  songs?: Song[];
+  initialItem?: ProjectorItem | null;
+}
+
+const DEFAULT_LIVE_STATE: ProjectorLiveState = {
+  type: 'logo',
+  title: 'BAPEKKRIS BANK MANDIRI',
+  text: 'Badan Pembinaan Kerohanian Kristen PT Bank Mandiri (Persero) Tbk.',
+  isBlackout: false,
+  isClearText: false,
+  isLogo: true,
+  isLowerThird: false,
+  bgTheme: 'cathedral',
+  fontSize: 48
+};
 
 // Helper to break song lyrics into distinct slide stanzas
-function parseTextToSlides(rawText = '') {
+function parseTextToSlides(rawText: string = ''): Slide[] {
   if (!rawText) return [];
   const normalized = rawText.replace(/\r\n/g, '\n').trim();
   // Split by double newline or Stanza labels
@@ -32,41 +61,21 @@ function parseTextToSlides(rawText = '') {
 }
 
 /** Service order, slides, live projector state and controls; markup in EasyWorshipSection.tsx. */
-export function useEasyWorship({
-  songs = [],
-  theme,
-  initialItem
-}) {
-  const isDark = theme === 'dark';
+export function useEasyWorship({ songs = [], initialItem }: UseEasyWorshipProps) {
+  // Built-in hymnal with the custom songs from Supabase
+  const availableSongs = useMemo(() => mergeSongLibrary(songs), [songs]);
 
-  // Koleksi lagu lengkap (Pustaka Himne Kanonik + custom dari Supabase)
-  const availableSongs = useMemo(() => {
-    const list = [...BIBLE_SONG_COLLECTION];
-    (songs || []).forEach(customSong => {
-      const idx = list.findIndex(s => 
-        (customSong.id && s.id === customSong.id) ||
-        (customSong.songNumber && s.songNumber?.toLowerCase() === customSong.songNumber?.toLowerCase())
-      );
-      if (idx >= 0) {
-        list[idx] = { ...list[idx], ...customSong };
-      } else {
-        list.push(customSong);
-      }
-    });
-    return list.sort((a, b) => (a.songNumber || a.title || '').localeCompare(b.songNumber || b.title || ''));
-  }, [songs]);
-
-  // Master Playlist / Service Order state
-  const [playlist, setPlaylist] = useState(() => {
+  // Service order, kept in this browser
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>(() => {
     try {
       const saved = localStorage.getItem('bapekkris_ew_playlist');
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   });
 
-  const [activeItemId, setActiveItemId] = useState(playlist[0]?.id || null);
+  const [activeItemId, setActiveItemId] = useState<string | null>(playlist[0]?.id || null);
   const activeItem = playlist.find(p => p.id === activeItemId) || playlist[0] || null;
 
   // Slides of the currently selected playlist item
@@ -77,44 +86,34 @@ export function useEasyWorship({
   const [activeSlideIndex, setActiveSlideIndex] = useState(0);
 
   // Live Presentation State (What is displayed on the projector)
-  const [liveState, setLiveState] = useState(() => {
+  const [liveState, setLiveState] = useState<ProjectorLiveState>(() => {
     try {
       const saved = localStorage.getItem('bapekkris_ew_live_state');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return {
-      type: 'logo',
-      title: 'BAPEKKRIS BANK MANDIRI',
-      text: 'Badan Pembinaan Kerohanian Kristen PT Bank Mandiri (Persero) Tbk.',
-      isBlackout: false,
-      isClearText: false,
-      isLogo: true,
-      isLowerThird: false,
-      bgTheme: 'cathedral',
-      fontSize: 48
-    };
+      if (saved) return { ...DEFAULT_LIVE_STATE, ...JSON.parse(saved) };
+    } catch { /* storage unavailable or corrupt */ }
+    return DEFAULT_LIVE_STATE;
   });
 
   // Cross-device projector room (Supabase Realtime); the code survives a page refresh in this tab
-  const [roomCode, setRoomCode] = useState(() => {
-    try { return sessionStorage.getItem('bapekkris_ew_room') || null; } catch (e) { return null; }
+  const [roomCode, setRoomCode] = useState<string | null>(() => {
+    try { return sessionStorage.getItem('bapekkris_ew_room') || null; } catch { return null; }
   });
   const { connectedScreens, sendState: sendRemoteState } = useProjectorRoomOperator(roomCode, liveState);
 
   const startRemoteRoom = () => {
     const code = roomCode || createRoomCode();
     setRoomCode(code);
-    try { sessionStorage.setItem('bapekkris_ew_room', code); } catch (e) { /* storage unavailable */ }
+    try { sessionStorage.setItem('bapekkris_ew_room', code); } catch { /* storage unavailable */ }
     return code;
   };
   const stopRemoteRoom = () => {
     setRoomCode(null);
-    try { sessionStorage.removeItem('bapekkris_ew_room'); } catch (e) { /* storage unavailable */ }
+    try { sessionStorage.removeItem('bapekkris_ew_room'); } catch { /* storage unavailable */ }
   };
 
   // Modal Add Item states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addTab, setAddTab] = useState('song'); // 'song' | 'bible' | 'custom'
+  const [addTab, setAddTab] = useState<'song' | 'bible' | 'custom'>('song');
   const [songSearchQuery, setSongSearchQuery] = useState('');
   const [selectedBibleBook, setSelectedBibleBook] = useState(BIBLE_BOOKS[0]);
   const [selectedBibleChapter, setSelectedBibleChapter] = useState(1);
@@ -136,7 +135,7 @@ export function useEasyWorship({
   // Handle incoming initialItem (e.g. from Alkitab or Kidung Jemaat "Kirim ke EasyWorship")
   useEffect(() => {
     if (initialItem && initialItem.title) {
-      const newItem = {
+      const newItem: PlaylistItem = {
         id: `ew-${Date.now()}`,
         type: initialItem.type || 'custom',
         title: initialItem.title,
@@ -152,7 +151,7 @@ export function useEasyWorship({
 
   // Sync live state to projector windows on this device (BroadcastChannel / storage) and to
   // screens on other devices joined to the room (Supabase Realtime)
-  const broadcastLiveState = (nextState) => {
+  const broadcastLiveState = (nextState: ProjectorLiveState) => {
     setLiveState(nextState);
     sendRemoteState(nextState);
     try {
@@ -160,18 +159,18 @@ export function useEasyWorship({
       const channel = new BroadcastChannel('bapekkris_easyworship');
       channel.postMessage(nextState);
       channel.close();
-    } catch (e) { /* storage or BroadcastChannel unavailable */ }
+    } catch { /* storage or BroadcastChannel unavailable */ }
   };
 
   // Push specific slide to LIVE
-  const handleGoLive = (item, slideIdx = 0) => {
+  const handleGoLive = (item: PlaylistItem | null, slideIdx = 0) => {
     soundFx.playClick();
     const targetItem = item || activeItem;
     if (!targetItem) return;
     const itemSlides = parseTextToSlides(targetItem.text);
     const targetSlide = itemSlides[slideIdx] || itemSlides[0];
 
-    const next = {
+    const next: ProjectorLiveState = {
       ...liveState,
       type: targetItem.type,
       title: targetItem.title,
@@ -185,10 +184,11 @@ export function useEasyWorship({
 
   // Keyboard navigation for presentation slides
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (['input', 'textarea', 'select'].includes(e.target.tagName?.toLowerCase())) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (['input', 'textarea', 'select'].includes(target?.tagName?.toLowerCase() || '')) return;
       // Keys pressed inside a dialog (e.g. Space on a button) belong to the dialog.
-      if (e.target.closest?.('[role="dialog"]')) return;
+      if (target?.closest?.('[role="dialog"]')) return;
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
         e.preventDefault();
@@ -241,10 +241,10 @@ export function useEasyWorship({
       soundFx.playClick();
       setToastMsg('Susunan Tata Ibadah berhasil disimpan!');
       setTimeout(() => setToastMsg(''), 2500);
-    } catch (e) {}
+    } catch { /* storage unavailable */ }
   };
 
-  const handleAddItemToPlaylist = (newItem) => {
+  const handleAddItemToPlaylist = (newItem: PlaylistItem) => {
     setPlaylist(prev => [...prev, newItem]);
     setActiveItemId(newItem.id);
     setActiveSlideIndex(0);

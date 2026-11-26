@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { normalizeRoomCode, useProjectorRoomScreen, ROOM_CODE_LENGTH } from '../lib/projectorSync';
+import { useState, useEffect, useRef } from 'react';
+import { normalizeRoomCode, sanitizeLiveState, useProjectorRoomScreen, ROOM_CODE_LENGTH, type ProjectorLiveState, type ScreenConnection } from '../lib/projectorSync';
 import { buildPageMeta, useDocumentMeta } from '../lib/seo';
 
-const CONNECTION_LABEL = {
+const CONNECTION_LABEL: Partial<Record<ScreenConnection, string>> = {
   connecting: 'Menyambungkan ke konsol operator…',
   connected: 'Tersambung ke konsol operator',
   error: 'Gagal tersambung. Periksa koneksi internet atau kode ruang.'
@@ -12,10 +12,10 @@ const CONNECTION_LABEL = {
  * Corner panel of the projector screen: shows the room connection, or lets the operator type a room
  * code when the screen was opened without one. Hidden while connected unless the pointer moves.
  */
-function RoomPanel({ roomCode, connection, onConnect }) {
+function RoomPanel({ roomCode, connection, onConnect }: { roomCode: string | null; connection: ScreenConnection; onConnect: (code: string) => void }) {
   const [visible, setVisible] = useState(true);
   const [draft, setDraft] = useState('');
-  const timerRef = useRef();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const reveal = () => {
@@ -58,25 +58,27 @@ function RoomPanel({ roomCode, connection, onConnect }) {
   );
 }
 
+const DEFAULT_LIVE_STATE: ProjectorLiveState = {
+  type: 'logo',
+  title: 'BAPEKKRIS BANK MANDIRI',
+  text: 'Badan Pembinaan Kerohanian Kristen PT Bank Mandiri (Persero) Tbk.',
+  ref: '',
+  isBlackout: false,
+  isClearText: false,
+  isLogo: true,
+  isLowerThird: false,
+  bgTheme: 'cathedral',
+  fontSize: 48
+};
+
 // Pure Fullscreen Projector Display for 2nd Monitor / HDMI Projector
 export default function ProjectorDisplay() {
-  const [liveState, setLiveState] = useState(() => {
+  const [liveState, setLiveState] = useState<ProjectorLiveState>(() => {
     try {
       const cached = localStorage.getItem('bapekkris_ew_live_state');
-      return cached ? JSON.parse(cached) : {
-        type: 'logo',
-        title: 'BAPEKKRIS BANK MANDIRI',
-        text: 'Badan Pembinaan Kerohanian Kristen PT Bank Mandiri (Persero) Tbk.',
-        ref: '',
-        isBlackout: false,
-        isClearText: false,
-        isLogo: true,
-        isLowerThird: false,
-        bgTheme: 'cathedral',
-        fontSize: 48
-      };
-    } catch (e) {
-      return { isLogo: true, bgTheme: 'cathedral' };
+      return (cached && sanitizeLiveState(JSON.parse(cached))) || DEFAULT_LIVE_STATE;
+    } catch {
+      return DEFAULT_LIVE_STATE;
     }
   });
 
@@ -85,7 +87,7 @@ export default function ProjectorDisplay() {
   // Room on another device (?room=CODE); otherwise windows on this device sync via BroadcastChannel
   const [roomCode, setRoomCode] = useState(() => normalizeRoomCode(new URLSearchParams(window.location.search).get('room')));
   const connection = useProjectorRoomScreen(roomCode, setLiveState);
-  const connectRoom = (code) => {
+  const connectRoom = (code: string) => {
     setRoomCode(code);
     const url = new URL(window.location.href);
     url.searchParams.set('room', code);
@@ -95,23 +97,22 @@ export default function ProjectorDisplay() {
 
   useEffect(() => {
     // Listen to BroadcastChannel for real-time instant cross-window sync
-    let channel;
+    let channel: BroadcastChannel | null = null;
     try {
       channel = new BroadcastChannel('bapekkris_easyworship');
-      channel.onmessage = (event) => {
-        if (event.data) {
-          setLiveState(event.data);
-        }
+      channel.onmessage = (event: MessageEvent) => {
+        const next = sanitizeLiveState(event.data);
+        if (next) setLiveState(next);
       };
-    } catch (e) {}
+    } catch { /* BroadcastChannel unavailable */ }
 
     // Fallback storage event
-    const handleStorage = (e) => {
-      if (e.key === 'bapekkris_ew_live_state' && e.newValue) {
-        try {
-          setLiveState(JSON.parse(e.newValue));
-        } catch (err) {}
-      }
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key !== 'bapekkris_ew_live_state' || !e.newValue) return;
+      try {
+        const next = sanitizeLiveState(JSON.parse(e.newValue));
+        if (next) setLiveState(next);
+      } catch { /* malformed value */ }
     };
     window.addEventListener('storage', handleStorage);
 

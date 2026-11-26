@@ -4,15 +4,16 @@ import type { AppItem } from '../../lib/supabase';
 import { soundFx } from '../../utils/audio';
 import { formatToIndonesianDate } from '../../utils/dateUtils';
 import { Badge, Button, EmptyState, Input, PageHeader, Select, cn } from '../../ui';
+import type { SendToProjector } from '../../types/content';
 import { useDevotions } from './useDevotions';
 
-export default function DailyDevotionSection(props: any) {
+export default function DailyDevotionSection(props: { devotions?: AppItem[]; onSendToEasyWorship?: SendToProjector }) {
   const {
     activeDevotion, copied, filteredDevotions, handleCopyText, handleDownloadCard, handleShareWhatsApp, isGeneratingCard,
     onSendToEasyWorship, searchQuery, selectedTheme, setActiveDevotionId, setSearchQuery, setSelectedTheme, sortedDevotions, themesList
-  } = useDevotions(props) as Record<string, any>;
+  } = useDevotions(props);
   const articleRef = useRef<HTMLElement>(null);
-  const d: AppItem | null = activeDevotion;
+  const d = activeDevotion;
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 pb-24 md:px-6">

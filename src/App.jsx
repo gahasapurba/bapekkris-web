@@ -1154,7 +1154,6 @@ function MainApp() {
               tenureRoles={tenureRoles}
               isEventPageVisible={isPageVisible('event')}
               onNavigateProgram={isPageVisible('event') ? () => setCurrentTab('event') : undefined}
-              theme={theme}
               onSelectTenure={handleSelectTenure}
             />
           )}
@@ -1212,7 +1211,6 @@ function MainApp() {
               events={events}
               activeTenure={activeTenure}
               tenures={tenures}
-              theme={theme}
               initialGalleryId={activeGalleryIdFromUrl}
               onSelectGalleryUrl={(gId) => setCurrentTab('galeri', null, null, false, gId)}
               onNavigateEvent={(eId) => setCurrentTab('event', null, eId)}
@@ -1234,7 +1232,7 @@ function MainApp() {
 
           {effectiveTab === 'lagu' && (
             <WorshipSongSection
-              worshipSongs={worshipSongs}
+              songs={worshipSongs}
               onSendToEasyWorship={handleSendToEasyWorship}
             />
           )}
@@ -1243,11 +1241,8 @@ function MainApp() {
 
           {effectiveTab === 'easyworship' && (
             <EasyWorshipSection
-              worshipSongs={worshipSongs}
-              devotions={devotions}
+              songs={worshipSongs}
               initialItem={easyWorshipInitialItem}
-              savedSchedules={easyWorshipSchedules}
-              onSaveSchedule={handleAddEasyWorshipSchedule}
             />
           )}
 

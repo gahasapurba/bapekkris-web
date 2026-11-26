@@ -1,24 +1,36 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type SyntheticEvent } from 'react';
+import type { AppItem } from '../../lib/supabase';
 import { useAppNavigate } from '../../lib/appNavigation';
 import { formatWibDateTime } from '../../utils/dateUtils';
 import { getPublicBaseUrl } from '../../utils/urlUtils';
 
 /** Album selection (synced with the URL), filters, photo navigation and sharing of the gallery. */
-export function useGallery({ 
-  galleries = [], 
-  divisions = [], 
+export interface UseGalleryProps {
+  galleries?: AppItem[];
+  divisions?: AppItem[];
+  events?: AppItem[];
+  activeTenure?: AppItem | null;
+  tenures?: AppItem[];
+  initialGalleryId?: string | null;
+  onSelectGalleryUrl?: (galleryId: string | null) => void;
+  onNavigateEvent?: (eventId: string) => void;
+}
+
+export type GalleryState = ReturnType<typeof useGallery>;
+
+export function useGallery({
+  galleries = [],
+  divisions = [],
   events = [],
-  activeTenure = null, 
-  theme, 
+  activeTenure = null,
   tenures = [],
   initialGalleryId = null,
   onSelectGalleryUrl,
   onNavigateEvent
-}) {
+}: UseGalleryProps) {
   const navigateTo = useAppNavigate();
-  const isDark = theme === 'dark';
-  const [selectedGalleryId, setSelectedGalleryId] = useState(null);
-  const [copiedGalleryId, setCopiedGalleryId] = useState(null);
+  const [selectedGalleryId, setSelectedGalleryId] = useState<string | null>(null);
+  const [copiedGalleryId, setCopiedGalleryId] = useState<string | null>(null);
   const [currentPhotoIdx, setCurrentPhotoIdx] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [divFilter, setDivFilter] = useState('all');
@@ -35,7 +47,7 @@ export function useGallery({
     ? divisions.filter(d => d.tenureId === activeTenure.id)
     : divisions;
 
-  const uniqueDivisions = Array.from(
+  const uniqueDivisions: string[] = Array.from(
     new Set([
       ...scopedDivisions.map(d => d.name),
       ...scopedGalleries.map(g => g.divisionName || g.division).filter(Boolean)
@@ -69,12 +81,12 @@ export function useGallery({
     return matchesDiv && matchesSearch;
   });
 
-  const activeEvent =
+  const activeEvent: AppItem | null =
     filteredGalleries.find(g => g.id === selectedGalleryId) ||
     filteredGalleries[0] ||
     null;
 
-  const eventPhotos = Array.isArray(activeEvent?.photos) ? activeEvent.photos : [];
+  const eventPhotos: string[] = Array.isArray(activeEvent?.photos) ? activeEvent.photos : [];
 
   const nextPhoto = () => {
     if (eventPhotos.length <= 1) return;
@@ -92,7 +104,7 @@ export function useGallery({
 
   useEffect(() => {
     if (!isLightboxOpen) return;
-    const handleKey = (e) => {
+    const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsLightboxOpen(false);
       if (e.key === 'ArrowRight') nextPhoto();
       if (e.key === 'ArrowLeft') prevPhoto();
@@ -104,7 +116,7 @@ export function useGallery({
   const safePhotoIdx = eventPhotos.length > 0 && currentPhotoIdx < eventPhotos.length ? currentPhotoIdx : 0;
   const currentPhotoUrl = eventPhotos[safePhotoIdx] || eventPhotos[0] || '/assets/mandiri-club-bapekkris-original.png';
 
-  const getDownloadPhotoUrl = (url) => {
+  const getDownloadPhotoUrl = (url: string) => {
     if (!url || typeof url !== 'string') return '';
     if (url.includes('supabase.co/storage/v1/')) {
       return url.replace(/https:\/\/[^/]+\.supabase\.co\/storage\/v1\//, '/storage-proxy/');
@@ -114,7 +126,7 @@ export function useGallery({
 
   // Gallery id from the URL that has been applied to the view. Data refreshes re-run the effect,
   // so filters and search are only reset when the URL points at a different gallery.
-  const appliedGalleryIdRef = useRef(null);
+  const appliedGalleryIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (initialGalleryId && galleries.length > 0) {
@@ -149,12 +161,12 @@ export function useGallery({
     }
   }, [initialGalleryId, galleries, activeTenure]);
 
-  const getGalleryShareUrl = (galId) => {
+  const getGalleryShareUrl = (galId: string) => {
     const origin = getPublicBaseUrl();
     return `${origin}/?gallery=${encodeURIComponent(galId)}#galeri`;
   };
 
-  const handleCopyGalleryLink = (gal, e) => {
+  const handleCopyGalleryLink = (gal: AppItem | null, e?: SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -164,10 +176,10 @@ export function useGallery({
       navigator.clipboard.writeText(getGalleryShareUrl(gal.id));
       setCopiedGalleryId(gal.id);
       setTimeout(() => setCopiedGalleryId(null), 2500);
-    } catch (err) {}
+    } catch { /* clipboard unavailable */ }
   };
 
-  const handleShareGalleryWa = (gal, e) => {
+  const handleShareGalleryWa = (gal: AppItem | null, e?: SyntheticEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -183,7 +195,7 @@ export function useGallery({
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
   };
 
-  const handleSelectGallery = (gId) => {
+  const handleSelectGallery = (gId: string) => {
     setSelectedGalleryId(gId);
     setCurrentPhotoIdx(0);
     if (onSelectGalleryUrl) {

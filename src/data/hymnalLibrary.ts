@@ -6,7 +6,17 @@
 // 4. Praise & Worship Kontemporer Terpopuler
 // Disimpan sebagai pustaka digital statis (On-Demand) tanpa membebani kuota database Supabase.
 
-export const BIBLE_SONG_COLLECTION = [
+export interface HymnalSong {
+  id: string;
+  songNumber: string;
+  title: string;
+  category: string;
+  keySignature: string;
+  author: string;
+  lyrics: string;
+}
+
+export const BIBLE_SONG_COLLECTION: HymnalSong[] = [
   {
     "id": "kj-1",
     "songNumber": "KJ 001",
