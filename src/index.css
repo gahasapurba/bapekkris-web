@@ -42,6 +42,7 @@
   --color-field: var(--input-bg);
   --color-field-line: var(--input-border);
   --color-navy-ink: var(--navy-ink);
+  --color-chart-1: var(--chart-1);
   --color-navy-tint: var(--navy-tint);
   --color-navy-line: var(--navy-line);
   --color-gold-tint: var(--gold-tint);

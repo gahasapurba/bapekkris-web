@@ -707,6 +707,24 @@ export type Database = {
         }
         Relationships: []
       }
+      page_view_daily: {
+        Row: {
+          day: string
+          page: string
+          views: number
+        }
+        Insert: {
+          day: string
+          page: string
+          views?: number
+        }
+        Update: {
+          day?: string
+          page?: string
+          views?: number
+        }
+        Relationships: []
+      }
       prayer_requests: {
         Row: {
           created_at: string | null
@@ -1011,6 +1029,14 @@ export type Database = {
           id: string
         }[]
       }
+      get_page_view_stats: {
+        Args: { p_days?: number }
+        Returns: {
+          day: string
+          page: string
+          views: number
+        }[]
+      }
       get_prayer_wall: {
         Args: never
         Returns: {
@@ -1061,6 +1087,7 @@ export type Database = {
         }
         Returns: string
       }
+      track_page_view: { Args: { p_page: string }; Returns: undefined }
       track_submissions: {
         Args: { p_query: string }
         Returns: {

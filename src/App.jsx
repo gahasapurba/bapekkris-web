@@ -67,6 +67,7 @@ import {
 import { isEventPassed } from './utils/dateUtils';
 import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
 import { buildPageMeta, useDocumentMeta } from './lib/seo';
+import { useTrackPageView } from './lib/analytics';
 import { deriveRegistrationCounts } from './utils/quotaUtils';
 
 const EMPTY_ROLE_QUOTAS = {};
@@ -979,6 +980,8 @@ function MainApp() {
   const seoGallery = activeGalleryIdFromUrl ? galleries.find(g => g.id === activeGalleryIdFromUrl) : null;
   const upcomingPublicEvents = useMemo(() => events.filter(e => e.isPublic === true && e.status !== 'Completed'), [events]);
   useDocumentMeta(buildPageMeta(effectiveTab, { event: seoEvent, form: seoForm, gallery: seoGallery, events: upcomingPublicEvents }));
+  // Privacy-friendly visit counts; admins browsing the site are not counted
+  useTrackPageView(effectiveTab, { enabled: adminSession.status === 'signedOut' });
 
   return (
     <AppNavigationContext.Provider value={navigateTo}>

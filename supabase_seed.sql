@@ -86,3 +86,5 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- 21. prayer_requests (Pokok Doa). Permohonan dikirim jemaat lewat RPC submit_prayer_request.
 -- INSERT INTO public.prayer_requests (id, requester_name, request, is_anonymous, is_private, status)
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
+
+-- 22. page_view_daily (Statistik pengunjung). Diisi otomatis lewat RPC track_page_view; tanpa seed.
