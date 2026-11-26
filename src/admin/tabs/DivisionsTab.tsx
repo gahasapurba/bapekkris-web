@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ChevronDown, Download, Edit2, Layers, Plus, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { getDivisionLead, getDivisionStructure } from '../../utils/memberQuotaUtils';
@@ -5,18 +6,40 @@ import { Badge, Button, Field, Input, Pagination, Select, Textarea, cn } from '.
 import { AdminEmpty, AdminPanel, AdminSubsection, FilterSelect, IconButton, ListToolbar, SearchBox, Switch } from '../AdminUi';
 import { downloadCsv } from '../csv';
 import { useAdminPortal } from '../AdminPortalContext';
+import { divisionCreateSchema, subDivisionDraftSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type DivisionForm = { newDivName: string; newDivTenureId: string; newDivDesc: string; newDivFocus: string };
+type SubDivisionForm = { newSubDivDivisionId: string; newSubDivName: string; newSubDivCode: string };
+const DEFAULT_DIVISION_COLOR = '#00529B';
 
 const PER_PAGE = 8;
 
 export default function DivisionsTab() {
   const {
-    activeTenure, clearFieldError, divPage, divRecruitFilter, divSearchQuery, divTenureFilter, divisions, expandedDivSubId, formErrors,
-    handleCreateDivision, handleDeleteDivisionClick, members, newDivDesc, newDivFocus, newDivName, newDivTenureId, newSubDivCode,
-    newSubDivDivisionId, newSubDivName, onAddSubDivision, onUpdateDivision, setDeleteConfirm, setDivPage, setDivRecruitFilter,
-    setDivSearchQuery, setDivTenureFilter, setEditModalError, setEditingItem, setExpandedDivSubId, setNewDivDesc, setNewDivFocus,
-    setNewDivName, setNewDivTenureId, setNewSubDivCode, setNewSubDivDivisionId, setNewSubDivName, setSubDivError, showToast,
-    subDivError, subDivisions, tenureRoles, tenures
+    activeTenure, divPage, divRecruitFilter, divSearchQuery, divTenureFilter, divisions, expandedDivSubId,
+    handleDeleteDivisionClick, members, onAddDivision, onAddSubDivision, onUpdateDivision, setDeleteConfirm, setDivPage, setDivRecruitFilter,
+    setDivSearchQuery, setDivTenureFilter, setEditModalError, setEditingItem, setExpandedDivSubId, showToast, subDivisions, tenureRoles, tenures
   } = useAdminPortal();
+  const { handleSubmit, field, resetToDefaults, formState: { errors } } = useAdminDraftForm<DivisionForm>('division', divisionCreateSchema,
+    { newDivName: '', newDivTenureId: activeTenure?.id || '', newDivDesc: '', newDivFocus: '' });
+  const createDivision = handleSubmit((v) => {
+    onAddDivision({
+      id: 'div-' + Date.now(),
+      tenureId: v.newDivTenureId || activeTenure?.id || '',
+      name: v.newDivName,
+      slug: v.newDivName.toLowerCase().replace(/\s+/g, '-'),
+      memberId: null,
+      leadName: '',
+      color: DEFAULT_DIVISION_COLOR,
+      motto: '',
+      description: v.newDivDesc.trim(),
+      focusAreas: v.newDivFocus ? v.newDivFocus.split(',').map((s) => s.trim()).filter(Boolean) : [],
+      isRecruiting: false
+    });
+    resetToDefaults();
+    showToast(`Divisi "${v.newDivName}" berhasil ditambahkan & disinkronkan!`);
+  }, () => showToast('Mohon isi Nama Divisi terlebih dahulu', 'error'));
 
   const q = divSearchQuery.toLowerCase().trim();
   const filtered = (divisions || []).filter((d: any) => {
@@ -41,9 +64,21 @@ export default function DivisionsTab() {
     showToast('Data divisi diunduh sebagai CSV.');
   };
 
+  // Inline "add sub-division" row: one draft, tied to the division it was typed into
+  const subForm = useAdminDraftForm<SubDivisionForm>('subdivision', subDivisionDraftSchema, { newSubDivDivisionId: '', newSubDivName: '', newSubDivCode: '' });
+  const sub = subForm.watch();
+  const [subDivError, setSubDivError] = useState<{ divId: string | null; message: string }>({ divId: null, message: '' });
+  const typeSub = (divId: string, key: 'newSubDivName' | 'newSubDivCode', value: string) => {
+    if (sub.newSubDivDivisionId !== divId) {
+      subForm.setValue('newSubDivDivisionId', divId);
+      subForm.setValue(key === 'newSubDivName' ? 'newSubDivCode' : 'newSubDivName', '');
+    }
+    subForm.setValue(key, value);
+  };
+
   const addSub = (d: any, currentSubs: any[]) => {
-    const name = (newSubDivDivisionId === d.id ? newSubDivName : '').trim();
-    const code = (newSubDivDivisionId === d.id ? newSubDivCode : '').trim().toUpperCase();
+    const name = (sub.newSubDivDivisionId === d.id ? sub.newSubDivName : '').trim();
+    const code = (sub.newSubDivDivisionId === d.id ? sub.newSubDivCode : '').trim().toUpperCase();
     if (!name) { setSubDivError({ divId: d.id, message: 'Nama sub-divisi wajib diisi.' }); showToast('Nama Sub-Divisi wajib diisi', 'error'); return; }
     if (currentSubs.some((s) => s.name.trim().toLowerCase() === name.toLowerCase())) {
       setSubDivError({ divId: d.id, message: `Sub-divisi "${name}" sudah terdaftar pada divisi ini.` });
@@ -53,8 +88,7 @@ export default function DivisionsTab() {
     setSubDivError({ divId: null, message: '' });
     if (!onAddSubDivision) return;
     onAddSubDivision({ id: 'subdiv-' + Date.now(), divisionId: d.id, name, code: code || undefined, description: '', sortOrder: currentSubs.length });
-    setNewSubDivName('');
-    setNewSubDivCode('');
+    subForm.resetToDefaults();
     showToast(`Sub-divisi "${name}" berhasil ditambahkan ke divisi ${d.name}!`);
   };
 
@@ -62,17 +96,17 @@ export default function DivisionsTab() {
     <AdminPanel title={`Divisi (${divisions.length})`} description="Divisi per periode, pimpinannya, status rekrutmen di situs, dan sub-divisi di bawahnya."
       actions={divisions.length > 0 && <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={exportCsv}>Ekspor CSV</Button>}>
       <AdminSubsection title="Tambah divisi">
-        <form onSubmit={handleCreateDivision} noValidate className="grid gap-4 md:grid-cols-2">
-          <Field label="Nama divisi" required error={formErrors.newDivName}>
-            <Input placeholder="Contoh: Pelayanan Kasih" value={newDivName} onChange={(e) => { setNewDivName(e.target.value); clearFieldError('newDivName'); }} />
+        <form onSubmit={createDivision} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Nama divisi" required error={errors.newDivName?.message}>
+            <Input placeholder="Contoh: Pelayanan Kasih" {...field('newDivName')} />
           </Field>
           <Field label="Periode" required>
-            <Select value={newDivTenureId || activeTenure?.id || ''} onChange={(e) => setNewDivTenureId(e.target.value)}>
+            <Select {...field('newDivTenureId')}>
               {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
-          <div className="md:col-span-2"><Field label="Deskripsi tugas"><Textarea rows={2} value={newDivDesc} onChange={(e) => setNewDivDesc(e.target.value)} /></Field></div>
-          <div className="md:col-span-2"><Field label="Fokus program" hint="Pisahkan dengan koma."><Input placeholder="Contoh: Bakti sosial, Kunjungan kasih" value={newDivFocus} onChange={(e) => setNewDivFocus(e.target.value)} /></Field></div>
+          <div className="md:col-span-2"><Field label="Deskripsi tugas"><Textarea rows={2} {...field('newDivDesc')} /></Field></div>
+          <div className="md:col-span-2"><Field label="Fokus program" hint="Pisahkan dengan koma."><Input placeholder="Contoh: Bakti sosial, Kunjungan kasih" {...field('newDivFocus')} /></Field></div>
           <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Tambah divisi</Button></div>
         </form>
       </AdminSubsection>
@@ -139,10 +173,10 @@ export default function DivisionsTab() {
                       <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
                         <div className="grid gap-3 sm:grid-cols-[2fr_1fr_auto] sm:items-start">
                           <Field label="Nama sub-divisi" required error={err || undefined}>
-                            <Input placeholder="Contoh: Sie Multimedia" value={newSubDivDivisionId === d.id ? newSubDivName : ''}
-                              onChange={(e) => { setNewSubDivDivisionId(d.id); setNewSubDivName(e.target.value); if (subDivError.divId === d.id) setSubDivError({ divId: null, message: '' }); }} />
+                            <Input placeholder="Contoh: Sie Multimedia" value={sub.newSubDivDivisionId === d.id ? sub.newSubDivName : ''}
+                              onChange={(e) => { typeSub(d.id, 'newSubDivName', e.target.value); if (subDivError.divId === d.id) setSubDivError({ divId: null, message: '' }); }} />
                           </Field>
-                          <Field label="Kode singkat"><Input placeholder="MULTI" value={newSubDivDivisionId === d.id ? newSubDivCode : ''} onChange={(e) => { setNewSubDivDivisionId(d.id); setNewSubDivCode(e.target.value); }} /></Field>
+                          <Field label="Kode singkat"><Input placeholder="MULTI" value={sub.newSubDivDivisionId === d.id ? sub.newSubDivCode : ''} onChange={(e) => typeSub(d.id, 'newSubDivCode', e.target.value)} /></Field>
                           <Button type="button" icon={<Plus size={15} aria-hidden="true" />} onClick={() => addSub(d, subs)} className="sm:mt-[30px]">Tambah</Button>
                         </div>
                         {subs.length === 0 ? <p className="text-[0.84rem] text-muted">Belum ada sub-divisi.</p> : (

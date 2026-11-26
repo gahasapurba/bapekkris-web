@@ -4,18 +4,52 @@ import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select } from '../../ui';
 import { AdminPanel, AdminSubsection, AdminTable, CheckField, FilterSelect, IconButton, ListToolbar, SearchBox, tdClass, thClass } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
+import { ROLE_NAME_REQUIRED, roleCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type RoleForm = { newRoleName: string; newRoleTenureId: string; newRoleLevel: number; newRoleMax: number; newRoleRequiresDivision: boolean; newRoleRequiresSubDivision: boolean };
 
 const PER_PAGE = 8;
 
 export default function RolesTab() {
   const {
-    activeTenure, clearFieldError, formErrors, handleCreateRole, members, newRoleLevel, newRoleMax, newRoleName, newRoleRequiresDivision,
-    newRoleRequiresSubDivision, newRoleTenureId, roleLevelFilter, rolePage, roleSearchQuery, roleTenureFilter, setDeleteConfirm, setEditingItem,
-    setNewRoleLevel, setNewRoleMax, setNewRoleName, setNewRoleRequiresDivision, setNewRoleRequiresSubDivision, setNewRoleTenureId,
-    setRoleLevelFilter, setRolePage, setRoleSearchQuery, setRoleTenureFilter, tenureRoles, tenures
+    activeTenure, members, onAddTenureRole, roleLevelFilter, rolePage, roleSearchQuery, roleTenureFilter, setDeleteConfirm, setEditingItem,
+    setRoleLevelFilter, setRolePage, setRoleSearchQuery, setRoleTenureFilter, showToast, tenureRoles, tenures
   } = useAdminPortal();
 
-  const formTenureId = newRoleTenureId || activeTenure?.id || tenures[0]?.id || '';
+  const tenureOf = (id: string) => id || activeTenure?.id || tenures[0]?.id || '';
+  const takenNamesIn = (tenureId: string) => (tenureRoles || []).filter((r: any) => r.tenureId === tenureId).map((r: any) => String(r?.name || '').toLowerCase().trim());
+  const { handleSubmit, field, watch, setValue, resetToDefaults, formState: { errors } } = useAdminDraftForm<RoleForm>(
+    'role',
+    (v) => roleCreateSchema({ takenNames: takenNamesIn(tenureOf(v.newRoleTenureId)) }),
+    { newRoleName: '', newRoleTenureId: activeTenure?.id || '', newRoleLevel: 5, newRoleMax: 0, newRoleRequiresDivision: false, newRoleRequiresSubDivision: false }
+  );
+  const values = watch();
+  const formTenureId = tenureOf(values.newRoleTenureId);
+  const createRole = handleSubmit((v) => {
+    const nowIso = new Date().toISOString();
+    onAddTenureRole?.({
+      id: `role-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      tenureId: formTenureId,
+      name: v.newRoleName.trim(),
+      level: Number(v.newRoleLevel ?? 5),
+      max: Number(v.newRoleMax || 0),
+      maxQuota: Number(v.newRoleMax || 0),
+      requiresDivision: Boolean(v.newRoleRequiresDivision),
+      requiresSubDivision: Boolean(v.newRoleRequiresDivision && v.newRoleRequiresSubDivision),
+      sortOrder: tenureRoles.length,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    });
+    // The period and level stay selected for the next role, as before.
+    resetToDefaults();
+    setValue('newRoleTenureId', v.newRoleTenureId);
+    setValue('newRoleLevel', v.newRoleLevel);
+    showToast(`Role "${v.newRoleName}" berhasil ditambahkan & disinkronkan ke Cloud!`);
+  }, (errs) => {
+    const message = errs.newRoleName?.message;
+    showToast(message === ROLE_NAME_REQUIRED ? 'Mohon isi Nama Jabatan terlebih dahulu' : message || 'Periksa kembali isian role', 'error');
+  });
   const filtered = (tenureRoles || []).filter((r: any) =>
     (r.name || '').toLowerCase().includes(roleSearchQuery.toLowerCase()) &&
     (roleTenureFilter === 'all' || r.tenureId === roleTenureFilter) &&
@@ -27,26 +61,26 @@ export default function RolesTab() {
   return (
     <AdminPanel title={`Role & jabatan (${tenureRoles.length})`} description="Jabatan per periode dengan kuota maksimal, tingkat di bagan organisasi (level 0–5), dan kewajiban penempatan divisi.">
       <AdminSubsection title="Tambah role">
-        <form onSubmit={handleCreateRole} noValidate className="grid gap-4 md:grid-cols-2">
-          <Field label="Nama jabatan" required error={formErrors.newRoleName}>
-            <Input placeholder="Contoh: Sekretaris, Ketua Divisi" value={newRoleName} onChange={(e) => { setNewRoleName(e.target.value); clearFieldError('newRoleName'); }} />
+        <form onSubmit={createRole} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Nama jabatan" required error={errors.newRoleName?.message}>
+            <Input placeholder="Contoh: Sekretaris, Ketua Divisi" {...field('newRoleName')} />
           </Field>
           <Field label="Periode" required>
-            <Select value={formTenureId} onChange={(e) => setNewRoleTenureId(e.target.value)}>
+            <Select {...field('newRoleTenureId')}>
               {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <Field label="Tingkat di bagan" required>
-            <Select value={newRoleLevel} onChange={(e) => setNewRoleLevel(Number(e.target.value))}>
+            <Select {...field('newRoleLevel', { valueAsNumber: true })}>
               {LEVEL_OPTIONS.map((lvl: any) => <option key={lvl.level} value={lvl.level}>{formatLevelOptionLabel(lvl, tenureRoles, formTenureId)}</option>)}
             </Select>
           </Field>
-          <Field label="Kuota maksimal" hint={newRoleMax > 0 ? `${newRoleMax} orang per ${newRoleRequiresDivision ? 'divisi' : 'periode'}` : '0 = tanpa batas'}>
-            <Input type="number" min={0} max={100} value={newRoleMax} onChange={(e) => setNewRoleMax(parseInt(e.target.value) || 0)} />
+          <Field label="Kuota maksimal" hint={values.newRoleMax > 0 ? `${values.newRoleMax} orang per ${values.newRoleRequiresDivision ? 'divisi' : 'periode'}` : '0 = tanpa batas'}>
+            <Input type="number" min={0} max={100} {...field('newRoleMax', { setValueAs: (v) => parseInt(v, 10) || 0 })} />
           </Field>
-          <CheckField checked={newRoleRequiresDivision} onChange={setNewRoleRequiresDivision} label="Wajib memilih divisi" description="Untuk jabatan yang ditempatkan di divisi tertentu, misalnya Ketua Divisi." />
-          {newRoleRequiresDivision && (
-            <CheckField checked={newRoleRequiresSubDivision} onChange={setNewRoleRequiresSubDivision} label="Wajib memilih sub-divisi juga" description="Personel ditempatkan di sub-divisi di bawah divisi yang dipilih." />
+          <CheckField checked={values.newRoleRequiresDivision} onChange={(v) => setValue('newRoleRequiresDivision', v)} label="Wajib memilih divisi" description="Untuk jabatan yang ditempatkan di divisi tertentu, misalnya Ketua Divisi." />
+          {values.newRoleRequiresDivision && (
+            <CheckField checked={values.newRoleRequiresSubDivision} onChange={(v) => setValue('newRoleRequiresSubDivision', v)} label="Wajib memilih sub-divisi juga" description="Personel ditempatkan di sub-divisi di bawah divisi yang dipilih." />
           )}
           <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Tambah role</Button></div>
         </form>

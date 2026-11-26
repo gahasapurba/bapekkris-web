@@ -4,16 +4,35 @@ import { Badge, Button, Field, Input, Pagination, Textarea } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FilterSelect, IconButton, ListToolbar, SearchBox } from '../AdminUi';
 import { downloadCsv } from '../csv';
 import { useAdminPortal } from '../AdminPortalContext';
+import { tenureCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type TenureForm = { newTenureCode: string; newTenureTitle: string; newTenureTagline: string; newTenureHeadline: string; newTenureHighlight: string; newTenureVisi: string; newTenureMisi: string };
+const EMPTY_TENURE: TenureForm = { newTenureCode: '', newTenureTitle: '', newTenureTagline: '', newTenureHeadline: '', newTenureHighlight: '', newTenureVisi: '', newTenureMisi: '' };
 
 const PER_PAGE = 6;
 
 export default function TenureTab() {
   const {
-    activeTenure, clearFieldError, formErrors, handleCreateTenure, handleDeleteTenureClick, newTenureCode, newTenureHeadline, newTenureHighlight,
-    newTenureMisi, newTenureTagline, newTenureTitle, newTenureVisi, onSelectTenure, onUpdateTenure, setEditingItem, setNewTenureCode,
-    setNewTenureHeadline, setNewTenureHighlight, setNewTenureMisi, setNewTenureTagline, setNewTenureTitle, setNewTenureVisi, setTenurePage,
+    activeTenure, handleDeleteTenureClick, onAddTenure, onSelectTenure, onUpdateTenure, setEditingItem, setTenurePage,
     setTenureSearchQuery, setTenureStatusFilter, showToast, tenurePage, tenureSearchQuery, tenureStatusFilter, tenures
   } = useAdminPortal();
+  const { handleSubmit, field, resetToDefaults, formState: { errors } } = useAdminDraftForm<TenureForm>('tenure', tenureCreateSchema, EMPTY_TENURE);
+  const createTenure = handleSubmit((v) => {
+    onAddTenure({
+      id: 'tenure-' + v.newTenureCode,
+      code: v.newTenureCode,
+      title: v.newTenureTitle.trim(),
+      themeTagline: v.newTenureTagline.trim(),
+      heroHeadline: v.newTenureHeadline.trim(),
+      heroHighlight: v.newTenureHighlight.trim(),
+      visi: v.newTenureVisi.trim(),
+      misi: v.newTenureMisi ? v.newTenureMisi.split('\n').map((s) => s.trim()).filter(Boolean) : [],
+      isActive: false
+    });
+    resetToDefaults();
+    showToast(`Periode Kepengurusan "${v.newTenureCode}" beserta Visi Misi berhasil dibuat!`);
+  }, () => showToast('Mohon lengkapi field wajib (Kode Tahun & Nama Periode)', 'error'));
 
   const isActive = (t: any) => activeTenure?.id === t.id || Boolean(t.isActive);
   const q = tenureSearchQuery.toLowerCase().trim();
@@ -34,18 +53,18 @@ export default function TenureTab() {
     <AdminPanel title={`Periode kepengurusan (${tenures.length})`} description="Ganti tahun kepengurusan tanpa menghapus riwayat pengurus lama. Periode aktif menentukan isi beranda dan bagan organisasi."
       actions={tenures.length > 0 && <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={exportCsv}>Ekspor CSV</Button>}>
       <AdminSubsection title="Tambah periode">
-        <form onSubmit={handleCreateTenure} noValidate className="grid gap-4 md:grid-cols-2">
-          <Field label="Kode tahun" required error={formErrors.newTenureCode}>
-            <Input placeholder="Contoh: 2027" value={newTenureCode} onChange={(e) => { setNewTenureCode(e.target.value); clearFieldError('newTenureCode'); }} />
+        <form onSubmit={createTenure} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Kode tahun" required error={errors.newTenureCode?.message}>
+            <Input placeholder="Contoh: 2027" {...field('newTenureCode')} />
           </Field>
-          <Field label="Nama periode" required error={formErrors.newTenureTitle}>
-            <Input placeholder="Contoh: Kepengurusan 2026/2027" value={newTenureTitle} onChange={(e) => { setNewTenureTitle(e.target.value); clearFieldError('newTenureTitle'); }} />
+          <Field label="Nama periode" required error={errors.newTenureTitle?.message}>
+            <Input placeholder="Contoh: Kepengurusan 2026/2027" {...field('newTenureTitle')} />
           </Field>
-          <div className="md:col-span-2"><Field label="Tema / tagline"><Input value={newTenureTagline} onChange={(e) => setNewTenureTagline(e.target.value)} /></Field></div>
-          <Field label="Judul beranda"><Input value={newTenureHeadline} onChange={(e) => setNewTenureHeadline(e.target.value)} /></Field>
-          <Field label="Sorotan judul" hint="Bagian judul yang diberi warna aksen."><Input value={newTenureHighlight} onChange={(e) => setNewTenureHighlight(e.target.value)} /></Field>
-          <div className="md:col-span-2"><Field label="Visi"><Textarea rows={2} value={newTenureVisi} onChange={(e) => setNewTenureVisi(e.target.value)} /></Field></div>
-          <div className="md:col-span-2"><Field label="Misi" hint="Satu butir misi per baris."><Textarea rows={3} value={newTenureMisi} onChange={(e) => setNewTenureMisi(e.target.value)} /></Field></div>
+          <div className="md:col-span-2"><Field label="Tema / tagline"><Input {...field('newTenureTagline')} /></Field></div>
+          <Field label="Judul beranda"><Input {...field('newTenureHeadline')} /></Field>
+          <Field label="Sorotan judul" hint="Bagian judul yang diberi warna aksen."><Input {...field('newTenureHighlight')} /></Field>
+          <div className="md:col-span-2"><Field label="Visi"><Textarea rows={2} {...field('newTenureVisi')} /></Field></div>
+          <div className="md:col-span-2"><Field label="Misi" hint="Satu butir misi per baris."><Textarea rows={3} {...field('newTenureMisi')} /></Field></div>
           <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Tambah periode</Button></div>
         </form>
       </AdminSubsection>

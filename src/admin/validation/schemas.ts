@@ -87,6 +87,9 @@ export const faqCreateSchema = z.object({
   faqAnswer: requiredText('Jawaban / penjelasan FAQ wajib diisi')
 });
 
+/** Inline "add sub-division" row; validated in the tab because the duplicate check needs data. */
+export const subDivisionDraftSchema = z.object({ newSubDivDivisionId: z.string(), newSubDivName: z.string(), newSubDivCode: z.string() });
+
 export const tenureCreateSchema = z.object({
   newTenureCode: requiredText('Kode Tahun Kepengurusan wajib diisi'),
   newTenureTitle: requiredText('Nama Periode Kepengurusan wajib diisi')

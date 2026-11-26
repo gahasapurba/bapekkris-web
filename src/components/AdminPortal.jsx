@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Lock, 
   ArrowLeft, 
@@ -32,14 +32,9 @@ import { Badge, Button, useFeedback } from '../ui';
 import {
   collectFieldErrors,
   brandAssetCreateSchema,
-  divisionCreateSchema,
   eventCreateSchema,
-  faqCreateSchema,
   galleryCreateSchema,
   memberCreateSchema,
-  roleCreateSchema,
-  tenureCreateSchema,
-  ROLE_NAME_REQUIRED
 } from '../admin/validation/schemas';
 import { SYNC_BADGE, DIVISION_ADMIN_TABS } from '../admin/adminConstants';
 import AdminSummaryBar from '../admin/AdminSummaryBar';
@@ -177,6 +172,8 @@ export default function AdminPortal({
   const showToast = (message, type = 'success') => notify(message, type === 'error' ? 'error' : 'success');
 
   // Custom Inline Field Validation State (replaces native browser required tooltips)
+  // Half-filled create forms of tabs that are currently closed (useAdminDraftForm)
+  const formDrafts = useRef(new Map());
   const [formErrors, setFormErrors] = useState({});
   const clearFieldError = (fieldKey) => {
     setFormErrors((prev) => {
@@ -220,11 +217,6 @@ export default function AdminPortal({
 
   // Search & Filter states for Members in Admin
   // Form & filter states for Role Management
-  const [newRoleName, setNewRoleName] = useState('');
-  const [newRoleTenureId, setNewRoleTenureId] = useState(activeTenure?.id || '');
-  const [newRoleLevel, setNewRoleLevel] = useState(5);
-  const [newRoleMax, setNewRoleMax] = useState(0);
-  const [newRoleRequiresDivision, setNewRoleRequiresDivision] = useState(false);
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [roleTenureFilter, setRoleTenureFilter] = useState('all');
   const [roleLevelFilter, setRoleLevelFilter] = useState('all');
@@ -313,12 +305,7 @@ export default function AdminPortal({
   const [memDivisionId, setMemDivisionId] = useState('');
   const [memSubDivisionId, setMemSubDivisionId] = useState('');
   const [expandedDivSubId, setExpandedDivSubId] = useState(null);
-  const [newSubDivName, setNewSubDivName] = useState('');
-  const [newSubDivCode, setNewSubDivCode] = useState('');
-  const [newSubDivDivisionId, setNewSubDivDivisionId] = useState('');
-  const [subDivError, setSubDivError] = useState({ divId: null, message: '' });
   const [isAdminMobileMenuOpen, setIsAdminMobileMenuOpen] = useState(false);
-  const [newRoleRequiresSubDivision, setNewRoleRequiresSubDivision] = useState(false);
 
   // Devotions State
   const [devotionDate, setDevotionDate] = useState(new Date().toISOString().split('T')[0]);
@@ -352,24 +339,12 @@ export default function AdminPortal({
   const [memImage, setMemImage] = useState('');
 
   // Form states for new division
-  const [newDivName, setNewDivName] = useState('');
-  const [newDivColor, setNewDivColor] = useState('#00529B');
-  const [newDivDesc, setNewDivDesc] = useState('');
-  const [newDivFocus, setNewDivFocus] = useState('');
-  const [newDivTenureId, setNewDivTenureId] = useState(activeTenure?.id || '');
   const [divSearchQuery, setDivSearchQuery] = useState('');
   const [divTenureFilter, setDivTenureFilter] = useState('all');
   const [divRecruitFilter, setDivRecruitFilter] = useState('all');
   const [divPage, setDivPage] = useState(1);
 
   // Form states for new tenure
-  const [newTenureCode, setNewTenureCode] = useState('');
-  const [newTenureTitle, setNewTenureTitle] = useState('');
-  const [newTenureTagline, setNewTenureTagline] = useState('');
-  const [newTenureHeadline, setNewTenureHeadline] = useState('');
-  const [newTenureHighlight, setNewTenureHighlight] = useState('');
-  const [newTenureVisi, setNewTenureVisi] = useState('');
-  const [newTenureMisi, setNewTenureMisi] = useState('');
   const [tenureSearchQuery, setTenureSearchQuery] = useState('');
   const [tenureStatusFilter, setTenureStatusFilter] = useState('all');
   const [tenurePage, setTenurePage] = useState(1);
@@ -607,36 +582,6 @@ export default function AdminPortal({
   const [eventIsLimited, setEventIsLimited] = useState(false);
   const [eventMaxQuota, setEventMaxQuota] = useState('');
 
-  // Form State: New FAQ
-  const [faqCategory, setFaqCategory] = useState('');
-  const [faqQuestion, setFaqQuestion] = useState('');
-  const [faqAnswer, setFaqAnswer] = useState('');
-
-  const handleCreateFaq = (e) => {
-    e.preventDefault();
-    const errs = collectFieldErrors(faqCreateSchema, { faqCategory, faqQuestion, faqAnswer });
-    if (Object.keys(errs).length > 0) {
-      setFormErrors((prev) => ({ ...prev, ...errs }));
-      showToast('Mohon lengkapi seluruh kolom wajib pada form FAQ', 'error');
-      return;
-    }
-
-    if (onAddFaq) {
-      onAddFaq({
-        id: 'faq-' + Date.now(),
-        category: faqCategory.trim(),
-        question: faqQuestion.trim(),
-        answer: faqAnswer.trim(),
-        isPublished: true
-      });
-    }
-
-    setFaqCategory('');
-    setFaqQuestion('');
-    setFaqAnswer('');
-    showToast('Pertanyaan FAQ baru berhasil ditambahkan & disinkronkan!');
-  };
-
   const handleCreateEvent = (e) => {
     e.preventDefault();
     const targetEventTenureId = eventTenureId || activeTenure?.id || '';
@@ -834,109 +779,6 @@ export default function AdminPortal({
     setMemImage('');
     setPendingMemberPhoto(null);
     showToast(`Pengurus/Anggota "${savedName}" berhasil ditambahkan & tersimpan di Cloud!`);
-  };
-
-  const handleCreateDivision = (e) => {
-    e.preventDefault();
-    const divisionErrors = collectFieldErrors(divisionCreateSchema, { newDivName });
-    if (divisionErrors.newDivName) {
-      setFormErrors((prev) => ({ ...prev, ...divisionErrors }));
-      showToast('Mohon isi Nama Divisi terlebih dahulu', 'error');
-      return;
-    }
-
-    onAddDivision({
-      id: 'div-' + Date.now(),
-      tenureId: newDivTenureId || activeTenure?.id || '',
-      name: newDivName,
-      slug: newDivName.toLowerCase().replace(/\s+/g, '-'),
-      memberId: null,
-      leadName: '',
-      color: newDivColor || '#00529B',
-      motto: '',
-      description: newDivDesc.trim() || '',
-      focusAreas: newDivFocus ? newDivFocus.split(',').map(s => s.trim()).filter(Boolean) : [],
-      isRecruiting: false
-    });
-
-    const savedDiv = newDivName;
-    setNewDivName('');
-    setNewDivDesc('');
-    setNewDivFocus('');
-    showToast(`Divisi "${savedDiv}" berhasil ditambahkan & disinkronkan!`);
-  };
-
-  const handleCreateRole = (e) => {
-    e.preventDefault();
-    const targetTenureId = newRoleTenureId || activeTenure?.id || tenures[0]?.id || '';
-    const takenNames = (tenureRoles || [])
-      .filter((r) => r.tenureId === targetTenureId)
-      .map((r) => String(r?.name || '').toLowerCase().trim());
-    const roleErrors = collectFieldErrors(roleCreateSchema({ takenNames }), { newRoleName });
-    if (roleErrors.newRoleName) {
-      setFormErrors((prev) => ({ ...prev, ...roleErrors }));
-      showToast(roleErrors.newRoleName === ROLE_NAME_REQUIRED ? 'Mohon isi Nama Jabatan terlebih dahulu' : roleErrors.newRoleName, 'error');
-      return;
-    }
-
-    const nowIso = new Date().toISOString();
-    if (onAddTenureRole) {
-      onAddTenureRole({
-        id: `role-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        tenureId: targetTenureId,
-        name: newRoleName.trim(),
-        level: Number(newRoleLevel ?? 5),
-        max: Number(newRoleMax ?? 0),
-        maxQuota: Number(newRoleMax ?? 0),
-        requiresDivision: Boolean(newRoleRequiresDivision),
-        requiresSubDivision: Boolean(newRoleRequiresDivision && newRoleRequiresSubDivision),
-        sortOrder: tenureRoles.length,
-        createdAt: nowIso,
-        updatedAt: nowIso
-      });
-    }
-
-    const savedRole = newRoleName;
-    setNewRoleName('');
-    setNewRoleMax(0);
-    setNewRoleRequiresDivision(false);
-    setNewRoleRequiresSubDivision(false);
-    clearFieldError('newRoleName');
-    showToast(`Role "${savedRole}" berhasil ditambahkan & disinkronkan ke Cloud!`);
-  };
-
-  const handleCreateTenure = (e) => {
-    e.preventDefault();
-    const errors = collectFieldErrors(tenureCreateSchema, { newTenureCode, newTenureTitle });
-    if (Object.keys(errors).length > 0) {
-      setFormErrors((prev) => ({ ...prev, ...errors }));
-      showToast('Mohon lengkapi field wajib (Kode Tahun & Nama Periode)', 'error');
-      return;
-    }
-
-    onAddTenure({
-      id: 'tenure-' + newTenureCode,
-      code: newTenureCode,
-      title: newTenureTitle.trim() || '',
-      themeTagline: newTenureTagline.trim() || '',
-      heroHeadline: newTenureHeadline.trim() || '',
-      heroHighlight: newTenureHighlight.trim() || '',
-      visi: newTenureVisi.trim() || '',
-      misi: newTenureMisi 
-        ? newTenureMisi.split('\n').map(s => s.trim()).filter(Boolean)
-        : [],
-      isActive: false
-    });
-
-    const savedCode = newTenureCode;
-    setNewTenureCode('');
-    setNewTenureTitle('');
-    setNewTenureTagline('');
-    setNewTenureHeadline('');
-    setNewTenureHighlight('');
-    setNewTenureVisi('');
-    setNewTenureMisi('');
-    showToast(`Periode Kepengurusan "${savedCode}" beserta Visi Misi berhasil dibuat!`);
   };
 
   const [uploadedPhotos, setUploadedPhotos] = useState([]);
@@ -1375,6 +1217,11 @@ export default function AdminPortal({
   // IF AUTHENTICATED: SHOW ADMIN DASHBOARD
     // Everything the extracted tabs and modals (src/admin/*) read from this component.
   const adminPortalContext = {
+    formDrafts,
+    onAddTenureRole,
+    onAddDivision,
+    onAddTenure,
+    onAddFaq,
     activeTab,
     activeTenure,
     addDocLinkField,
@@ -1446,9 +1293,7 @@ export default function AdminPortal({
     eventTitle,
     events,
     expandedDivSubId,
-    faqAnswer,
     faqCatFilter,
-    faqQuestion,
     faqSearchQuery,
     faqs,
     formCatFilter,
@@ -1480,13 +1325,9 @@ export default function AdminPortal({
     handleAddPhotoLinkToEditModal,
     handleBrandAssetUpload,
     handleCreateBrandAsset,
-    handleCreateDivision,
     handleCreateEvent,
-    handleCreateFaq,
     handleCreateGallery,
     handleCreateMember,
-    handleCreateRole,
-    handleCreateTenure,
     handleDeleteDivisionClick,
     handleDeleteEventClick,
     handleDeleteFormClick,
@@ -1511,10 +1352,6 @@ export default function AdminPortal({
     memTenureId,
     memWhatsapp,
     members,
-    newDivDesc,
-    newDivFocus,
-    newDivName,
-    newDivTenureId,
     newFormCategory,
     newFormDeadline,
     newFormEventId,
@@ -1528,22 +1365,6 @@ export default function AdminPortal({
     newFormSubtitle,
     newFormTenureId,
     newFormTitle,
-    newRoleLevel,
-    newRoleMax,
-    newRoleName,
-    newRoleRequiresDivision,
-    newRoleRequiresSubDivision,
-    newRoleTenureId,
-    newSubDivCode,
-    newSubDivDivisionId,
-    newSubDivName,
-    newTenureCode,
-    newTenureHeadline,
-    newTenureHighlight,
-    newTenureMisi,
-    newTenureTagline,
-    newTenureTitle,
-    newTenureVisi,
     onAddDevotion,
     onAddForm,
     onAddSubDivision,
@@ -1656,9 +1477,7 @@ export default function AdminPortal({
     setEventTenureId,
     setEventTitle,
     setExpandedDivSubId,
-    setFaqAnswer,
     setFaqCatFilter,
-    setFaqQuestion,
     setFaqSearchQuery,
     setFormCatFilter,
     setFormErrors,
@@ -1695,10 +1514,6 @@ export default function AdminPortal({
     setMemSubDivisionId,
     setMemTenureId,
     setMemWhatsapp,
-    setNewDivDesc,
-    setNewDivFocus,
-    setNewDivName,
-    setNewDivTenureId,
     setNewFormCategory,
     setNewFormDeadline,
     setNewFormEventId,
@@ -1712,22 +1527,6 @@ export default function AdminPortal({
     setNewFormSubtitle,
     setNewFormTenureId,
     setNewFormTitle,
-    setNewRoleLevel,
-    setNewRoleMax,
-    setNewRoleName,
-    setNewRoleRequiresDivision,
-    setNewRoleRequiresSubDivision,
-    setNewRoleTenureId,
-    setNewSubDivCode,
-    setNewSubDivDivisionId,
-    setNewSubDivName,
-    setNewTenureCode,
-    setNewTenureHeadline,
-    setNewTenureHighlight,
-    setNewTenureMisi,
-    setNewTenureTagline,
-    setNewTenureTitle,
-    setNewTenureVisi,
     setPendingAssetFile,
     setPendingMemberPhoto,
     setPendingPreviewFile,
@@ -1750,7 +1549,6 @@ export default function AdminPortal({
     setSongTitle,
     setSongYoutube,
     setSubCurrentPage,
-    setSubDivError,
     setSubSearchQuery,
     setSubStatusFilter,
     setSubTenureFilter,
@@ -1768,7 +1566,6 @@ export default function AdminPortal({
     songTitle,
     songYoutube,
     subCurrentPage,
-    subDivError,
     subDivisions,
     subSearchQuery,
     subStatusFilter,

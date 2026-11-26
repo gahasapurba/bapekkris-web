@@ -1,4 +1,4 @@
-import { createContext, useContext, type Dispatch, type SetStateAction } from 'react';
+import { createContext, useContext, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import type { AppItem } from '../lib/supabase';
 
 type AnyFn = (...args: any[]) => any;
@@ -11,6 +11,8 @@ type AnyFn = (...args: any[]) => any;
  * its own typed hook.
  */
 export interface AdminPortalContextValue {
+  /** Half-filled create forms parked while their tab is closed (see useAdminDraftForm). */
+  formDrafts: MutableRefObject<Map<string, unknown>>;
   activeTab: any;
   activeTenure: any;
   addDocLinkField: AnyFn;
@@ -82,9 +84,7 @@ export interface AdminPortalContextValue {
   eventTitle: any;
   events: AppItem[];
   expandedDivSubId: any;
-  faqAnswer: any;
   faqCatFilter: any;
-  faqQuestion: any;
   faqSearchQuery: any;
   faqs: AppItem[];
   formCatFilter: any;
@@ -116,13 +116,9 @@ export interface AdminPortalContextValue {
   handleAddPhotoLinkToEditModal: AnyFn;
   handleBrandAssetUpload: AnyFn;
   handleCreateBrandAsset: AnyFn;
-  handleCreateDivision: AnyFn;
   handleCreateEvent: AnyFn;
-  handleCreateFaq: AnyFn;
   handleCreateGallery: AnyFn;
   handleCreateMember: AnyFn;
-  handleCreateRole: AnyFn;
-  handleCreateTenure: AnyFn;
   handleDeleteDivisionClick: AnyFn;
   handleDeleteEventClick: AnyFn;
   handleDeleteFormClick: AnyFn;
@@ -147,10 +143,6 @@ export interface AdminPortalContextValue {
   memTenureId: any;
   memWhatsapp: any;
   members: AppItem[];
-  newDivDesc: any;
-  newDivFocus: any;
-  newDivName: any;
-  newDivTenureId: any;
   newFormCategory: any;
   newFormDeadline: any;
   newFormEventId: any;
@@ -164,23 +156,11 @@ export interface AdminPortalContextValue {
   newFormSubtitle: any;
   newFormTenureId: any;
   newFormTitle: any;
-  newRoleLevel: any;
-  newRoleMax: any;
-  newRoleName: any;
-  newRoleRequiresDivision: any;
-  newRoleRequiresSubDivision: any;
-  newRoleTenureId: any;
-  newSubDivCode: any;
-  newSubDivDivisionId: any;
-  newSubDivName: any;
-  newTenureCode: any;
-  newTenureHeadline: any;
-  newTenureHighlight: any;
-  newTenureMisi: any;
-  newTenureTagline: any;
-  newTenureTitle: any;
-  newTenureVisi: any;
   onAddDevotion: AnyFn;
+  onAddFaq: AnyFn;
+  onAddTenureRole: AnyFn;
+  onAddDivision: AnyFn;
+  onAddTenure: AnyFn;
   onAddForm: AnyFn;
   onAddSubDivision: AnyFn;
   onAddWorshipSong: AnyFn;
@@ -292,9 +272,7 @@ export interface AdminPortalContextValue {
   setEventTenureId: Dispatch<SetStateAction<any>>;
   setEventTitle: Dispatch<SetStateAction<any>>;
   setExpandedDivSubId: Dispatch<SetStateAction<any>>;
-  setFaqAnswer: Dispatch<SetStateAction<any>>;
   setFaqCatFilter: Dispatch<SetStateAction<any>>;
-  setFaqQuestion: Dispatch<SetStateAction<any>>;
   setFaqSearchQuery: Dispatch<SetStateAction<any>>;
   setFormCatFilter: Dispatch<SetStateAction<any>>;
   setFormErrors: Dispatch<SetStateAction<any>>;
@@ -331,10 +309,6 @@ export interface AdminPortalContextValue {
   setMemSubDivisionId: Dispatch<SetStateAction<any>>;
   setMemTenureId: Dispatch<SetStateAction<any>>;
   setMemWhatsapp: Dispatch<SetStateAction<any>>;
-  setNewDivDesc: Dispatch<SetStateAction<any>>;
-  setNewDivFocus: Dispatch<SetStateAction<any>>;
-  setNewDivName: Dispatch<SetStateAction<any>>;
-  setNewDivTenureId: Dispatch<SetStateAction<any>>;
   setNewFormCategory: Dispatch<SetStateAction<any>>;
   setNewFormDeadline: Dispatch<SetStateAction<any>>;
   setNewFormEventId: Dispatch<SetStateAction<any>>;
@@ -348,22 +322,6 @@ export interface AdminPortalContextValue {
   setNewFormSubtitle: Dispatch<SetStateAction<any>>;
   setNewFormTenureId: Dispatch<SetStateAction<any>>;
   setNewFormTitle: Dispatch<SetStateAction<any>>;
-  setNewRoleLevel: Dispatch<SetStateAction<any>>;
-  setNewRoleMax: Dispatch<SetStateAction<any>>;
-  setNewRoleName: Dispatch<SetStateAction<any>>;
-  setNewRoleRequiresDivision: Dispatch<SetStateAction<any>>;
-  setNewRoleRequiresSubDivision: Dispatch<SetStateAction<any>>;
-  setNewRoleTenureId: Dispatch<SetStateAction<any>>;
-  setNewSubDivCode: Dispatch<SetStateAction<any>>;
-  setNewSubDivDivisionId: Dispatch<SetStateAction<any>>;
-  setNewSubDivName: Dispatch<SetStateAction<any>>;
-  setNewTenureCode: Dispatch<SetStateAction<any>>;
-  setNewTenureHeadline: Dispatch<SetStateAction<any>>;
-  setNewTenureHighlight: Dispatch<SetStateAction<any>>;
-  setNewTenureMisi: Dispatch<SetStateAction<any>>;
-  setNewTenureTagline: Dispatch<SetStateAction<any>>;
-  setNewTenureTitle: Dispatch<SetStateAction<any>>;
-  setNewTenureVisi: Dispatch<SetStateAction<any>>;
   setPendingAssetFile: Dispatch<SetStateAction<any>>;
   setPendingMemberPhoto: Dispatch<SetStateAction<any>>;
   setPendingPreviewFile: Dispatch<SetStateAction<any>>;
@@ -386,7 +344,6 @@ export interface AdminPortalContextValue {
   setSongTitle: Dispatch<SetStateAction<any>>;
   setSongYoutube: Dispatch<SetStateAction<any>>;
   setSubCurrentPage: Dispatch<SetStateAction<any>>;
-  setSubDivError: Dispatch<SetStateAction<any>>;
   setSubSearchQuery: Dispatch<SetStateAction<any>>;
   setSubStatusFilter: Dispatch<SetStateAction<any>>;
   setSubTenureFilter: Dispatch<SetStateAction<any>>;
@@ -404,7 +361,6 @@ export interface AdminPortalContextValue {
   songTitle: any;
   songYoutube: any;
   subCurrentPage: any;
-  subDivError: any;
   subDivisions: AppItem[];
   subSearchQuery: any;
   subStatusFilter: any;

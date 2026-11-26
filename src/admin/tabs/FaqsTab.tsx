@@ -1,18 +1,29 @@
 import { Edit2, Eye, EyeOff, Plus, Search, Trash2 } from 'lucide-react';
 import { formatLastUpdatedWib, formatWibTimestamp } from '../../utils/dateUtils';
-import { Badge, Button, Field, Input, Pagination, Textarea } from '../../ui';
+import { Badge, Button, Field, Input, Pagination, Select, Textarea } from '../../ui';
+import { faqCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
 import { AdminEmpty, AdminPanel, AdminSubsection, IconButton } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
 
 const PER_PAGE = 10;
 const CATEGORIES = ['Tentang Bapekkris', 'Kegiatan & Event', 'Pelayanan & Operasional', 'Doa & Pelayanan Kasih', 'Pendaftaran & Oprec', 'Umum'];
+type FaqForm = { faqCategory: string; faqQuestion: string; faqAnswer: string };
+
 const selectClass = 'h-11 cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink';
 
 export default function FaqsTab() {
   const {
-    adminFaqPage, clearFieldError, faqAnswer, faqCatFilter, faqQuestion, faqSearchQuery, faqs, formErrors, handleCreateFaq, onUpdateFaq,
-    setAdminFaqPage, setDeleteConfirm, setEditingItem, setFaqAnswer, setFaqCatFilter, setFaqQuestion, setFaqSearchQuery
+    adminFaqPage, faqCatFilter, faqSearchQuery, faqs, onAddFaq, onUpdateFaq, showToast,
+    setAdminFaqPage, setDeleteConfirm, setEditingItem, setFaqCatFilter, setFaqSearchQuery
   } = useAdminPortal();
+  const { handleSubmit, field, resetToDefaults, formState: { errors } } = useAdminDraftForm<FaqForm>('faq', faqCreateSchema,
+    { faqCategory: '', faqQuestion: '', faqAnswer: '' });
+  const createFaq = handleSubmit(({ faqCategory, faqQuestion, faqAnswer }) => {
+    onAddFaq?.({ id: 'faq-' + Date.now(), category: faqCategory.trim(), question: faqQuestion.trim(), answer: faqAnswer.trim(), isPublished: true });
+    resetToDefaults();
+    showToast('Pertanyaan FAQ baru berhasil ditambahkan & disinkronkan!');
+  }, () => showToast('Mohon lengkapi seluruh kolom wajib pada form FAQ', 'error'));
 
   const q = faqSearchQuery.trim().toLowerCase();
   const filtered = faqs.filter((f: any) =>
@@ -25,12 +36,18 @@ export default function FaqsTab() {
   return (
     <AdminPanel title={`Panduan & FAQ (${faqs.length})`} description="Pertanyaan umum seputar persekutuan, ibadah, pelayanan kasih, dan pendaftaran kegiatan. Pertanyaan dari pengunjung masuk sebagai draf sampai dijawab.">
       <AdminSubsection title="Tambah pertanyaan">
-        <form onSubmit={handleCreateFaq} noValidate className="flex flex-col gap-4">
-          <Field label="Pertanyaan" required error={formErrors.faqQuestion}>
-            <Input placeholder="Contoh: Bagaimana cara mengikuti persekutuan doa?" value={faqQuestion} onChange={(e) => { setFaqQuestion(e.target.value); clearFieldError('faqQuestion'); }} />
+        <form onSubmit={createFaq} noValidate className="flex flex-col gap-4">
+          <Field label="Kategori" required error={errors.faqCategory?.message}>
+            <Select {...field('faqCategory')}>
+              <option value="">Pilih kategori</option>
+              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
           </Field>
-          <Field label="Jawaban" required error={formErrors.faqAnswer}>
-            <Textarea rows={4} placeholder="Penjelasan yang jelas dan membantu" value={faqAnswer} onChange={(e) => { setFaqAnswer(e.target.value); clearFieldError('faqAnswer'); }} />
+          <Field label="Pertanyaan" required error={errors.faqQuestion?.message}>
+            <Input placeholder="Contoh: Bagaimana cara mengikuti persekutuan doa?" {...field('faqQuestion')} />
+          </Field>
+          <Field label="Jawaban" required error={errors.faqAnswer?.message}>
+            <Textarea rows={4} placeholder="Penjelasan yang jelas dan membantu" {...field('faqAnswer')} />
           </Field>
           <div className="flex justify-end"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Tambah pertanyaan</Button></div>
         </form>
