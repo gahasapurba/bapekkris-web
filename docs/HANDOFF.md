@@ -2,7 +2,7 @@
 
 Dokumen ini merangkum status perombakan website Bapekkris Bank Mandiri agar pekerjaan bisa dilanjutkan dari perangkat lain (atau sesi AI baru) tanpa kehilangan konteks. **Tidak berisi rahasia** — kredensial disimpan terpisah di luar repo.
 
-Terakhir diperbarui: 27 November 2026 (Fase 1–4 selesai; uji Master_Test_Checklist berjalan — Web Light selesai, 3 matriks tersisa).
+Terakhir diperbarui: 27 November 2026 (Fase 1–4 selesai; Master_Test_Checklist 4 matriks selesai + audit visual).
 
 ---
 
@@ -178,12 +178,16 @@ Terakhir diperbarui: 27 November 2026 (Fase 1–4 selesai; uji Master_Test_Check
 - Pembentukan data tersimpan: `admin/contentItems.ts` (`toDevotionItem`, `toSongItem`) dipakai form tambah dan dialog edit.
 - Diuji Playwright 15/15 (validasi, draf antar tab, terbit, edit, filter tema & kategori publik, hapus) + cek isi database; data uji dihapus.
 
-### Uji Master_Test_Checklist (187 kasus × 4 matriks) — berjalan
-- **Web Light: selesai.** 182 PASS (termasuk #187 build/push), 3 N/A (#145, #173, #174), #161 manual. Dua FAIL terakhir sudah ditelusuri (27 Nov 2026):
-  - #109 navigasi bulan kalender: **bug aplikasi** — kalender membuka bulan acara pertama menurut urutan data, bukan acara terdekat menurut tanggal (mis. Natal 20 Des tampil sebelum Ibadah Jumat 27 Nov). Diperbaiki di `EventCalendarView.tsx` (acara diurutkan menurut tanggal). Skrip juga diperbaiki: "Bulan ini" = bulan berjalan WIB.
-  - #160 sinkron slide ke proyektor: sinkron sebenarnya berfungsi; pencarian "KJ 1" di Multimedia Live menampilkan KJ 100 (1 bait) di urutan pertama sehingga "Berikutnya" nonaktif. Pencarian lagu kini diurutkan: nomor persis ("KJ 1" = "KJ 001") > awalan nomor > judul > lirik (`rankSongs` di `lib/searchUtils.ts`, ada unit test).
-- **Belum:** matriks Web Dark, Mobile Light, Mobile Dark; berkas `Master_Test_Checklist_Bapekkris_Mandiri_Hasil.xlsx`; daftar uji manual (kamera QR, install PWA, share WhatsApp, Safari iPhone, proyektor nyata).
-- Runner Playwright (`checklist/cycle.sh`, `reset.sh`, `admin_session.sh`, `e2e/cl/*.mjs`, `build_xlsx.py`) **tidak ada di Git**; paket terbarunya ada di QuickDrop. Ia bekerja pada DB produksi yang sengaja dikosongkan (persetujuan pengguna 26 Nov: "Ya, sengaja — biarkan kosong") dan mengembalikannya ke nol setiap siklus; butuh `SUPABASE_MGMT_TOKEN` di `.env` dan berkas asli `Master_Test_Checklist_Bapekkris_Mandiri.xlsx` di root repo (tidak di Git).
+### Uji Master_Test_Checklist (187 kasus × 4 matriks) — ✅ SELESAI (27 Nov 2026)
+- Hasil akhir per matriks (setelah perbaikan): Web Light, Web Dark, Mobile Light, Mobile Dark masing-masing **183 PASS, 0 FAIL, 3 N/A** (#145, #173, #174) + #161 manual + #187 build/push. Mobile memakai profil **iPhone 17 Pro Max** (440×763, retina 3×); web 1366×900.
+- Bug aplikasi yang ditemukan & diperbaiki di putaran ini:
+  - #109 kalender membuka bulan acara pertama menurut urutan data → kini acara terdekat menurut tanggal (`EventCalendarView.tsx`).
+  - #160 pencarian "KJ 1" menampilkan KJ 100 lebih dulu → `rankSongs` (nomor persis > awalan nomor > judul > lirik).
+  - #107 daftar acara & agenda Beranda memakai urutan data (agenda bisa menampilkan acara lampau) → `sortEventsForList` (`utils/eventOrder.ts`).
+- **Audit visual** (baru): 136 tampilan (semua halaman publik + 16 tab admin + statistik) × 4 konfigurasi, tangkapan layar penuh + cek DOM (keluar kotak/layar, teks terpotong, kontrol bertumpuk, scroll horizontal, target sentuh). Temuan & perbaikan: kartu divisi Organisasi keluar layar di ponsel; kalender ponsel hanya 4 kolom (kini 7 kolom + titik acara); ringkasan admin memenuhi layar ponsel (kini dilipat); tabel Role (badge terlipat, tombol hapus terdorong keluar; kolom sekunder disembunyikan di ponsel). Sisa catatan otomatis = positif palsu (teks `sr-only`, tombol overlay foto/password, isi daftar ber-scroll).
+- Berkas hasil: `Master_Test_Checklist_Bapekkris_Mandiri_Hasil_Mandiri.xlsx` (root repo, diabaikan Git; juga di QuickDrop). Dibuat tanpa workbook asli (asli tertinggal di laptop kantor); bila berkas asli ditaruh di root repo, `build_xlsx.py` menggabungkan hasil ke format aslinya.
+- Uji manual di perangkat nyata masih perlu: kamera QR, install PWA, share WhatsApp, Safari iPhone, proyektor nyata.
+- Runner (`checklist/cycle.sh`, `visual.sh`, `reset.sh`, `admin_session.sh`, `e2e/cl/*.mjs`, `build_xlsx.py`, `montage.py`) **tidak ada di Git**; paket terbarunya (path laptop rumah, mode `HEADED=1`, `DEVICE=`) ada di QuickDrop. Ia bekerja pada DB produksi yang sengaja dikosongkan (persetujuan 26 Nov) dan mengembalikannya ke nol setiap siklus; butuh `SUPABASE_MGMT_TOKEN` di `.env`.
 
 ### Temuan kecil yang masih terbuka
 - Tidak ada.
