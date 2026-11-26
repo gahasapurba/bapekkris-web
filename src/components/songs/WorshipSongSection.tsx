@@ -17,7 +17,7 @@ const OPTIONAL_CATEGORIES = new Set<string>(['Lagu Rohani Lainnya']);
 export default function WorshipSongSection(props: WorshipSongSectionProps) {
   const {
     selectedCategory, setSelectedCategory, searchQuery, setSearchQuery, copied, displayLimit, setDisplayLimit, songList,
-    activeSong, setActiveSongId, categoryCounts, filteredSongs, handleCopySong, handleSendToProjector, onSendToEasyWorship
+    activeSong, setActiveSongId, categoryCounts, filteredSongs, handleCopySong, handleSendToProjector, onSendToEasyWorship, isHymnalLoading
   } = useWorshipSongs(props);
   const song = activeSong;
 
@@ -26,7 +26,9 @@ export default function WorshipSongSection(props: WorshipSongSectionProps) {
       <PageHeader eyebrow="Kidung & Lagu" title="Bernyanyi bagi Tuhan"
         description="Kidung Jemaat, PKJ, NKB, dan Praise & Worship dengan lirik lengkap, nada dasar, dan penayangan ke proyektor EasyWorship." />
 
-      {songList.length === 0 ? (
+      {isHymnalLoading ? (
+        <p role="status" className="py-16 text-center text-[0.95rem] text-muted">Memuat kidung…</p>
+      ) : songList.length === 0 ? (
         <EmptyState icon={<Music size={22} />} title="Belum ada lagu" description="Daftar pujian akan tampil di sini setelah ditambahkan pengurus." />
       ) : (
         <>

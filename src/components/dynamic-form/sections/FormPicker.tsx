@@ -13,7 +13,7 @@ export default function FormPicker() {
   };
   return (
     <section aria-label="Pilih formulir" className="mx-auto w-full max-w-[1000px]">
-      <p className="mb-4 text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-dim">Pilih formulir yang ingin diisi</p>
+      <h2 className="mb-4 font-sans text-[0.78rem] font-semibold uppercase tracking-[0.14em] text-dim">Pilih formulir yang ingin diisi</h2>
       <ul className="grid list-none gap-4 md:grid-cols-2 lg:grid-cols-3">
         {activeForms.map((f) => {
           const selected = f.id === selectedFormId;

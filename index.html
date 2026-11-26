@@ -25,9 +25,6 @@
     <script type="application/ld+json">
       {"@context":"https://schema.org","@type":"Organization","name":"Bapekkris Bank Mandiri","alternateName":"Badan Pembinaan Kerohanian Kristen PT Bank Mandiri (Persero) Tbk.","url":"https://bapekkris-mandiri.netlify.app/","logo":"https://bapekkris-mandiri.netlify.app/assets/mandiri-club-bapekkris-original.png"}
     </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       // Same rule as src/lib/theme.ts, applied before first paint to avoid a theme flash.
       (function () {
@@ -41,7 +38,27 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static first paint (same header as SiteHeader); React replaces it once the app has loaded -->
+      <div class="flex min-h-screen flex-col" aria-hidden="true">
+        <header class="sticky top-0 z-[100] border-b border-line bg-[var(--bg-nav)]">
+          <div class="mx-auto flex h-[72px] max-w-[1260px] items-center gap-4 px-4 md:px-6">
+            <span class="flex min-w-0 items-center gap-3">
+              <img id="boot-logo" src="/assets/web/bapekkris-logo.webp" width="228" height="112" alt="" class="h-9 w-auto shrink-0 object-contain" />
+              <span class="h-7 w-px shrink-0 bg-line"></span>
+              <span class="flex min-w-0 flex-col leading-none">
+                <span class="font-display text-[1.15rem] font-semibold tracking-[-0.01em] text-ink">Bapekkris</span>
+                <span class="mt-1 text-[0.66rem] font-semibold uppercase tracking-[0.18em] text-dim">Bank Mandiri</span>
+              </span>
+            </span>
+          </div>
+        </header>
+      </div>
+      <script>
+        if (document.documentElement.getAttribute('data-theme') === 'dark') document.getElementById('boot-logo').src = '/assets/web/bapekkris-logo-white.webp';
+      </script>
+    </div>
+    <noscript>Website Bapekkris Bank Mandiri memerlukan JavaScript. Aktifkan JavaScript di browser Anda.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

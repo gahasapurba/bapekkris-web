@@ -7,3 +7,9 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Self-hosted fonts never change under the same name (a new version gets a new file name)
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

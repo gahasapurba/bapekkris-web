@@ -7,6 +7,8 @@ import { useModalBehavior } from '../../ui/useModalBehavior';
 import { setPageIntent } from '../../lib/pageIntent';
 import { fold, matchBibleBooks, songNumberKey, type Song } from '../../lib/searchUtils';
 import { NAV_ITEMS } from './navItems';
+import { useQueryClient } from '@tanstack/react-query';
+import { loadHymnal } from '../../lib/songLibrary';
 
 const PAGE_EXTRAS = [{ id: 'form', label: 'Registrasi & Formulir' }];
 
@@ -29,14 +31,16 @@ export default function QuickSearch({ query, onQueryChange, onClose, onNavigate,
   const q = query.trim().toLowerCase();
   const { members, events, forms, galleries, brandAssets, devotions, worshipSongs, faqs, tenureRoles, divisions } = data;
 
-  // The hymnal (1,000+ songs, ~750 KB) loads only once the visitor starts typing.
-  const [hymnal, setHymnal] = useState<Song[] | null>(null);
+  // The hymnal (1,000+ songs) loads only once the visitor starts typing.
+  const queryClient = useQueryClient();
+  const [hymnal, setHymnal] = useState<Song[] | null>(() => queryClient.getQueryData<Song[]>(['hymnal']) || null);
   useEffect(() => {
     if (q.length < 2 || hymnal) return;
     let cancelled = false;
-    import('../../data/hymnalLibrary').then((mod) => { if (!cancelled) setHymnal(mod.BIBLE_SONG_COLLECTION as Song[]); }).catch(() => {});
+    queryClient.fetchQuery({ queryKey: ['hymnal'], queryFn: loadHymnal, staleTime: Infinity })
+      .then((list) => { if (!cancelled) setHymnal(list); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [q, hymnal]);
+  }, [q, hymnal, queryClient]);
 
   const roleOf = (m: AppItem) => {
     const r = tenureRoles.find((x) => x.id === m.roleId) || tenureRoles.find((x) => String(x?.name || '').toLowerCase().trim() === String(m?.role || '').toLowerCase().trim());

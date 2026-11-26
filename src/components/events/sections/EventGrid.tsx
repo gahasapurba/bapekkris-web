@@ -57,6 +57,7 @@ export default function EventGrid() {
 
   return (
     <div className="flex flex-col gap-8">
+      <h2 className="sr-only">Daftar acara</h2>
       <ul className="grid list-none gap-5 md:grid-cols-2">
         {visible.map((evt) => {
           const division = divisions.find((d) => d.id === evt.divisionId);

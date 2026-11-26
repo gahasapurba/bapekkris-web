@@ -1,0 +1,46 @@
+/* Self-hosted variable fonts (latin subset, SIL OFL 1.1, see public/fonts/LICENSE.txt), precached
+   by the service worker so they also work offline. They are not preloaded: on slow connections that
+   would delay the stylesheet. Instead the fallback faces resize Arial / Georgia to the brand fonts'
+   metrics, so the swap moves almost nothing (values measured from the font files). */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/inter-latin-wght.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/fraunces-latin-opsz.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/fraunces-latin-opsz-italic.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Inter Fallback';
+  src: local('Arial'), local('ArialMT');
+  size-adjust: 109.56%;
+  ascent-override: 88.42%;
+  descent-override: 22.02%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Fraunces Fallback';
+  src: local('Georgia');
+  size-adjust: 119.79%;
+  ascent-override: 81.64%;
+  descent-override: 21.29%;
+  line-gap-override: 0%;
+}

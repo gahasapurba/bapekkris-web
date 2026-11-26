@@ -8,21 +8,41 @@ import HomePage from './components/home/HomePage';
 import SiteFooter from './components/layout/SiteFooter';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Badge, Card } from './ui';
+import { BAPEKKRIS_LOGO, logoFor } from './lib/brandLogos';
 import AdminOnlyNotice from './components/AdminOnlyNotice';
 
-const OrganizationSection = lazy(() => import('./components/organization/OrganizationSection'));
-const ProgramSection = lazy(() => import('./components/events/ProgramSection'));
-const GallerySection = lazy(() => import('./components/gallery/GallerySection'));
-const DailyDevotionSection = lazy(() => import('./components/devotions/DailyDevotionSection'));
-const BibleSection = lazy(() => import('./components/bible/BibleSection'));
-const WorshipSongSection = lazy(() => import('./components/songs/WorshipSongSection'));
-const PrayerWallSection = lazy(() => import('./components/prayer/PrayerWallSection'));
-const EasyWorshipSection = lazy(() => import('./components/easyworship/EasyWorshipSection'));
-const ProjectorDisplay = lazy(() => import('./components/ProjectorDisplay'));
-const AssetKitSection = lazy(() => import('./components/assets/AssetKitSection'));
-const DynamicFormSection = lazy(() => import('./components/dynamic-form/DynamicFormSection'));
-const AdminPortal = lazy(() => import('./components/AdminPortal'));
-const EventRegistrationStats = lazy(() => import('./components/registration-stats/EventRegistrationStats'));
+// Page chunks, keyed by tab. The chunk of the tab in the address bar starts downloading right away
+// (below), in parallel with the app bundle, instead of after the first render.
+const PAGE_LOADERS = {
+  organisasi: () => import('./components/organization/OrganizationSection'),
+  event: () => import('./components/events/ProgramSection'),
+  galeri: () => import('./components/gallery/GallerySection'),
+  renungan: () => import('./components/devotions/DailyDevotionSection'),
+  alkitab: () => import('./components/bible/BibleSection'),
+  lagu: () => import('./components/songs/WorshipSongSection'),
+  doa: () => import('./components/prayer/PrayerWallSection'),
+  easyworship: () => import('./components/easyworship/EasyWorshipSection'),
+  projector: () => import('./components/ProjectorDisplay'),
+  assets: () => import('./components/assets/AssetKitSection'),
+  form: () => import('./components/dynamic-form/DynamicFormSection'),
+  admin: () => import('./components/AdminPortal'),
+  'event-stats': () => import('./components/registration-stats/EventRegistrationStats')
+};
+PAGE_LOADERS[parseLocationRoute(window.location).tab as keyof typeof PAGE_LOADERS]?.().catch(() => { /* retried by React.lazy on render */ });
+
+const OrganizationSection = lazy(PAGE_LOADERS.organisasi);
+const ProgramSection = lazy(PAGE_LOADERS.event);
+const GallerySection = lazy(PAGE_LOADERS.galeri);
+const DailyDevotionSection = lazy(PAGE_LOADERS.renungan);
+const BibleSection = lazy(PAGE_LOADERS.alkitab);
+const WorshipSongSection = lazy(PAGE_LOADERS.lagu);
+const PrayerWallSection = lazy(PAGE_LOADERS.doa);
+const EasyWorshipSection = lazy(PAGE_LOADERS.easyworship);
+const ProjectorDisplay = lazy(PAGE_LOADERS.projector);
+const AssetKitSection = lazy(PAGE_LOADERS.assets);
+const DynamicFormSection = lazy(PAGE_LOADERS.form);
+const AdminPortal = lazy(PAGE_LOADERS.admin);
+const EventRegistrationStats = lazy(PAGE_LOADERS['event-stats']);
 
 import {
   supabase,
@@ -1012,12 +1032,13 @@ function MainApp() {
       )}
 
       {/* Main Content Area */}
-      <main className="relative flex-1">
+      {/* At least a screen tall, so the footer starts below the fold and content loading in does not push it */}
+      <main className="relative min-h-screen flex-1">
         {effectiveTab === 'all-hidden' && (
           <div className="mx-auto mb-20 mt-14 w-full max-w-[620px] px-4">
             <Card padding="lg" className="flex flex-col items-center gap-4 text-center">
-              <img src={isDark ? '/assets/mandiri-club-bapekkris-white.png' : '/assets/mandiri-club-bapekkris-original.png'} alt="Bapekkris Bank Mandiri"
-                className="h-13 w-auto object-contain" onError={(e) => { e.currentTarget.src = '/assets/mandiri-club-bapekkris-original.png'; }} />
+              <img {...logoFor(BAPEKKRIS_LOGO, isDark)} alt="Bapekkris Bank Mandiri"
+                className="h-13 w-auto object-contain"/>
               <span className="flex size-15 items-center justify-center rounded-full bg-gold-tint text-gold-ink"><EyeOff size={28} aria-hidden="true" /></span>
               <Badge tone="gold">Halaman sedang disembunyikan</Badge>
               <h2 className="font-display text-[1.65rem] font-semibold text-ink">Seluruh halaman sedang disembunyikan</h2>

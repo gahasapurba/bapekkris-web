@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { createRoomCode, useProjectorRoomOperator, type ProjectorLiveState } from '../../lib/projectorSync';
-import { mergeSongLibrary } from '../../lib/songLibrary';
+import { mergeSongLibrary, useHymnal } from '../../lib/songLibrary';
 import type { ProjectorItem, Song } from '../../types/content';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../../data/bibleBooks';
@@ -63,7 +63,8 @@ function parseTextToSlides(rawText: string = ''): Slide[] {
 /** Service order, slides, live projector state and controls; markup in EasyWorshipSection.tsx. */
 export function useEasyWorship({ songs = [], initialItem }: UseEasyWorshipProps) {
   // Built-in hymnal with the custom songs from Supabase
-  const availableSongs = useMemo(() => mergeSongLibrary(songs), [songs]);
+  const { data: hymnal } = useHymnal();
+  const availableSongs = useMemo(() => mergeSongLibrary(hymnal || [], songs), [hymnal, songs]);
 
   // Service order, kept in this browser
   const [playlist, setPlaylist] = useState<PlaylistItem[]>(() => {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { usePageIntent } from '../../lib/pageIntent';
 import { soundFx } from '../../utils/audio';
-import { mergeSongLibrary } from '../../lib/songLibrary';
+import { mergeSongLibrary, useHymnal } from '../../lib/songLibrary';
 import type { SendToProjector, Song } from '../../types/content';
 
 interface UseWorshipSongsProps {
@@ -22,7 +22,8 @@ export function useWorshipSongs({ songs = [], onSendToEasyWorship }: UseWorshipS
   }, [searchQuery, selectedCategory]);
 
   // Built-in hymnal (KJ, PKJ, NKB, PW) with the custom songs from Supabase
-  const songList = useMemo(() => mergeSongLibrary(songs), [songs]);
+  const { data: hymnal, isPending: isHymnalLoading } = useHymnal();
+  const songList = useMemo(() => mergeSongLibrary(hymnal || [], songs), [hymnal, songs]);
 
   const [activeSongId, setActiveSongId] = useState<string | null>(songList[0]?.id || null);
   // Opened from site search: show the hymn with no filter hiding it
@@ -88,6 +89,7 @@ export function useWorshipSongs({ songs = [], onSendToEasyWorship }: UseWorshipS
     displayLimit,
     setDisplayLimit,
     songList,
+    isHymnalLoading,
     activeSong,
     setActiveSongId,
     categoryCounts,

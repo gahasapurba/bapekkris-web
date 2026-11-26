@@ -101,8 +101,9 @@ export default function SiteHeader({
   return (
     <header className="sticky top-0 z-[100] border-b border-line bg-[var(--bg-nav)]">
       <div className="mx-auto flex h-[72px] max-w-[1260px] items-center gap-4 px-4 md:px-6">
-        <button type="button" onClick={goHome} aria-label="Bapekkris Bank Mandiri — ke Beranda" className="min-w-0 shrink cursor-pointer border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-navy-ink">
+        <button type="button" onClick={goHome} className="min-w-0 shrink cursor-pointer border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-navy-ink">
           <BrandMark isDark={isDark} />
+          <span className="sr-only">, ke beranda</span>
         </button>
 
         <nav aria-label="Navigasi utama" className="ml-4 hidden items-center gap-5 xl:flex">

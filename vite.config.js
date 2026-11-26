@@ -38,10 +38,10 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,webp,woff2}'],
         // Admin-only and on-demand chunks (PDF export, QR scanner, admin portal, stats) are not needed
         // offline; they load from the network when used, keeping the first install light.
-        globIgnores: ['**/exportPdf-*.js', '**/index.es-*.js', '**/purify.es-*.js', '**/jsQR-*.js', '**/AdminPortal-*.js', '**/EventRegistrationStats-*.js', 'assets/Danantara/**', 'assets/Mandiri/**'],
+        globIgnores: ['**/exportPdf-*.js', '**/index.es-*.js', '**/purify.es-*.js', '**/jsQR-*.js', '**/AdminPortal-*.js', '**/EventRegistrationStats-*.js', 'assets/Danantara/**', 'assets/Mandiri/**', 'assets/mandiri-logo.png', 'assets/danantara-logo.png'],
         // The hymnal (~770 KB) and PDF export (~600 KB) chunks are large but must work offline too.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: '/index.html',
@@ -67,11 +67,6 @@ export default defineConfig({
             options: { cacheName: 'alkitab-en', expiration: { maxEntries: 200, maxAgeSeconds: 365 * 24 * 3600 } }
           },
           {
-            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\//,
-            handler: 'CacheFirst',
-            options: { cacheName: 'fonts', expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 3600 }, cacheableResponse: { statuses: [0, 200] } }
-          },
-          {
             urlPattern: /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'media', expiration: { maxEntries: 150, maxAgeSeconds: 30 * 24 * 3600 }, cacheableResponse: { statuses: [0, 200] } }
@@ -93,10 +88,15 @@ export default defineConfig({
     chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-icons': ['lucide-react']
+        // Long-lived vendor chunks (cached across deploys); matched by path so subpath imports such as
+        // react-dom/client land in the same chunk.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (/node_modules\/(react|react-dom|scheduler|react-router)\//.test(id)) return 'vendor-react';
+          if (id.includes('node_modules/@tanstack/')) return 'vendor-query';
+          if (id.includes('node_modules/@supabase/')) return 'vendor-supabase';
+          if (id.includes('node_modules/lucide-react/')) return 'vendor-icons';
+          return undefined;
         }
       }
     }

@@ -1,5 +1,6 @@
 import { BrandMark } from './BrandMark';
 import { NAV_ITEMS, isPageShown, type PageVisibility } from './navItems';
+import { DANANTARA_LOGO, MANDIRI_LOGO, logoFor } from '../../lib/brandLogos';
 
 interface SiteFooterProps {
   theme: 'light' | 'dark';
@@ -37,10 +38,8 @@ export default function SiteFooter({ theme, pageVisibility = {}, setCurrentTab }
         <div>
           <p className="mb-4 text-[0.74rem] font-semibold uppercase tracking-[0.14em] text-dim">Bagian dari</p>
           <div className="flex flex-wrap items-center gap-6">
-            <img src={isDark ? '/assets/Mandiri/04-Mandiri White Color Alternative Logo.png' : '/assets/mandiri-logo.png'} alt="Bank Mandiri" className="h-6 w-auto object-contain"
-              onError={(e) => { e.currentTarget.src = '/assets/mandiri-logo.png'; }} />
-            <img src={isDark ? '/assets/Danantara/negative-danantara-indonesia-horizontal-logo.png' : '/assets/danantara-logo.png'} alt="Danantara Indonesia" className="h-[22px] w-auto object-contain"
-              onError={(e) => { e.currentTarget.src = '/assets/danantara-logo.png'; }} />
+            <img {...logoFor(MANDIRI_LOGO, isDark)} alt="Bank Mandiri" loading="lazy" className="h-6 w-auto object-contain" />
+            <img {...logoFor(DANANTARA_LOGO, isDark)} alt="Danantara Indonesia" loading="lazy" className="h-[22px] w-auto object-contain" />
           </div>
         </div>
       </div>

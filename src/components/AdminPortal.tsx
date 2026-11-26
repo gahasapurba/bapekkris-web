@@ -1,5 +1,6 @@
 import { ArrowLeft, ClipboardList, Download, Globe, KeyRound, Lock, LogOut, RefreshCw, Upload } from 'lucide-react';
 import AdminAccountsPanel from '../admin/AdminAccountsPanel';
+import { BAPEKKRIS_LOGO, logoFor } from '../lib/brandLogos';
 import { AdminPortalContext } from '../admin/AdminPortalContext';
 import AdminLoginForm from '../admin/AdminLoginForm';
 import ChangePasswordDialog from '../admin/ChangePasswordDialog';
@@ -42,8 +43,8 @@ export default function AdminPortal(props: AdminPortalProps) {
         <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="mb-5">Kembali ke beranda</Button>
         <div className="rounded-xl border border-line bg-surface p-7 shadow-card md:p-9">
           <div className="mb-6 text-center">
-            <img src={isDark ? '/assets/mandiri-club-bapekkris-white.png' : '/assets/mandiri-club-bapekkris-original.png'} alt="Bapekkris Bank Mandiri"
-              className="mx-auto mb-5 block h-12 w-auto object-contain" onError={(e) => { e.currentTarget.src = '/assets/mandiri-club-bapekkris-original.png'; }} />
+            <img {...logoFor(BAPEKKRIS_LOGO, isDark)} alt="Bapekkris Bank Mandiri"
+              className="mx-auto mb-5 block h-12 w-auto object-contain"/>
             <span className="mx-auto mb-3 flex size-11 items-center justify-center rounded-full bg-gold-tint text-gold-ink"><Lock size={20} aria-hidden="true" /></span>
             <h1 className="font-display text-[1.6rem] font-semibold text-ink">Portal pengurus</h1>
             <p className="mt-1 text-[0.9rem] text-muted">Masuk untuk mengelola acara, pengurus, renungan, lagu, dan konten lainnya.</p>
