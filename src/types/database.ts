@@ -707,6 +707,42 @@ export type Database = {
         }
         Relationships: []
       }
+      prayer_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_anonymous: boolean
+          is_private: boolean
+          prayed_count: number
+          request: string
+          requester_name: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean
+          is_private?: boolean
+          prayed_count?: number
+          request: string
+          requester_name?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_anonymous?: boolean
+          is_private?: boolean
+          prayed_count?: number
+          request?: string
+          requester_name?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       sub_divisions: {
         Row: {
           code: string | null
@@ -975,6 +1011,17 @@ export type Database = {
           id: string
         }[]
       }
+      get_prayer_wall: {
+        Args: never
+        Returns: {
+          created_at: string
+          display_name: string
+          id: string
+          prayed_count: number
+          request: string
+          status: string
+        }[]
+      }
       get_registration_counts: {
         Args: never
         Returns: {
@@ -990,9 +1037,19 @@ export type Database = {
       }
       is_super_admin: { Args: never; Returns: boolean }
       parse_wib_deadline: { Args: { p_deadline: string }; Returns: string }
+      pray_for_request: { Args: { p_id: string }; Returns: number }
       revoke_admin_role: { Args: { p_user_id: string }; Returns: undefined }
       submit_form: {
         Args: { p_data: Json; p_files?: Json; p_form_id: string }
+        Returns: string
+      }
+      submit_prayer_request: {
+        Args: {
+          p_is_anonymous?: boolean
+          p_is_private?: boolean
+          p_name: string
+          p_request: string
+        }
         Returns: string
       }
       submit_rsvp: {

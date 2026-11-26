@@ -82,3 +82,7 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- INSERT INTO public.admin_profiles (user_id, email, role, division_id)
 -- SELECT id, lower(email), 'super_admin', NULL FROM auth.users WHERE lower(email) = lower('EMAIL_ADMIN')
 -- ON CONFLICT (user_id) DO NOTHING;
+
+-- 21. prayer_requests (Pokok Doa). Permohonan dikirim jemaat lewat RPC submit_prayer_request.
+-- INSERT INTO public.prayer_requests (id, requester_name, request, is_anonymous, is_private, status)
+-- VALUES (...) ON CONFLICT (id) DO NOTHING;

@@ -15,6 +15,7 @@ const GallerySection = lazy(() => import('./components/gallery/GallerySection'))
 const DailyDevotionSection = lazy(() => import('./components/devotions/DailyDevotionSection'));
 const BibleSection = lazy(() => import('./components/bible/BibleSection'));
 const WorshipSongSection = lazy(() => import('./components/songs/WorshipSongSection'));
+const PrayerWallSection = lazy(() => import('./components/prayer/PrayerWallSection'));
 const EasyWorshipSection = lazy(() => import('./components/easyworship/EasyWorshipSection'));
 const ProjectorDisplay = lazy(() => import('./components/ProjectorDisplay'));
 const AssetKitSection = lazy(() => import('./components/assets/AssetKitSection'));
@@ -71,7 +72,7 @@ import { deriveRegistrationCounts } from './utils/quotaUtils';
 const EMPTY_ROLE_QUOTAS = {};
 
 // Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
-const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'easyworship', 'organisasi', 'galeri', 'assets', 'event-stats', 'admin']);
+const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'organisasi', 'galeri', 'assets', 'event-stats', 'admin']);
 
 // Parents are restored before children so foreign keys always resolve.
 const RESTORE_ORDER = [
@@ -137,6 +138,7 @@ const DEFAULT_PAGE_VISIBILITY = {
   renungan: true,
   alkitab: true,
   lagu: true,
+  doa: true,
   easyworship: true,
   galeri: true,
   assets: true,
@@ -1239,6 +1241,8 @@ function MainApp() {
               onSendToEasyWorship={handleSendToEasyWorship}
             />
           )}
+
+          {effectiveTab === 'doa' && <PrayerWallSection />}
 
           {effectiveTab === 'easyworship' && (
             <EasyWorshipSection

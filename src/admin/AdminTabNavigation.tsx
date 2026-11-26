@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, CalendarDays, ClipboardList, Download, Eye, FileCheck2, Image as ImageIcon, Layers, LogOut, MessageSquare, MonitorPlay, Music, Shield, ShieldCheck, Users } from 'lucide-react';
+import { BookOpen, Calendar, CalendarDays, ClipboardList, Download, Eye, FileCheck2, HandHeart, Image as ImageIcon, Layers, LogOut, MessageSquare, MonitorPlay, Music, Shield, ShieldCheck, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, cn } from '../ui';
 import { DIVISION_ADMIN_TABS } from './adminConstants';
@@ -31,7 +31,8 @@ export default function AdminTabNavigation({ onLogout }: { onLogout?: () => void
       { id: 'easyworship', label: 'Jadwal EasyWorship', icon: MonitorPlay, count: easyWorshipSchedules.length },
       { id: 'gallery', label: 'Galeri kegiatan', icon: ImageIcon, count: galleries.length },
       { id: 'assets', label: 'Aset & logo', icon: Download, count: brandAssets.length },
-      { id: 'faqs', label: 'Panduan & FAQ', icon: MessageSquare, count: faqs.length }
+      { id: 'faqs', label: 'Panduan & FAQ', icon: MessageSquare, count: faqs.length },
+      { id: 'prayers', label: 'Pokok doa', icon: HandHeart }
     ] },
     { title: 'Pengaturan', items: [
       { id: 'visibility', label: 'Visibilitas menu', icon: Eye },

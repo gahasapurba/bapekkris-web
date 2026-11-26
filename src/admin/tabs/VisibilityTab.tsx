@@ -14,6 +14,7 @@ export default function VisibilityTab() {
     { id: 'renungan', label: 'Renungan', desc: 'Renungan harian, doa, dan kartu bagikan ke WhatsApp.' },
     { id: 'alkitab', label: 'Alkitab', desc: 'Alkitab Terjemahan Baru 66 kitab, terhubung ke Multimedia Live.' },
     { id: 'lagu', label: 'Kidung & lagu', desc: 'Katalog KJ, PKJ, NKB, dan lagu pujian.' },
+    { id: 'doa', label: 'Pokok doa', desc: 'Permohonan doa jemaat dan dinding doa yang sudah ditinjau.' },
     { id: 'easyworship', label: 'Multimedia Live', desc: 'Konsol operator tayangan ibadah dan layar proyektor.' },
     { id: 'galeri', label: 'Galeri', desc: 'Album foto kegiatan dan tautan folder dokumentasi.' },
     { id: 'assets', label: 'Aset & logo', desc: 'Logo resmi, template, dan dokumen panduan untuk diunduh.' },

@@ -118,7 +118,7 @@ export default function CheckInView() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
-      <Card className="flex flex-col gap-5 p-5 md:p-6">
+      <Card padding="none" className="flex flex-col gap-5 p-5 md:p-6">
         <div>
           <h2 className="font-display text-[1.35rem] font-semibold text-ink">Check-in peserta</h2>
           <p className="mt-1 text-[0.9rem] text-muted">Pindai QR dari halaman pendaftaran peserta, atau ketik ID pendaftaran / NIP.</p>
@@ -150,7 +150,7 @@ export default function CheckInView() {
         {resultCard}
       </Card>
 
-      <Card className="flex min-w-0 flex-col gap-4 p-5 md:p-6">
+      <Card padding="none" className="flex min-w-0 flex-col gap-4 p-5 md:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-[1.2rem] font-semibold text-ink">Daftar kehadiran</h2>
           <Button size="sm" variant="secondary" icon={<Download size={14} aria-hidden="true" />} onClick={exportAttendance} disabled={attendees.length === 0}>Ekspor CSV</Button>

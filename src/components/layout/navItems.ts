@@ -1,4 +1,4 @@
-import { BookOpen, BookmarkCheck, Building2, Calendar, Download, Image as ImageIcon, MonitorPlay, Music, Users, type LucideIcon } from 'lucide-react';
+import { BookOpen, BookmarkCheck, Building2, Calendar, Download, HandHeart, Image as ImageIcon, MonitorPlay, Music, Users, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   id: string;
@@ -16,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'galeri', label: 'Galeri', icon: ImageIcon },
   { id: 'alkitab', label: 'Alkitab', icon: BookmarkCheck, secondary: true },
   { id: 'lagu', label: 'Kidung & Lagu', icon: Music, secondary: true },
+  { id: 'doa', label: 'Pokok Doa', icon: HandHeart, secondary: true },
   { id: 'easyworship', label: 'Multimedia Live', icon: MonitorPlay, secondary: true },
   { id: 'assets', label: 'Aset & Logo', icon: Download, secondary: true }
 ];

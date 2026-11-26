@@ -59,6 +59,7 @@ import SongsTab from '../admin/tabs/SongsTab';
 import EasyWorshipTab from '../admin/tabs/EasyWorshipTab';
 import AssetsTab from '../admin/tabs/AssetsTab';
 import FaqsTab from '../admin/tabs/FaqsTab';
+import PrayerRequestsTab from '../admin/tabs/PrayerRequestsTab';
 import EditItemModal from '../admin/modals/EditItemModal';
 import DeleteConfirmModal from '../admin/modals/DeleteConfirmModal';
 import ExecutiveReportModal from '../admin/modals/ExecutiveReportModal';
@@ -2001,6 +2002,8 @@ export default function AdminPortal({
       )}
 
       {activeTab === 'visibility' && <VisibilityTab />}
+
+      {activeTab === 'prayers' && isSuperAdmin && <PrayerRequestsTab />}
 
       {/* TAB CONTENT: PENGURUS & ANGGOTA (DENGAN NOMOR WA OPSIONAL) */}
       {activeTab === 'members' && <MembersTab />}

@@ -36,6 +36,7 @@ const TAB_META: Record<string, { title: string; description: string }> = {
   renungan: { title: 'Renungan Harian', description: 'Renungan harian dengan bacaan Alkitab, refleksi, dan doa dari Bapekkris Bank Mandiri.' },
   alkitab: { title: 'Alkitab Online', description: 'Baca Alkitab Terjemahan Baru (TB), KJV, dan WEB per kitab dan pasal, lalu bagikan atau tayangkan ayat.' },
   lagu: { title: 'Kidung Jemaat & Lagu Rohani', description: 'Lirik Kidung Jemaat, Pelengkap Kidung Jemaat, Nyanyikanlah Kidung Baru, dan lagu pujian penyembahan.' },
+  doa: { title: 'Pokok Doa', description: 'Kirim permohonan doa dan turut mendoakan pokok doa jemaat Bapekkris Bank Mandiri.' },
   easyworship: { title: 'Multimedia Live', description: 'Konsol presentasi ibadah untuk menayangkan lirik, ayat, dan pengumuman ke proyektor.' },
   galeri: { title: 'Galeri Kegiatan', description: 'Dokumentasi foto kegiatan persekutuan dan pelayanan Bapekkris Bank Mandiri.' },
   assets: { title: 'Aset & Logo Resmi', description: 'Logo, templat, dan materi resmi Bapekkris Bank Mandiri untuk diunduh.' },

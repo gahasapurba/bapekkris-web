@@ -37,7 +37,7 @@ const tables = [
   'tenures', 'tenure_roles', 'divisions', 'sub_divisions',
   'members', 'events', 'galleries', 'forms', 'submissions',
   'lucky_draws', 'event_rsvps', 'faqs', 'brand_assets', 'page_settings',
-  'daily_devotions', 'worship_songs', 'easy_worship_schedules', 'admin_profiles'
+  'daily_devotions', 'worship_songs', 'easy_worship_schedules', 'admin_profiles', 'prayer_requests'
 ];
 
 async function downloadFile(url, destPath) {

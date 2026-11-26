@@ -823,6 +823,7 @@ const RPC_ERROR_MESSAGES: Record<string, string> = {
   FORM_DUPLICATE: 'Data pada field unik sudah pernah didaftarkan sebelumnya.',
   EVENT_NOT_FOUND: 'Acara tidak ditemukan atau tidak dibuka untuk umum.',
   RSVP_QUOTA_FULL: 'Maaf, kuota kehadiran acara ini telah terpenuhi.',
+  PRAYER_NOT_FOUND: 'Pokok doa ini sudah tidak ditampilkan.',
   INVALID_PAYLOAD: 'Data yang dikirim tidak valid.',
   PAYLOAD_TOO_LARGE: 'Data yang dikirim terlalu besar.',
   NOT_AUTHORIZED: 'Anda tidak memiliki izin untuk tindakan ini.',
