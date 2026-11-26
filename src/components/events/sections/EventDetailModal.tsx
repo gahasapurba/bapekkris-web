@@ -156,7 +156,7 @@ export default function EventDetailModal() {
           <Button size="sm" variant="secondary" icon={copiedEventId === evt.id ? <Check size={15} aria-hidden="true" /> : <Link2 size={15} aria-hidden="true" />} onClick={() => handleCopyEventLink(evt)}>
             {copiedEventId === evt.id ? 'Tautan tersalin' : 'Salin tautan'}
           </Button>
-          <Button size="sm" variant="secondary" icon={<CalendarPlus size={15} aria-hidden="true" />} onClick={() => downloadIcs(evt)}>Simpan ke kalender (.ics)</Button>
+          <Button size="sm" variant="secondary" icon={<CalendarPlus size={15} aria-hidden="true" />} onClick={() => downloadIcs(evt)} title="File kalender (.ics) dengan pengingat H-1 dan 1 jam sebelum acara">Ingatkan saya (.ics)</Button>
           <ButtonLink size="sm" variant="secondary" icon={<ExternalLink size={15} aria-hidden="true" />} href={googleCalendarUrl(evt)} target="_blank" rel="noopener noreferrer">Google Calendar</ButtonLink>
         </div>
 
