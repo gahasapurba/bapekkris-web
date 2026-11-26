@@ -128,15 +128,12 @@ export interface AdminPortalContextValue {
   handleDeleteFormClick: AnyFn;
   handleDeleteGalleryClick: AnyFn;
   handleDeleteMemberClick: AnyFn;
-  handleDeleteRole: AnyFn;
   handleDeleteTenureClick: AnyFn;
   handleMemberPhotoUpload: AnyFn;
   handleMoveField: AnyFn;
   handlePhotoUpload: AnyFn;
-  handleSaveRole: AnyFn;
   isAdminMobileMenuOpen: any;
   isDark: any;
-  isOrgRolesOpen: any;
   isSuperAdmin: any;
   isUploadingMedia: any;
   luckyDraws: AppItem[];
@@ -227,9 +224,7 @@ export interface AdminPortalContextValue {
   removeUploadedPhoto: AnyFn;
   renderFieldError: AnyFn;
   reportTenureId: any;
-  roleDeleteWarning: any;
   roleLevelFilter: any;
-  roleModal: any;
   rolePage: any;
   roleQuotas: any;
   roleSearchQuery: any;
@@ -237,7 +232,6 @@ export interface AdminPortalContextValue {
   rsvpEventFilter: any;
   rsvpModeFilter: any;
   rsvpSearchQuery: any;
-  selectedOrgTenureId: any;
   selectedSubFilter: any;
   setActiveTab: AnyFn;
   setAdminEventPage: Dispatch<SetStateAction<any>>;
@@ -326,7 +320,6 @@ export interface AdminPortalContextValue {
   setGallerySearchQuery: Dispatch<SetStateAction<any>>;
   setGalleryTenureFilter: Dispatch<SetStateAction<any>>;
   setIsAdminMobileMenuOpen: Dispatch<SetStateAction<any>>;
-  setIsOrgRolesOpen: Dispatch<SetStateAction<any>>;
   setIsUploadingMedia: Dispatch<SetStateAction<any>>;
   setMemCategory: Dispatch<SetStateAction<any>>;
   setMemDivisionId: Dispatch<SetStateAction<any>>;
@@ -375,16 +368,13 @@ export interface AdminPortalContextValue {
   setPendingMemberPhoto: Dispatch<SetStateAction<any>>;
   setPendingPreviewFile: Dispatch<SetStateAction<any>>;
   setReportTenureId: Dispatch<SetStateAction<any>>;
-  setRoleDeleteWarning: Dispatch<SetStateAction<any>>;
   setRoleLevelFilter: Dispatch<SetStateAction<any>>;
-  setRoleModal: Dispatch<SetStateAction<any>>;
   setRolePage: Dispatch<SetStateAction<any>>;
   setRoleSearchQuery: Dispatch<SetStateAction<any>>;
   setRoleTenureFilter: Dispatch<SetStateAction<any>>;
   setRsvpEventFilter: Dispatch<SetStateAction<any>>;
   setRsvpModeFilter: Dispatch<SetStateAction<any>>;
   setRsvpSearchQuery: Dispatch<SetStateAction<any>>;
-  setSelectedOrgTenureId: Dispatch<SetStateAction<any>>;
   setSelectedSubFilter: Dispatch<SetStateAction<any>>;
   setShowExecutiveReportModal: Dispatch<SetStateAction<any>>;
   setSongAuthor: Dispatch<SetStateAction<any>>;

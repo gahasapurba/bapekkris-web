@@ -22,7 +22,6 @@ import {
 import {
   getTenureRoles,
   getCategoryFromLevel,
-  canDeleteRole,
   validateMemberQuota
 } from '../utils/memberQuotaUtils';
 
@@ -150,7 +149,6 @@ export default function AdminPortal({
   },
   onUpdateAnnouncementBar,
   roleQuotas = {},
-  onUpdateRoleQuotas,
   tenureRoles = [],
   onAddTenureRole,
   onUpdateTenureRole,
@@ -219,17 +217,6 @@ export default function AdminPortal({
       setActiveTab(DIVISION_ADMIN_TABS[0]);
     }
   }, [isAuthenticated, isSuperAdmin, activeTab]);
-
-  // Dynamic Role & Organization Management States
-  const [isOrgRolesOpen, setIsOrgRolesOpen] = useState(false);
-  const [selectedOrgTenureId, setSelectedOrgTenureId] = useState(activeTenure?.id || tenures[0]?.id || '');
-  const [roleModal, setRoleModal] = useState({
-    isOpen: false,
-    mode: 'add',
-    tenureId: '',
-    role: { id: '', name: '', level: 5, max: 0, requiresDivision: true, requiresSubDivision: false }
-  });
-  const [roleDeleteWarning, setRoleDeleteWarning] = useState(null);
 
   // Search & Filter states for Members in Admin
   // Form & filter states for Role Management
@@ -847,94 +834,6 @@ export default function AdminPortal({
     setMemImage('');
     setPendingMemberPhoto(null);
     showToast(`Pengurus/Anggota "${savedName}" berhasil ditambahkan & tersimpan di Cloud!`);
-  };
-
-  const handleSaveRole = async (targetTenureId, roleData) => {
-    if (!roleData.name || !roleData.name.trim()) {
-      showToast('Nama Jabatan/Role wajib diisi', 'error');
-      return;
-    }
-    const currentRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
-    let updatedRoles;
-    if (roleData.id) {
-      updatedRoles = currentRoles.map(r => r.id === roleData.id ? {
-        ...r,
-        name: roleData.name.trim(),
-        level: Number(roleData.level ?? 5),
-        max: Number(roleData.max ?? 0),
-        requiresDivision: Boolean(roleData.requiresDivision),
-        requiresSubDivision: Boolean(roleData.requiresDivision && roleData.requiresSubDivision)
-      } : r);
-    } else {
-      const newRole = {
-        id: `role-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-        tenureId: targetTenureId,
-        name: roleData.name.trim(),
-        level: Number(roleData.level ?? 5),
-        max: Number(roleData.max ?? 0),
-        maxQuota: Number(roleData.max ?? 0),
-        requiresDivision: Boolean(roleData.requiresDivision),
-        requiresSubDivision: Boolean(roleData.requiresDivision && roleData.requiresSubDivision)
-      };
-      updatedRoles = [...currentRoles, newRole];
-      if (onAddTenureRole) onAddTenureRole(newRole);
-    }
-
-    if (roleData.id && onUpdateTenureRole) {
-      onUpdateTenureRole({
-        ...roleData,
-        tenureId: targetTenureId,
-        name: roleData.name.trim(),
-        level: Number(roleData.level ?? 5),
-        max: Number(roleData.max ?? 0),
-        maxQuota: Number(roleData.max ?? 0),
-        requiresDivision: Boolean(roleData.requiresDivision),
-        requiresSubDivision: Boolean(roleData.requiresDivision && roleData.requiresSubDivision)
-      });
-    }
-
-    const updatedQuotas = {
-      ...(roleQuotas || {}),
-      [targetTenureId]: {
-        ...(roleQuotas?.[targetTenureId] || {}),
-        roles: updatedRoles
-      }
-    };
-
-    if (onUpdateRoleQuotas) {
-      await onUpdateRoleQuotas(updatedQuotas);
-    }
-    setRoleModal({ isOpen: false, mode: 'add', tenureId: '', role: { id: '', name: '', level: 5, max: 0, requiresDivision: true, requiresSubDivision: false } });
-    showToast(`Role "${roleData.name}" berhasil disimpan untuk periode kepengurusan ini!`);
-  };
-
-  const handleDeleteRole = async (targetTenureId, roleToDelete) => {
-    const check = canDeleteRole(roleToDelete, targetTenureId, members);
-    if (!check.canDelete) {
-      setRoleDeleteWarning({
-        role: roleToDelete,
-        tenureId: targetTenureId,
-        reason: check.reason,
-        members: check.members
-      });
-      return;
-    }
-    const currentRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
-    const updatedRoles = currentRoles.filter(r => r.id !== roleToDelete.id);
-    const updatedQuotas = {
-      ...(roleQuotas || {}),
-      [targetTenureId]: {
-        ...(roleQuotas?.[targetTenureId] || {}),
-        roles: updatedRoles
-      }
-    };
-    if (onDeleteTenureRole) {
-      onDeleteTenureRole(roleToDelete.id);
-    }
-    if (onUpdateRoleQuotas) {
-      await onUpdateRoleQuotas(updatedQuotas);
-    }
-    showToast(`Role "${roleToDelete.name}" berhasil dihapus.`);
   };
 
   const handleCreateDivision = (e) => {
@@ -1593,15 +1492,12 @@ export default function AdminPortal({
     handleDeleteFormClick,
     handleDeleteGalleryClick,
     handleDeleteMemberClick,
-    handleDeleteRole,
     handleDeleteTenureClick,
     handleMemberPhotoUpload,
     handleMoveField,
     handlePhotoUpload,
-    handleSaveRole,
     isAdminMobileMenuOpen,
     isDark,
-    isOrgRolesOpen,
     isSuperAdmin,
     isUploadingMedia,
     luckyDraws,
@@ -1692,9 +1588,7 @@ export default function AdminPortal({
     removeUploadedPhoto,
     renderFieldError,
     reportTenureId,
-    roleDeleteWarning,
     roleLevelFilter,
-    roleModal,
     rolePage,
     roleQuotas,
     roleSearchQuery,
@@ -1702,7 +1596,6 @@ export default function AdminPortal({
     rsvpEventFilter,
     rsvpModeFilter,
     rsvpSearchQuery,
-    selectedOrgTenureId,
     selectedSubFilter,
     setActiveTab,
     setAdminEventPage,
@@ -1791,7 +1684,6 @@ export default function AdminPortal({
     setGallerySearchQuery,
     setGalleryTenureFilter,
     setIsAdminMobileMenuOpen,
-    setIsOrgRolesOpen,
     setIsUploadingMedia,
     setMemCategory,
     setMemDivisionId,
@@ -1840,16 +1732,13 @@ export default function AdminPortal({
     setPendingMemberPhoto,
     setPendingPreviewFile,
     setReportTenureId,
-    setRoleDeleteWarning,
     setRoleLevelFilter,
-    setRoleModal,
     setRolePage,
     setRoleSearchQuery,
     setRoleTenureFilter,
     setRsvpEventFilter,
     setRsvpModeFilter,
     setRsvpSearchQuery,
-    setSelectedOrgTenureId,
     setSelectedSubFilter,
     setShowExecutiveReportModal,
     setSongAuthor,

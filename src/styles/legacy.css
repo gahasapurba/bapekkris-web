@@ -85,12 +85,6 @@ select option {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.glass-panel-hover:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-card-hover);
-  box-shadow: 0 2px 4px rgba(14, 26, 43, 0.05), 0 18px 36px -18px rgba(14, 26, 43, 0.28);
-}
-
 /* Container */
 .container {
   width: 100%;
@@ -100,33 +94,8 @@ select option {
 }
 
 /* Modals & Dialogs */
-.modal-container {
-  max-height: 90vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-[data-theme='light'] .modal-container,
-[data-theme='light'] .modal-structured {
-  background: var(--bg-card) !important;
-  color: var(--text-main) !important;
-}
-
-[data-theme='light'] .glass-panel.modal-container {
-  background: var(--bg-card) !important;
-  border: 1px solid var(--border-card) !important;
-  box-shadow: 0 24px 60px -20px rgba(14, 26, 43, 0.35) !important;
-}
 
 /* Admin Tabs Sticky Navigation */
-.admin-desktop-tabs {
-  position: sticky !important;
-  top: 74px !important;
-  z-index: 95 !important;
-}
 
 /* Badges */
 .badge-gold {
@@ -142,46 +111,6 @@ select option {
   gap: 6px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.badge-cyan {
-  background: rgba(43, 93, 151, 0.08);
-  color: var(--neon-cyan);
-  border: 1px solid rgba(43, 93, 151, 0.24);
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.76rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-[data-theme='dark'] .badge-cyan {
-  background: rgba(122, 167, 221, 0.12);
-  border-color: rgba(122, 167, 221, 0.3);
-}
-
-.badge-red {
-  background: rgba(180, 35, 64, 0.08);
-  color: var(--neon-rose);
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
-  font-size: 0.76rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-[data-theme='dark'] .badge-red {
-  background: rgba(244, 63, 94, 0.18);
-  border-color: rgba(244, 63, 94, 0.4);
 }
 
 /* Animations */
@@ -205,10 +134,6 @@ select option {
   }
 }
 
-.pulse-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
-}
-
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -228,113 +153,10 @@ select option {
    ========================================================== */
 
 /* 1. Header & Navigation Mobile Queries */
-.desktop-nav {
-  display: flex !important;
-}
-
-.mobile-burger-btn,
-.mobile-hamburger {
-  display: none;
-}
-
-.navbar-brand-logo {
-  height: 34px;
-  max-width: 120px;
-  object-fit: contain;
-  flex-shrink: 0;
-  transition: height 0.2s ease, max-width 0.2s ease;
-}
-
-.navbar-brand-title {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.96rem;
-  color: var(--text-main);
-  line-height: 1.15;
-  white-space: nowrap;
-}
-
-.navbar-brand-subtitle {
-  display: block;
-}
-
-.navbar-brand-divider {
-  display: block;
-}
-
-.navbar-search-label {
-  display: inline;
-}
 
 /* LAPTOP COMPACT & STANDARD (<= 1380px) */
-@media screen and (max-width: 1380px) {
-  .navbar-brand-subtitle {
-    display: none !important;
-  }
-  .navbar-brand-divider {
-    display: none !important;
-  }
-  .navbar-search-label {
-    display: none !important;
-  }
-  .navbar-brand-logo {
-    height: 30px !important;
-    max-width: 100px !important;
-  }
-}
-
-.navbar-right-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  margin-left: 14px;
-}
-
-.navbar-tenure-select {
-  appearance: none;
-  border: 1px solid var(--border-card);
-  color: var(--text-main);
-  padding: 6px 24px 6px 10px;
-  border-radius: var(--radius-full);
-  font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-  max-width: 105px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* 2. Responsive Layout Utilities */
-.worship-grid-layout,
-.worship-grid,
-.devotion-grid-layout,
-.bible-grid-layout,
-.easyworship-3col-layout {
-  display: grid;
-  width: 100%;
-}
-
-@media screen and (max-width: 1024px) {
-  .easyworship-3col-layout {
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
-  }
-}
-
-@media screen and (max-width: 900px) {
-  .bible-grid-layout {
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-  }
-  .bible-book-col {
-    max-height: 260px !important;
-  }
-  .bible-chapter-col {
-    max-height: 190px !important;
-  }
-}
 
 .mobile-two-col {
   display: grid;
@@ -342,58 +164,8 @@ select option {
   gap: 16px;
 }
 
-.mobile-stack-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 32px;
-}
-
-.worship-grid {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr;
-  gap: 36px;
-  align-items: start;
-}
-
-.gallery-window {
-  position: relative;
-  height: 460px;
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  background: #040914;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.org-level-2 {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  position: relative;
-  z-index: 10;
-}
-
-.org-level-3 {
-  display: grid;
-  grid-template-columns: repeat(var(--level3-cols, 2), minmax(0, 1fr));
-  gap: 24px;
-}
-
-.org-pimpro-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--pimpro-cols, 4), minmax(0, 1fr));
-  gap: 16px;
-  width: 100%;
-  position: relative;
-  z-index: 10;
-}
-
 @media (max-width: 960px) {
-  .org-pimpro-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 16px;
-  }
+  
   .org-tree-line {
     display: none !important;
   }
@@ -403,56 +175,7 @@ select option {
   display: block;
 }
 
-.admin-form-two-col {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-  gap: 16px;
-  width: 100%;
-  max-width: 100%;
-}
-
-.admin-form-two-col > * {
-  min-width: 0;
-  max-width: 100%;
-}
-
 /* TABLET & MOBILE NAVBAR BREAKPOINT (< 1280px): the desktop bar needs about 1,250px */
-@media screen and (max-width: 1279px) {
-  .desktop-nav {
-    display: none !important;
-  }
-
-  .mobile-burger-btn,
-  .mobile-hamburger {
-    display: flex !important;
-    width: 36px !important;
-    height: 36px !important;
-    flex-shrink: 0 !important;
-    align-items: center !important;
-    justify-content: center !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  .navbar-right-actions {
-    margin-left: auto !important;
-    gap: 6px !important;
-    flex-shrink: 0 !important;
-  }
-
-  .navbar-search-btn {
-    width: 36px !important;
-    height: 36px !important;
-    padding: 0 !important;
-    justify-content: center !important;
-    flex-shrink: 0 !important;
-  }
-
-  .navbar-search-btn .navbar-search-text,
-  .navbar-search-btn kbd {
-    display: none !important;
-  }
-}
 
 /* TABLET & MOBILE CONTENT (< 868px) */
 @media screen and (max-width: 868px) {
@@ -460,34 +183,16 @@ select option {
     display: none !important;
   }
 
-  .navbar-brand-logo {
-    height: 28px !important;
-    max-width: 85px !important;
-  }
+  
 
-  .navbar-brand-title {
-    font-size: 0.88rem !important;
-  }
+  
 
-  .navbar-tenure-select {
-    padding: 5px 20px 5px 8px !important;
-    font-size: 0.72rem !important;
-    max-width: 80px !important;
-  }
+  
 
   /* Admin Tabs Responsive Toggle */
-  .admin-desktop-tabs {
-    display: none !important;
-  }
+  
 
-  .admin-mobile-tabs-bar {
-    display: flex !important;
-    position: sticky !important;
-    top: 64px !important;
-    z-index: 95 !important;
-    backdrop-filter: blur(14px) !important;
-    -webkit-backdrop-filter: blur(14px) !important;
-  }
+  
 
   header .container {
     height: 64px !important;
@@ -498,31 +203,15 @@ select option {
     padding-right: 14px !important;
   }
 
-  .worship-grid,
-  .worship-grid-layout,
-  .devotion-grid-layout {
-    grid-template-columns: 1fr !important;
-    gap: 24px !important;
-  }
+  
 
-  .worship-list-col {
-    max-height: 290px !important;
-  }
+  
 
-  .mobile-stack-grid {
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
-  }
+  
 
-  .gallery-window {
-    height: 300px !important;
-  }
+  
 
-  .admin-form-two-col {
-    grid-template-columns: minmax(0, 1fr) !important;
-    width: 100% !important;
-    max-width: 100% !important;
-  }
+  
 
   .admin-form-two-col > *,
   .mobile-two-col > * {
@@ -558,30 +247,18 @@ select option {
   }
 
   /* Organigram Hierarchy tree adjustments on mobile */
-  .org-section-wrapper {
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-    gap: 36px !important;
-  }
+  
 
   .org-tree-wrapper {
     gap: 24px !important;
     padding: 0 6px !important;
   }
 
-  .org-level-2, .org-level-3 {
-    grid-template-columns: 1fr !important;
-    gap: 20px !important;
-  }
+  
 
-  .org-pimpro-grid {
-    grid-template-columns: 1fr !important;
-    gap: 28px !important;
-  }
+  
 
-  .org-anggota-wrapper {
-    margin-top: 14px !important;
-  }
+  
 
   .org-anggota-box {
     padding: 16px !important;
@@ -603,9 +280,7 @@ select option {
   }
 
   /* Carousel size adjust for vertical mobile screens */
-  .gallery-window {
-    height: 240px !important;
-  }
+  
 
   /* Typography adjustments to prevent awkward wraps */
   h1 {
@@ -646,55 +321,27 @@ select option {
   }
 
   /* Make sure modal fits screen comfortably with margins without being cut off */
-  .modal-container {
-    max-height: 90vh !important;
-    max-width: calc(100vw - 24px) !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain !important;
-    -webkit-overflow-scrolling: touch !important;
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
-  }
-  .modal-container:not(.modal-structured) {
-    padding: 20px 16px !important;
-  }
+  
+  
 }
 
 /* EXTRA SMALL MOBILE (< 480px) */
 @media screen and (max-width: 480px) {
-  .modal-container {
-    max-height: 92vh !important;
-    max-width: calc(100vw - 16px) !important;
-    padding: 16px 12px !important;
-  }
+  
   .container {
     padding-left: max(10px, env(safe-area-inset-left)) !important;
     padding-right: max(10px, env(safe-area-inset-right)) !important;
   }
 
-  .navbar-brand-logo {
-    height: 24px !important;
-    max-width: 65px !important;
-  }
+  
 
-  .navbar-brand-title {
-    font-size: 0.8rem !important;
-  }
+  
 
-  .navbar-right-actions {
-    gap: 4px !important;
-  }
+  
 
-  .navbar-tenure-select {
-    padding: 4px 18px 4px 6px !important;
-    font-size: 0.68rem !important;
-    max-width: 72px !important;
-  }
+  
 
-  .mobile-burger-btn {
-    width: 32px !important;
-    height: 32px !important;
-  }
+  
 }
 
 @media print {
@@ -823,60 +470,4 @@ select option {
 }
 
 /* Event Page Mobile Responsive Filter & Switch Layout */
-@media screen and (max-width: 768px) {
-  .event-filter-bar {
-    padding: 14px 12px !important;
-    gap: 12px !important;
-  }
-
-  .event-filter-left,
-  .event-filter-right {
-    width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-  }
-
-  .event-filter-divider {
-    display: none !important;
-  }
-
-  .event-pill-group {
-    width: 100% !important;
-    display: flex !important;
-    box-sizing: border-box !important;
-  }
-
-  .event-pill-group button {
-    flex: 1 1 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 8px 10px !important;
-    font-size: 0.78rem !important;
-    white-space: nowrap !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .event-select-wrapper {
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    box-sizing: border-box !important;
-  }
-
-  .event-select-wrapper select {
-    flex: 1 1 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
-}
-
-
 

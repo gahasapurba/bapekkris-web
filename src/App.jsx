@@ -318,7 +318,6 @@ function MainApp() {
     ? pageSettings.roleQuotas
     : EMPTY_ROLE_QUOTAS;
   const setAnnouncementBar = (bar) => updatePageSettings({ announcementBar: bar });
-  const setRoleQuotas = (quotas) => updatePageSettings({ roleQuotas: quotas });
 
   const [easyWorshipInitialItem, setEasyWorshipInitialItem] = useState(null);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
@@ -430,11 +429,6 @@ function MainApp() {
       ...prev,
       [kind]: { ...prev[kind], [id]: (prev[kind][id] || 0) + 1 }
     }));
-  };
-
-  const handleUpdateRoleQuotas = async (updatedQuotas) => {
-    setRoleQuotas(updatedQuotas);
-    await persist('Kuota jabatan', () => saveSetting('roleQuotas', updatedQuotas));
   };
 
   const setPageVisibility = (nextVis) => {
@@ -1286,7 +1280,6 @@ function MainApp() {
                 tenures={tenures}
                 activeTenure={activeTenure}
                 roleQuotas={roleQuotas}
-                onUpdateRoleQuotas={handleUpdateRoleQuotas}
                 tenureRoles={tenureRoles}
                 onAddTenureRole={handleAddTenureRole}
                 onUpdateTenureRole={handleUpdateTenureRole}
