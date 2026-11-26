@@ -4,94 +4,81 @@ import { getPublicBaseUrl } from '../../utils/urlUtils';
 import { Badge, Button, Field, Input, Pagination, Select, Textarea } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, CheckField, FilterSelect, IconButton, ListToolbar, SearchBox, Switch } from '../AdminUi';
 import { useAdminPortal } from '../AdminPortalContext';
-import { collectFieldErrors, formCreateSchema } from '../validation/schemas';
+import { formCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type NewForm = {
+  newFormTitle: string; newFormTenureId: string; newFormCategory: string; newFormDeadline: string; newFormSubtitle: string; newFormNotes: string;
+  newFormRequiresTracking: boolean; newFormShowAnnouncement: boolean; newFormIsLimited: boolean; newFormMaxQuota: string;
+  newFormIsEventConnected: boolean; newFormEventId: string; newFormIsLuckyDraw: boolean;
+};
 
 const PER_PAGE = 6;
 const CATEGORIES: [string, string][] = [['Kegiatan & Event', 'Kegiatan & acara'], ['Rekrutmen', 'Rekrutmen & oprec'], ['Ibadah & Kebaktian', 'Ibadah & kebaktian'], ['Pelayanan & Diakonia', 'Pelayanan & diakonia'], ['Workshop & Sharing', 'Workshop & sharing']];
+// Default questions of a new form: with status tracking (NIP as search index) or a simple form.
+const TRACKED_FIELDS = [
+  { id: 'f-name', label: 'Nama Lengkap (HCM Mandiri)', type: 'text', placeholder: 'Nama sesuai HCM Mandiri', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-nip', label: 'NIP / Employee ID', type: 'text', placeholder: 'NIP Mandiri', required: true, isSearchIndex: true, isUnique: true },
+  { id: 'f-unit', label: 'Unit Kerja / Cabang Mandiri', type: 'text', placeholder: 'Contoh: Corporate Banking / Region IV', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-wa', label: 'Nomor WhatsApp Aktif', type: 'text', placeholder: '0812xxxxxxxx', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-divisi', label: 'Pilihan Divisi Terkait', type: 'select', source: 'divisions', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-notes', label: 'Catatan / Alasan Pendaftaran', type: 'textarea', placeholder: 'Tuliskan keterangan pendukung...', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-doc', label: 'Upload Dokumen / File Pendukung', type: 'file', accept: '.pdf,.png,.jpg,.jpeg', required: false, isSearchIndex: false, isUnique: false }
+];
+const SIMPLE_FIELDS = [
+  { id: 'f-name', label: 'Nama Lengkap', type: 'text', placeholder: 'Nama pengisi formulir', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-unit', label: 'Unit Kerja / Cabang Mandiri', type: 'text', placeholder: 'Contoh: Corporate Banking / Region IV', required: true, isSearchIndex: false, isUnique: false },
+  { id: 'f-feedback', label: 'Tanggapan / Isian', type: 'textarea', placeholder: 'Tuliskan respon Anda...', required: true, isSearchIndex: false, isUnique: false }
+];
 const connectedFormOf = (forms: any[], eventId: string) => (forms || []).find((f) => (f.isEventConnected || f.fields?.[0]?._isEventConnected) && String(f.eventId || f.fields?.[0]?._eventId) === String(eventId));
 
 export default function FormsTab() {
   const {
-    activeTenure, clearFieldError, divisions, events, formCatFilter, formErrors, formPage, formSearchQuery, formStatusFilter, formTenureFilter, forms,
-    handleDeleteFormClick, newFormCategory, newFormDeadline, newFormEventId, newFormIsEventConnected, newFormIsLimited, newFormIsLuckyDraw,
-    newFormMaxQuota, newFormNotes, newFormRequiresTracking, newFormShowAnnouncement, newFormSubtitle, newFormTenureId, newFormTitle, onAddForm,
-    onUpdateForm, setEditingItem, setFormCatFilter, setFormErrors, setFormPage, setFormSearchQuery, setFormStatusFilter, setFormTenureFilter,
-    setNewFormCategory, setNewFormDeadline, setNewFormEventId, setNewFormIsEventConnected, setNewFormIsLimited, setNewFormIsLuckyDraw,
-    setNewFormMaxQuota, setNewFormNotes, setNewFormRequiresTracking, setNewFormShowAnnouncement, setNewFormSubtitle, setNewFormTenureId,
-    setNewFormTitle, showToast, submissions, tenures
+    activeTenure, divisions, events, formCatFilter, formPage, formSearchQuery, formStatusFilter, formTenureFilter, forms,
+    handleDeleteFormClick, onAddForm, onUpdateForm, setEditingItem, setFormCatFilter, setFormPage, setFormSearchQuery, setFormStatusFilter,
+    setFormTenureFilter, showToast, submissions, tenures
   } = useAdminPortal();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs = collectFieldErrors(formCreateSchema, {
-      newFormTitle,
-      newFormCategory,
-      newFormDeadline,
-      newFormIsLimited,
-      newFormMaxQuota,
-      newFormIsEventConnected,
-      newFormEventId
-    });
-    if (Object.keys(errs).length > 0) {
-      setFormErrors((prev: any) => ({ ...prev, ...errs }));
-      showToast('Mohon lengkapi kolom wajib pada form Formulir', 'error');
-      return;
-    }
+  const { handleSubmit, field, watch, setValue, clearErrors, resetToDefaults, formState: { errors } } = useAdminDraftForm<NewForm>('form', formCreateSchema, {
+    newFormTitle: '', newFormTenureId: activeTenure?.id || '', newFormCategory: '', newFormDeadline: '', newFormSubtitle: '', newFormNotes: '',
+    newFormRequiresTracking: true, newFormShowAnnouncement: false, newFormIsLimited: false, newFormMaxQuota: '',
+    newFormIsEventConnected: false, newFormEventId: '', newFormIsLuckyDraw: false
+  });
+  const nf = watch();
 
-    const targetTenureId = newFormTenureId || activeTenure?.id || tenures[0]?.id || '';
+  const createForm = handleSubmit((f) => {
+    const targetTenureId = f.newFormTenureId || activeTenure?.id || tenures[0]?.id || '';
     const newForm = {
       id: 'form-' + Date.now(),
-      title: newFormTitle.trim(),
-      subtitle: newFormSubtitle.trim() || '',
-      notes: newFormNotes.trim() || '',
-      category: newFormCategory.trim(),
-      deadline: toDatetimeLocalSecondsValue(newFormDeadline.trim()) || '',
+      title: f.newFormTitle.trim(),
+      subtitle: f.newFormSubtitle.trim(),
+      notes: f.newFormNotes.trim(),
+      category: f.newFormCategory.trim(),
+      deadline: toDatetimeLocalSecondsValue(f.newFormDeadline.trim()) || '',
       isOpen: true,
-      requiresTracking: newFormRequiresTracking,
-      showAnnouncement: newFormShowAnnouncement,
-      isLimited: newFormIsLimited,
-      maxQuota: newFormIsLimited ? (parseInt(newFormMaxQuota, 10) || 0) : 0,
+      requiresTracking: f.newFormRequiresTracking,
+      showAnnouncement: f.newFormShowAnnouncement,
+      isLimited: f.newFormIsLimited,
+      maxQuota: f.newFormIsLimited ? (parseInt(f.newFormMaxQuota, 10) || 0) : 0,
       tenureId: targetTenureId,
-      isEventConnected: newFormIsEventConnected,
-      eventId: newFormIsEventConnected ? newFormEventId : '',
-      isLuckyDraw: newFormIsEventConnected && newFormIsLuckyDraw,
-      fields: newFormRequiresTracking ? [
-        { id: 'f-name', label: 'Nama Lengkap (HCM Mandiri)', type: 'text', placeholder: 'Nama sesuai HCM Mandiri', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-nip', label: 'NIP / Employee ID', type: 'text', placeholder: 'NIP Mandiri', required: true, isSearchIndex: true, isUnique: true },
-        { id: 'f-unit', label: 'Unit Kerja / Cabang Mandiri', type: 'text', placeholder: 'Contoh: Corporate Banking / Region IV', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-wa', label: 'Nomor WhatsApp Aktif', type: 'text', placeholder: '0812xxxxxxxx', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-divisi', label: 'Pilihan Divisi Terkait', type: 'select', source: 'divisions', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-notes', label: 'Catatan / Alasan Pendaftaran', type: 'textarea', placeholder: 'Tuliskan keterangan pendukung...', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-doc', label: 'Upload Dokumen / File Pendukung', type: 'file', accept: '.pdf,.png,.jpg,.jpeg', required: false, isSearchIndex: false, isUnique: false }
-      ] : [
-        { id: 'f-name', label: 'Nama Lengkap', type: 'text', placeholder: 'Nama pengisi formulir', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-unit', label: 'Unit Kerja / Cabang Mandiri', type: 'text', placeholder: 'Contoh: Corporate Banking / Region IV', required: true, isSearchIndex: false, isUnique: false },
-        { id: 'f-feedback', label: 'Tanggapan / Isian', type: 'textarea', placeholder: 'Tuliskan respon Anda...', required: true, isSearchIndex: false, isUnique: false }
-      ]
+      isEventConnected: f.newFormIsEventConnected,
+      eventId: f.newFormIsEventConnected ? f.newFormEventId : '',
+      isLuckyDraw: f.newFormIsEventConnected && f.newFormIsLuckyDraw,
+      fields: f.newFormRequiresTracking ? TRACKED_FIELDS : SIMPLE_FIELDS
     };
-
-    if (onAddForm) onAddForm(newForm);
-    setNewFormTitle('');
-    setNewFormSubtitle('');
-    setNewFormNotes('');
-    setNewFormDeadline('');
-    setNewFormCategory('');
-    setNewFormRequiresTracking(true);
-    setNewFormShowAnnouncement(false);
-    setNewFormIsLimited(false);
-    setNewFormMaxQuota('');
-    setNewFormIsEventConnected(false);
-    setNewFormEventId('');
-    setNewFormIsLuckyDraw(false);
+    onAddForm?.(newForm);
+    // The period stays selected for the next form, as before.
+    resetToDefaults();
+    setValue('newFormTenureId', f.newFormTenureId);
     showToast(`Formulir "${newForm.title}" berhasil dibuat & dipublikasikan!`);
-  };
+  }, () => showToast('Mohon lengkapi kolom wajib pada form Formulir', 'error'));
 
-  const formTenure = newFormTenureId || activeTenure?.id || tenures[0]?.id || '';
+  const formTenure = nf.newFormTenureId || activeTenure?.id || tenures[0]?.id || '';
   const eventsForTenure = (events || []).filter((evt: any) => {
     const t = evt.tenureId || divisions.find((d: any) => d.id === evt.divisionId)?.tenureId;
     return !formTenure || !t || t === formTenure;
   });
-  const conflict = newFormEventId ? connectedFormOf(forms, newFormEventId) : null;
+  const conflict = nf.newFormEventId ? connectedFormOf(forms, nf.newFormEventId) : null;
 
   const q = formSearchQuery.trim().toLowerCase();
   const filtered = forms.filter((f: any) => {
@@ -108,60 +95,60 @@ export default function FormsTab() {
   return (
     <AdminPanel title={`Formulir (${forms.length})`} description="Buat formulir pendaftaran, atur batas waktu dan kuota, hubungkan ke acara, dan buka atau tutup formulir di situs.">
       <AdminSubsection title="Buat formulir">
-        <form noValidate onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
-          <Field label="Judul" required error={formErrors.newFormTitle}>
-            <Input placeholder="Contoh: Pendaftaran Retreat 2026" value={newFormTitle} onChange={(e) => { setNewFormTitle(e.target.value); clearFieldError('newFormTitle'); }} />
+        <form noValidate onSubmit={createForm} className="grid gap-4 md:grid-cols-2">
+          <Field label="Judul" required error={errors.newFormTitle?.message}>
+            <Input placeholder="Contoh: Pendaftaran Retreat 2026" {...field('newFormTitle')} />
           </Field>
           <Field label="Periode" required>
             <Select value={formTenure} onChange={(e) => {
               const t = e.target.value;
-              setNewFormTenureId(t);
-              if (newFormEventId) {
-                const ev = (events || []).find((x: any) => x.id === newFormEventId);
+              setValue('newFormTenureId', t);
+              if (nf.newFormEventId) {
+                const ev = (events || []).find((x: any) => x.id === nf.newFormEventId);
                 const evT = ev?.tenureId || divisions.find((d: any) => d.id === ev?.divisionId)?.tenureId;
-                if (evT && evT !== t) { setNewFormEventId(''); showToast('Periode form diubah. Pilihan acara di-reset agar sesuai periode baru.', 'info'); }
+                if (evT && evT !== t) { setValue('newFormEventId', ''); showToast('Periode form diubah. Pilihan acara di-reset agar sesuai periode baru.', 'info'); }
               }
             }}>
               {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || `Kepengurusan ${t.code}`}{t.id === activeTenure?.id ? ' (aktif)' : ''}</option>)}
             </Select>
           </Field>
-          <Field label="Kategori" required error={formErrors.newFormCategory}>
-            <Select value={newFormCategory} onChange={(e) => { setNewFormCategory(e.target.value); clearFieldError('newFormCategory'); }}>
+          <Field label="Kategori" required error={errors.newFormCategory?.message}>
+            <Select {...field('newFormCategory')}>
               <option value="">Pilih kategori</option>
               {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </Select>
           </Field>
-          <Field label="Batas waktu (WIB)" required error={formErrors.newFormDeadline} hint={newFormDeadline ? `Tampil di situs: ${formatDeadlineWib(newFormDeadline)}` : undefined}>
-            <Input type="datetime-local" step={1} value={toDatetimeLocalSecondsValue(newFormDeadline)} onChange={(e) => { setNewFormDeadline(e.target.value); setFormErrors((prev: any) => ({ ...prev, newFormDeadline: undefined })); }} />
+          <Field label="Batas waktu (WIB)" required error={errors.newFormDeadline?.message} hint={nf.newFormDeadline ? `Tampil di situs: ${formatDeadlineWib(nf.newFormDeadline)}` : undefined}>
+            <Input type="datetime-local" step={1} value={toDatetimeLocalSecondsValue(nf.newFormDeadline)} onChange={(e) => { setValue('newFormDeadline', e.target.value); clearErrors('newFormDeadline'); }} />
           </Field>
-          <div className="md:col-span-2"><Field label="Subjudul"><Input placeholder="Tujuan pendaftaran secara singkat" value={newFormSubtitle} onChange={(e) => setNewFormSubtitle(e.target.value)} /></Field></div>
+          <div className="md:col-span-2"><Field label="Subjudul"><Input placeholder="Tujuan pendaftaran secara singkat" {...field('newFormSubtitle')} /></Field></div>
           <div className="md:col-span-2">
             <Field label="Pesan setelah mengirim" hint="Tampil ke pendaftar setelah formulir terkirim, mis. tautan grup WhatsApp. Tautan otomatis bisa diklik.">
-              <Textarea rows={3} value={newFormNotes} onChange={(e) => setNewFormNotes(e.target.value)} />
+              <Textarea rows={3} {...field('newFormNotes')} />
             </Field>
           </div>
 
           <div className="grid gap-3 md:col-span-2 md:grid-cols-2">
-            <CheckField checked={newFormRequiresTracking} onChange={setNewFormRequiresTracking} label="Pendaftar bisa melacak status"
-              description={newFormRequiresTracking ? 'Pendaftar mendapat ID dan bisa memantau status seleksi di situs.' : 'Formulir biasa (survei, absensi) tanpa pelacakan status.'} />
-            <CheckField checked={newFormShowAnnouncement} onChange={setNewFormShowAnnouncement} label="Umumkan peserta yang diterima"
-              description={newFormShowAnnouncement ? 'Daftar pendaftar berstatus Diterima tampil di halaman formulir.' : 'Hasil seleksi tidak dipublikasikan.'} />
+            <CheckField checked={nf.newFormRequiresTracking} onChange={(v) => setValue('newFormRequiresTracking', v)} label="Pendaftar bisa melacak status"
+              description={nf.newFormRequiresTracking ? 'Pendaftar mendapat ID dan bisa memantau status seleksi di situs.' : 'Formulir biasa (survei, absensi) tanpa pelacakan status.'} />
+            <CheckField checked={nf.newFormShowAnnouncement} onChange={(v) => setValue('newFormShowAnnouncement', v)} label="Umumkan peserta yang diterima"
+              description={nf.newFormShowAnnouncement ? 'Daftar pendaftar berstatus Diterima tampil di halaman formulir.' : 'Hasil seleksi tidak dipublikasikan.'} />
             <div className="flex flex-col gap-3">
-              <CheckField checked={newFormIsLimited} onChange={(v) => { setNewFormIsLimited(v); if (!v) { setNewFormMaxQuota(''); clearFieldError('newFormMaxQuota'); } }} label="Batasi kuota"
-                description={newFormIsLimited ? 'Formulir otomatis tertutup saat kuota terpenuhi.' : 'Tanpa batas kuota, hanya dibatasi batas waktu.'} />
-              {newFormIsLimited && (
-                <Field label="Kuota maksimal" required error={formErrors.newFormMaxQuota}>
-                  <Input type="number" min={1} placeholder="Contoh: 100" value={newFormMaxQuota} onChange={(e) => { setNewFormMaxQuota(e.target.value); clearFieldError('newFormMaxQuota'); }} />
+              <CheckField checked={nf.newFormIsLimited} onChange={(v) => { setValue('newFormIsLimited', v); if (!v) { setValue('newFormMaxQuota', ''); clearErrors('newFormMaxQuota'); } }} label="Batasi kuota"
+                description={nf.newFormIsLimited ? 'Formulir otomatis tertutup saat kuota terpenuhi.' : 'Tanpa batas kuota, hanya dibatasi batas waktu.'} />
+              {nf.newFormIsLimited && (
+                <Field label="Kuota maksimal" required error={errors.newFormMaxQuota?.message}>
+                  <Input type="number" min={1} placeholder="Contoh: 100" {...field('newFormMaxQuota')} />
                 </Field>
               )}
             </div>
             <div className="flex flex-col gap-3">
-              <CheckField checked={newFormIsEventConnected} onChange={(v) => { setNewFormIsEventConnected(v); if (!v) { setNewFormEventId(''); clearFieldError('newFormEventId'); } }} label="Hubungkan ke acara"
-                description={newFormIsEventConnected ? 'Menggantikan RSVP standar di acara tersebut; pendaftar masuk ke statistik dan undian acara.' : 'Formulir mandiri.'} />
-              {newFormIsEventConnected && (
+              <CheckField checked={nf.newFormIsEventConnected} onChange={(v) => { setValue('newFormIsEventConnected', v); if (!v) { setValue('newFormEventId', ''); clearErrors('newFormEventId'); } }} label="Hubungkan ke acara"
+                description={nf.newFormIsEventConnected ? 'Menggantikan RSVP standar di acara tersebut; pendaftar masuk ke statistik dan undian acara.' : 'Formulir mandiri.'} />
+              {nf.newFormIsEventConnected && (
                 <>
-                  <Field label="Acara" required error={formErrors.newFormEventId || (eventsForTenure.length === 0 ? 'Belum ada acara di periode ini.' : undefined)}>
-                    <Select value={newFormEventId} disabled={eventsForTenure.length === 0} onChange={(e) => { setNewFormEventId(e.target.value); clearFieldError('newFormEventId'); }}>
+                  <Field label="Acara" required error={errors.newFormEventId?.message || (eventsForTenure.length === 0 ? 'Belum ada acara di periode ini.' : undefined)}>
+                    <Select value={nf.newFormEventId} disabled={eventsForTenure.length === 0} onChange={(e) => { setValue('newFormEventId', e.target.value); clearErrors('newFormEventId'); }}>
                       <option value="">Pilih acara</option>
                       {eventsForTenure.map((evt: any) => {
                         const existing = connectedFormOf(forms, evt.id);
@@ -174,8 +161,8 @@ export default function FormsTab() {
                       Acara ini sedang terhubung ke <strong>“{conflict.title}”</strong>. Menyimpan formulir ini akan memindahkan koneksi ke formulir baru; formulir lama tetap ada beserta datanya.
                     </p>
                   )}
-                  <CheckField checked={newFormIsLuckyDraw} onChange={setNewFormIsLuckyDraw} label="Ada undian doorprize"
-                    description={newFormIsLuckyDraw ? 'Halaman statistik acara menampilkan modul undian.' : 'Hanya statistik pendaftar.'} />
+                  <CheckField checked={nf.newFormIsLuckyDraw} onChange={(v) => setValue('newFormIsLuckyDraw', v)} label="Ada undian doorprize"
+                    description={nf.newFormIsLuckyDraw ? 'Halaman statistik acara menampilkan modul undian.' : 'Hanya statistik pendaftar.'} />
                 </>
               )}
             </div>

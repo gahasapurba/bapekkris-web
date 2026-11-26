@@ -1,10 +1,18 @@
 import { Edit2, MessageCircle, Plus, Trash2, Upload } from 'lucide-react';
-import { LEVEL_OPTIONS, findMatchingRole, getCategoryFromLevel, getTenureRoles } from '../../utils/memberQuotaUtils';
+import { LEVEL_OPTIONS, findMatchingRole, getCategoryFromLevel, getTenureRoles, validateMemberQuota } from '../../utils/memberQuotaUtils';
 import { formatLastUpdatedWib } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FileButton, FilterSelect, IconButton, ListToolbar, SearchBox } from '../AdminUi';
 import { formatWaPhone } from '../adminConstants';
 import { useAdminPortal } from '../AdminPortalContext';
+import { uploadMediaToCloud } from '../../lib/supabase';
+import { memberCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type MemberForm = {
+  memName: string; memWhatsapp: string; memTenureId: string; memRoleId: string; memDivisionId: string; memSubDivisionId: string;
+  memMotto: string; memImage: string; pendingMemberPhoto: File | null;
+};
 
 const PER_PAGE = 12;
 const roleMatches = (m: any, role: any) => {
@@ -17,19 +25,103 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 
 export default function MembersTab() {
   const {
-    activeTenure, adminMemCatFilter, adminMemDivFilter, adminMemPage, adminMemSearch, adminMemTenureFilter, clearFieldError, divisions, formErrors,
-    handleCreateMember, handleDeleteMemberClick, handleMemberPhotoUpload, memDivisionId, memImage, memMotto, memName, memRole, memRoleId,
-    memSubDivisionId, memTenureId, memWhatsapp, members, roleQuotas, setAdminMemCatFilter, setAdminMemDivFilter, setAdminMemPage, setAdminMemSearch,
-    setAdminMemTenureFilter, setEditingItem, setMemCategory, setMemDivisionId, setMemImage, setMemMotto, setMemName, setMemRole, setMemRoleId,
-    setMemSubDivisionId, setMemTenureId, setMemWhatsapp, setPendingMemberPhoto, subDivisions, tenureRoles, tenures
+    activeTenure, adminMemCatFilter, adminMemDivFilter, adminMemPage, adminMemSearch, adminMemTenureFilter, divisions,
+    handleDeleteMemberClick, members, onAddMember, roleQuotas, setAdminMemCatFilter, setAdminMemDivFilter, setAdminMemPage, setAdminMemSearch,
+    setAdminMemTenureFilter, setEditingItem, showToast, subDivisions, tenureRoles, tenures, verifyImageUrl
   } = useAdminPortal();
 
   // --- create form
-  const tenureId = memTenureId || activeTenure?.id || '';
-  const roles = getTenureRoles(tenureId, roleQuotas, tenureRoles);
-  const role = roles.find((r: any) => r.id === memRoleId) || roles.find((r: any) => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) || null;
+  const tenureOf = (id: string) => id || activeTenure?.id || '';
+  const rolesOf = (tid: string) => getTenureRoles(tenureOf(tid), roleQuotas, tenureRoles);
+  const { handleSubmit, field, watch, setValue, setError, clearErrors, resetToDefaults, formState: { errors, isSubmitting } } = useAdminDraftForm<MemberForm>(
+    'member',
+    (v) => {
+      const tid = tenureOf(v.memTenureId);
+      const available = rolesOf(v.memTenureId);
+      return memberCreateSchema({
+        roleCount: available.length,
+        selectedRole: available.find((r: any) => r.id === v.memRoleId) || null,
+        divisionIds: divisions.filter((d: any) => d.tenureId === tid).map((d: any) => d.id),
+        subDivisionIdsOf: (divisionId) => subDivisions.filter((sd: any) => sd.divisionId === divisionId).map((sd: any) => sd.id)
+      });
+    },
+    { memName: '', memWhatsapp: '', memTenureId: activeTenure?.id || '', memRoleId: '', memDivisionId: '', memSubDivisionId: '', memMotto: '', memImage: '', pendingMemberPhoto: null }
+  );
+  const fv = watch();
+  const err = errors as Record<string, { message?: string } | undefined>;
+  const tenureId = tenureOf(fv.memTenureId);
+  const roles = rolesOf(fv.memTenureId);
+  const role = roles.find((r: any) => r.id === fv.memRoleId) || null;
   const divsForTenure = divisions.filter((d: any) => d.tenureId === tenureId);
-  const subsForDiv = subDivisions.filter((sd: any) => sd.divisionId === memDivisionId);
+  const subsForDiv = subDivisions.filter((sd: any) => sd.divisionId === fv.memDivisionId);
+
+  const pickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setValue('pendingMemberPhoto', file);
+    setValue('memImage', URL.createObjectURL(file));
+    clearErrors('memImage');
+    showToast(`Foto "${file.name}" dipilih (akan diunggah saat Anda klik Tambah Personel)`);
+  };
+
+  const createMember = handleSubmit(async (f) => {
+    const selectedRole = role;
+    const needsDivision = Boolean(selectedRole?.requiresDivision);
+    const needsSub = needsDivision && Boolean(selectedRole?.requiresSubDivision);
+    // Role quotas depend on the current members, so they are checked here rather than in the schema
+    const quota = validateMemberQuota(
+      { tenureId, roleId: selectedRole?.id, role: selectedRole?.name, divisionId: needsDivision ? f.memDivisionId : undefined, subDivisionId: needsSub ? f.memSubDivisionId : undefined },
+      members, divisions, roleQuotas, tenureRoles, subDivisions
+    );
+    if (!quota.isValid) {
+      setError((quota.field || 'memRole') as never, { message: quota.error });
+      showToast(quota.error, 'error');
+      return;
+    }
+    let imageUrl = (f.memImage || '').trim();
+    if (imageUrl && !f.pendingMemberPhoto && !imageUrl.startsWith('blob:')) {
+      showToast('Memverifikasi tautan foto profil...');
+      const check = await verifyImageUrl(imageUrl, { requireHttps: true, allowRelative: false });
+      if (!check.valid) {
+        setError('memImage', { message: check.error });
+        showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
+        return;
+      }
+    }
+    if (f.pendingMemberPhoto) {
+      showToast('Mengunggah foto profil ke Cloud Storage...');
+      try {
+        imageUrl = await uploadMediaToCloud(f.pendingMemberPhoto, 'members');
+      } catch (e) {
+        showToast('Gagal mengunggah foto profil: ' + ((e as Error).message || 'Error'), 'error');
+        return;
+      }
+    }
+    const divObj = needsDivision ? divisions.find((d: any) => d.id === f.memDivisionId) : null;
+    const roleName = needsDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj ? `Pimpro ${divObj.name}` : (selectedRole?.name || 'Anggota Divisi');
+    onAddMember({
+      id: 'mem-' + Date.now(),
+      tenureId,
+      divisionId: needsDivision ? f.memDivisionId : undefined,
+      subDivisionId: needsSub ? f.memSubDivisionId : undefined,
+      roleId: selectedRole?.id,
+      category: getCategoryFromLevel(selectedRole?.level ?? 5),
+      name: f.memName,
+      role: roleName,
+      title: divObj?.name || '',
+      image: imageUrl,
+      color: divObj?.color || '#FFB800',
+      whatsapp: f.memWhatsapp.trim(),
+      motto: f.memMotto.trim(),
+      responsibilities: []
+    });
+    // Period and division stay selected for the next person, as before.
+    resetToDefaults();
+    setValue('memTenureId', f.memTenureId);
+    setValue('memDivisionId', f.memDivisionId);
+    showToast(`Pengurus/Anggota "${f.memName}" berhasil ditambahkan & tersimpan di Cloud!`);
+  }, () => showToast('Mohon lengkapi kolom wajib pada form Personel', 'error'));
   const tenureMembers = members.filter((m: any) => !tenureId || m.tenureId === tenureId);
   const tenureObj = tenures.find((t: any) => t.id === tenureId);
 
@@ -57,22 +149,22 @@ export default function MembersTab() {
   return (
     <AdminPanel title={`Pengurus & pelayan (${members.length})`} description="Pimpinan, pembina, ketua divisi, dan anggota pelayan di bagan organisasi, lengkap dengan nomor WhatsApp untuk koordinasi.">
       <AdminSubsection title="Tambah personel">
-        <form onSubmit={handleCreateMember} noValidate className="grid gap-4 md:grid-cols-2">
-          <Field label="Nama lengkap" required error={formErrors.memName}>
-            <Input placeholder="Contoh: Maria Simanjuntak" value={memName} onChange={(e) => { setMemName(e.target.value); clearFieldError('memName'); }} />
+        <form onSubmit={createMember} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Nama lengkap" required error={err.memName?.message}>
+            <Input placeholder="Contoh: Maria Simanjuntak" {...field('memName')} />
           </Field>
-          <Field label="Nomor WhatsApp" hint="Opsional. Contoh: 0812…"><Input type="tel" inputMode="tel" value={memWhatsapp} onChange={(e) => setMemWhatsapp(e.target.value)} /></Field>
+          <Field label="Nomor WhatsApp" hint="Opsional. Contoh: 0812…"><Input type="tel" inputMode="tel" {...field('memWhatsapp')} /></Field>
           <Field label="Periode" required>
-            <Select value={tenureId} onChange={(e) => { setMemTenureId(e.target.value); setMemDivisionId(''); clearFieldError('memDivisionId'); }}>
+            <Select value={tenureId} onChange={(e) => { setValue('memTenureId', e.target.value); setValue('memRoleId', ''); setValue('memDivisionId', ''); clearErrors(['memDivisionId', 'memRole' as never]); }}>
               {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
-          <Field label="Jabatan" required error={formErrors.memRole || (roles.length === 0 ? 'Belum ada role di periode ini. Buat dulu di menu Role & jabatan.' : undefined)}>
+          <Field label="Jabatan" required error={err.memRole?.message || (roles.length === 0 ? 'Belum ada role di periode ini. Buat dulu di menu Role & jabatan.' : undefined)}>
             <Select value={role?.id || ''} disabled={roles.length === 0} onChange={(e) => {
               const r = roles.find((x: any) => x.id === e.target.value);
-              if (r) { setMemRoleId(r.id); setMemRole(r.name); setMemCategory(getCategoryFromLevel(r.level)); if (!r.requiresDivision) setMemDivisionId(''); }
-              else { setMemRoleId(''); setMemRole(''); }
-              clearFieldError('memRole'); clearFieldError('memDivisionId');
+              setValue('memRoleId', r?.id || '');
+              if (r && !r.requiresDivision) setValue('memDivisionId', '');
+              clearErrors(['memRole' as never, 'memDivisionId']);
             }}>
               <option value="">Pilih jabatan</option>
               {roles.map((r: any) => {
@@ -82,16 +174,16 @@ export default function MembersTab() {
             </Select>
           </Field>
           {role?.requiresDivision && (
-            <Field label="Divisi" required error={formErrors.memDivisionId || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)} hint={`Wajib untuk jabatan ${role.name}.`}>
-              <Select value={memDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setMemDivisionId(e.target.value); clearFieldError('memDivisionId'); }}>
+            <Field label="Divisi" required error={err.memDivisionId?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)} hint={`Wajib untuk jabatan ${role.name}.`}>
+              <Select value={fv.memDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('memDivisionId', e.target.value); setValue('memSubDivisionId', ''); clearErrors('memDivisionId'); }}>
                 <option value="">Pilih divisi</option>
                 {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </Field>
           )}
           {role?.requiresDivision && role?.requiresSubDivision && (
-            <Field label="Sub-divisi" required error={formErrors.memSubDivisionId || (memDivisionId && subsForDiv.length === 0 ? 'Divisi ini belum punya sub-divisi. Tambahkan di menu Divisi.' : undefined)} hint={!memDivisionId ? 'Pilih divisi terlebih dahulu.' : undefined}>
-              <Select value={memSubDivisionId} disabled={!memDivisionId || subsForDiv.length === 0} onChange={(e) => { setMemSubDivisionId(e.target.value); clearFieldError('memSubDivisionId'); }}>
+            <Field label="Sub-divisi" required error={err.memSubDivisionId?.message || (fv.memDivisionId && subsForDiv.length === 0 ? 'Divisi ini belum punya sub-divisi. Tambahkan di menu Divisi.' : undefined)} hint={!fv.memDivisionId ? 'Pilih divisi terlebih dahulu.' : undefined}>
+              <Select value={fv.memSubDivisionId} disabled={!fv.memDivisionId || subsForDiv.length === 0} onChange={(e) => { setValue('memSubDivisionId', e.target.value); clearErrors('memSubDivisionId'); }}>
                 <option value="">Pilih sub-divisi</option>
                 {subsForDiv.map((sd: any) => <option key={sd.id} value={sd.id}>{sd.name}{sd.code ? ` (${sd.code})` : ''}</option>)}
               </Select>
@@ -115,18 +207,18 @@ export default function MembersTab() {
             </div>
           )}
 
-          <div className="md:col-span-2"><Field label="Motto"><Input placeholder="Contoh: Melayani dengan kasih" value={memMotto} onChange={(e) => setMemMotto(e.target.value)} /></Field></div>
+          <div className="md:col-span-2"><Field label="Motto"><Input placeholder="Contoh: Melayani dengan kasih" {...field('memMotto')} /></Field></div>
           <div className="flex flex-col gap-2 md:col-span-2">
-            <Field label="Foto profil" error={formErrors.memImage} hint="Unggah berkas atau tempel tautan gambar.">
-              <Input placeholder="https://…" value={memImage} onChange={(e) => { setMemImage(e.target.value); clearFieldError('memImage'); }} />
+            <Field label="Foto profil" error={err.memImage?.message} hint="Unggah berkas atau tempel tautan gambar.">
+              <Input placeholder="https://…" {...field('memImage')} />
             </Field>
             <div className="flex flex-wrap items-center gap-3">
-              {memImage && <img src={memImage} alt="Pratinjau foto" className="size-11 rounded-full border border-line object-cover" />}
-              <FileButton icon={<Upload size={15} aria-hidden="true" />} accept="image/*" onChange={(e) => handleMemberPhotoUpload(e, false)}>Unggah foto</FileButton>
-              {memImage && <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={() => { setMemImage(''); setPendingMemberPhoto(null); clearFieldError('memImage'); }}>Hapus foto</Button>}
+              {fv.memImage && <img src={fv.memImage} alt="Pratinjau foto" className="size-11 rounded-full border border-line object-cover" />}
+              <FileButton icon={<Upload size={15} aria-hidden="true" />} accept="image/*" onChange={pickPhoto}>Unggah foto</FileButton>
+              {fv.memImage && <Button type="button" size="sm" variant="ghost" className="text-danger" onClick={() => { setValue('memImage', ''); setValue('pendingMemberPhoto', null); clearErrors('memImage'); }}>Hapus foto</Button>}
             </div>
           </div>
-          <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Simpan personel</Button></div>
+          <div className="flex justify-end md:col-span-2"><Button type="submit" loading={isSubmitting} icon={<Plus size={16} aria-hidden="true" />}>{isSubmitting ? 'Menyimpan…' : 'Simpan personel'}</Button></div>
         </form>
       </AdminSubsection>
 

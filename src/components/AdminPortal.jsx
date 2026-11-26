@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { 
-  Lock, 
-  ArrowLeft, 
+import {
+  useState,
+  useEffect,
+  useRef
+} from 'react';
+import {
+  Lock,
+  ArrowLeft,
   LogOut,
-  AlertCircle,
   ClipboardList,
   Download,
   Globe,
@@ -12,31 +15,26 @@ import {
   KeyRound
 } from 'lucide-react';
 import AdminAccountsPanel from '../admin/AdminAccountsPanel';
-import { uploadMediaToCloud } from '../lib/supabase';
-import { soundFx } from '../utils/audio';
-import { 
-  formatWibEventRange,
-  toDatetimeLocalValue,
-  buildFlexibleDate
-} from '../utils/dateUtils';
-import {
-  getTenureRoles,
-  getCategoryFromLevel,
-  validateMemberQuota
-} from '../utils/memberQuotaUtils';
 
-import { AdminPortalContext } from '../admin/AdminPortalContext';
+import {
+  soundFx
+} from '../utils/audio';
+
+import {
+  AdminPortalContext
+} from '../admin/AdminPortalContext';
 import AdminLoginForm from '../admin/AdminLoginForm';
 import ChangePasswordDialog from '../admin/ChangePasswordDialog';
-import { Badge, Button, useFeedback } from '../ui';
 import {
-  collectFieldErrors,
-  brandAssetCreateSchema,
-  eventCreateSchema,
-  galleryCreateSchema,
-  memberCreateSchema,
-} from '../admin/validation/schemas';
-import { SYNC_BADGE, DIVISION_ADMIN_TABS } from '../admin/adminConstants';
+  Badge,
+  Button,
+  useFeedback
+} from '../ui';
+
+import {
+  SYNC_BADGE,
+  DIVISION_ADMIN_TABS
+} from '../admin/adminConstants';
 import AdminSummaryBar from '../admin/AdminSummaryBar';
 import AdminTabNavigation from '../admin/AdminTabNavigation';
 import VisibilityTab from '../admin/tabs/VisibilityTab';
@@ -69,8 +67,6 @@ export default function AdminPortal({
   onAddDivision, 
   onUpdateDivision,
   onDeleteDivision,
-  recruitmentInfo = { isOpen: true, deadline: '' }, 
-  onUpdateRecruitment, 
   applications = [],
   galleries = [],
   onAddGallery,
@@ -171,27 +167,8 @@ export default function AdminPortal({
   const { toast: notify } = useFeedback();
   const showToast = (message, type = 'success') => notify(message, type === 'error' ? 'error' : 'success');
 
-  // Custom Inline Field Validation State (replaces native browser required tooltips)
   // Half-filled create forms of tabs that are currently closed (useAdminDraftForm)
   const formDrafts = useRef(new Map());
-  const [formErrors, setFormErrors] = useState({});
-  const clearFieldError = (fieldKey) => {
-    setFormErrors((prev) => {
-      if (!prev[fieldKey]) return prev;
-      const next = { ...prev };
-      delete next[fieldKey];
-      return next;
-    });
-  };
-  const renderFieldError = (fieldKey) => {
-    if (!formErrors[fieldKey]) return null;
-    return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#f43f5e', fontSize: '0.75rem', marginTop: '5px', fontWeight: 600 }}>
-        <AlertCircle size={13} />
-        <span>{formErrors[fieldKey]}</span>
-      </div>
-    );
-  };
 
   // Admin Dashboard Tabs: 'members' | 'visibility' | 'events' | 'forms' | 'submissions' | 'gallery' | 'assets' | 'divisions' | 'tenure' | 'devotions' | 'songs' | 'easyworship'
   const [activeTab, setActiveTabState] = useState(() => {
@@ -216,7 +193,7 @@ export default function AdminPortal({
   }, [isAuthenticated, isSuperAdmin, activeTab]);
 
   // Search & Filter states for Members in Admin
-  // Form & filter states for Role Management
+  // List filters: roles
   const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [roleTenureFilter, setRoleTenureFilter] = useState('all');
   const [roleLevelFilter, setRoleLevelFilter] = useState('all');
@@ -274,21 +251,7 @@ export default function AdminPortal({
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [subCurrentPage, setSubCurrentPage] = useState(1);
 
-  // Form states for new Brand Asset
-  const [assetTitle, setAssetTitle] = useState('');
-  const [assetCategory, setAssetCategory] = useState('');
-  const [assetBadge, setAssetBadge] = useState('');
-  const [assetFileType, setAssetFileType] = useState('');
-  const [assetFileSize, setAssetFileSize] = useState('');
-  const [assetFileUrl, setAssetFileUrl] = useState('');
-  const [assetPreviewUrl, setAssetPreviewUrl] = useState('');
-  const [assetDesc, setAssetDesc] = useState('');
-
   // Pending Upload States (Deferred upload on Save/Submit only, never prematurely on selection)
-  const [pendingAssetFile, setPendingAssetFile] = useState(null);
-  const [pendingPreviewFile, setPendingPreviewFile] = useState(null);
-  const [pendingMemberPhoto, setPendingMemberPhoto] = useState(null);
-  const [pendingGalFiles, setPendingGalFiles] = useState([]);
 
   // Generic Edit Modal State: { type: 'member'|'division'|'tenure'|'gallery', item: {...} }
   const [editingItem, setEditingItem] = useState(null);
@@ -297,13 +260,6 @@ export default function AdminPortal({
   // Generic Delete Confirmation Modal State: { type: 'member'|'division'|'tenure'|'gallery', id: string, name: string }
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Form states for new member
-  const [memName, setMemName] = useState('');
-  const [memCategory, setMemCategory] = useState('anggota'); // 'pembina' | 'inti' | 'pimpro' | 'anggota'
-  const [memRole, setMemRole] = useState('');
-  const [memRoleId, setMemRoleId] = useState('');
-  const [memDivisionId, setMemDivisionId] = useState('');
-  const [memSubDivisionId, setMemSubDivisionId] = useState('');
   const [expandedDivSubId, setExpandedDivSubId] = useState(null);
   const [isAdminMobileMenuOpen, setIsAdminMobileMenuOpen] = useState(false);
 
@@ -316,8 +272,6 @@ export default function AdminPortal({
   const [devotionPrayer, setDevotionPrayer] = useState('');
   const [devotionAuthor, setDevotionAuthor] = useState('Bapekkris Bank Mandiri');
   const [devotionTheme, setDevotionTheme] = useState('Integritas & Karakter Kristiani');
-  const [devotionSearch, setDevotionSearch] = useState('');
-  const [devotionPage, setDevotionPage] = useState(1);
 
   // Worship Songs State
   const [songTitle, setSongTitle] = useState('');
@@ -328,45 +282,23 @@ export default function AdminPortal({
   const [songLyrics, setSongLyrics] = useState('');
   const [songYoutube, setSongYoutube] = useState('');
   const [songSearch, setSongSearch] = useState('');
-  const [songCatFilter, setSongCatFilter] = useState('all');
-  const [songPage, setSongPage] = useState(1);
 
   // EasyWorship Schedules State
-  const [ewScheduleSearch, setEwScheduleSearch] = useState('');
-  const [memTenureId, setMemTenureId] = useState(activeTenure?.id || '');
-  const [memWhatsapp, setMemWhatsapp] = useState('');
-  const [memMotto, setMemMotto] = useState('');
-  const [memImage, setMemImage] = useState('');
 
-  // Form states for new division
+  // List filters: divisions
   const [divSearchQuery, setDivSearchQuery] = useState('');
   const [divTenureFilter, setDivTenureFilter] = useState('all');
   const [divRecruitFilter, setDivRecruitFilter] = useState('all');
   const [divPage, setDivPage] = useState(1);
 
-  // Form states for new tenure
+  // List filters: tenures
   const [tenureSearchQuery, setTenureSearchQuery] = useState('');
   const [tenureStatusFilter, setTenureStatusFilter] = useState('all');
   const [tenurePage, setTenurePage] = useState(1);
 
   // Recruitment controls
-  const [isRecruitOpen, setIsRecruitOpen] = useState(recruitmentInfo?.isOpen ?? true);
-  const [recruitDeadline, setRecruitDeadline] = useState(recruitmentInfo?.deadline ?? '');
 
-  // Form Creator & Field Builder States
-  const [newFormTitle, setNewFormTitle] = useState('');
-  const [newFormCategory, setNewFormCategory] = useState('');
-  const [newFormDeadline, setNewFormDeadline] = useState('');
-  const [newFormSubtitle, setNewFormSubtitle] = useState('');
-  const [newFormNotes, setNewFormNotes] = useState('');
-  const [newFormRequiresTracking, setNewFormRequiresTracking] = useState(true);
-  const [newFormShowAnnouncement, setNewFormShowAnnouncement] = useState(false);
-  const [newFormIsLimited, setNewFormIsLimited] = useState(false);
-  const [newFormMaxQuota, setNewFormMaxQuota] = useState('');
-  const [newFormIsEventConnected, setNewFormIsEventConnected] = useState(false);
-  const [newFormEventId, setNewFormEventId] = useState('');
-  const [newFormIsLuckyDraw, setNewFormIsLuckyDraw] = useState(false);
-  const [newFormTenureId, setNewFormTenureId] = useState(activeTenure?.id || '');
+  // Submissions filter and drag-and-drop ordering in the form-field editor
   const [selectedSubFilter, setSelectedSubFilter] = useState('all');
   const [draggedFieldIndex, setDraggedFieldIndex] = useState(null);
   const [dragOverFieldIndex, setDragOverFieldIndex] = useState(null);
@@ -547,424 +479,53 @@ export default function AdminPortal({
 
   // Escape for the edit, delete and report dialogs is handled by useModalBehavior (stack-aware).
 
-  // Form states for new Gallery Event (Flexible 5 Date Modes)
-  const [galTitle, setGalTitle] = useState('');
-  const [galDateMode, setGalDateMode] = useState('date'); // 'date' | 'dates' | 'range' | 'month' | 'year'
-  const [galDateVal, setGalDateVal] = useState(new Date().toISOString().split('T')[0]);
-  const [galDates, setGalDates] = useState([
-    new Date().toISOString().split('T')[0],
-    new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]
-  ]);
-  const [galStartDate, setGalStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [galEndDate, setGalEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [galMonth, setGalMonth] = useState(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
-  const [galYear, setGalYear] = useState(String(new Date().getFullYear()));
-  const [galDivisionId, setGalDivisionId] = useState('');
-  const [galDivision, setGalDivision] = useState('');
-  const [galEventId, setGalEventId] = useState('');
-  const [galTenureId, setGalTenureId] = useState(activeTenure?.id || '');
-  const [galDesc, setGalDesc] = useState('');
-  const [galPhotos, setGalPhotos] = useState('');
-
-  // Form states for Event
-  const [eventTitle, setEventTitle] = useState('');
-  const [eventCategory, setEventCategory] = useState('');
-  const [eventDivId, setEventDivId] = useState('');
-  const [eventTenureId, setEventTenureId] = useState(activeTenure?.id || '');
-  const [eventStartDate, setEventStartDate] = useState('');
-  const [eventEndDate, setEventEndDate] = useState('');
-  const [eventLocation, setEventLocation] = useState('');
-  const [eventKpi, setEventKpi] = useState('');
-  const [eventDesc, setEventDesc] = useState('');
-  const [eventRab, setEventRab] = useState('');
-  const [eventStatus, setEventStatus] = useState('Upcoming');
-  const [eventIsPublic, setEventIsPublic] = useState(false);
-  const [eventIsLimited, setEventIsLimited] = useState(false);
-  const [eventMaxQuota, setEventMaxQuota] = useState('');
-
-  const handleCreateEvent = (e) => {
-    e.preventDefault();
-    const targetEventTenureId = eventTenureId || activeTenure?.id || '';
-    const availableDivsForEvent = divisions.filter(d => d.tenureId === targetEventTenureId);
-    const errs = collectFieldErrors(
-      eventCreateSchema({ divisionIds: availableDivsForEvent.map(d => d.id) }),
-      { eventTitle, eventCategory, eventStartDate, eventEndDate, eventDesc, eventRab, eventIsLimited, eventMaxQuota, eventDivId }
-    );
-
-    if (Object.keys(errs).length > 0) {
-      setFormErrors((prev) => ({ ...prev, ...errs }));
-      const firstErrMsg = errs.eventStartDate || errs.eventEndDate || 'Mohon lengkapi kolom wajib pada form Event';
-      showToast(firstErrMsg, 'error');
-      return;
-    }
-
-    const divObj = divisions.find(d => d.id === eventDivId);
-
-    const sDate = toDatetimeLocalValue(eventStartDate) || new Date().toISOString().split('T')[0];
-    const eDate = toDatetimeLocalValue(eventEndDate) || sDate;
-    const dateLabel = formatWibEventRange(sDate, eDate);
-
-    const finalCategory = eventCategory.trim();
-
-    if (onAddEvent) {
-      onAddEvent({
-        id: 'evt-' + Date.now(),
-        tenureId: eventTenureId || activeTenure?.id || '',
-        divisionId: eventDivId,
-        divisionName: divObj?.name || '',
-        title: eventTitle.trim(),
-        date: dateLabel,
-        startDate: sDate,
-        endDate: eDate,
-        category: finalCategory,
-        kategori: finalCategory,
-        badge: finalCategory,
-        location: eventLocation.trim() || '',
-        peserta: eventKpi.trim() || '',
-        kpi: eventKpi.trim() || '',
-        description: eventDesc.trim(),
-        status: eventStatus,
-        isPublic: eventIsPublic,
-        isLimited: eventIsLimited,
-        maxQuota: eventIsLimited ? Number(eventMaxQuota || 0) : 0,
-        totalRab: Number(eventRab)
-      });
-    }
-
-    const savedTitle = eventTitle.trim();
-    setEventTitle('');
-    setEventCategory('');
-    setEventStartDate('');
-    setEventEndDate('');
-    setEventLocation('');
-    setEventKpi('');
-    setEventDesc('');
-    setEventRab('');
-    setEventIsPublic(false);
-    setEventIsLimited(false);
-    setEventMaxQuota('');
-    showToast(`Event "${savedTitle}" berhasil ditambahkan & disinkronkan!`);
-  };
-
   // Supabase Auth sign-in (form: src/admin/AdminLoginForm.tsx); access requires an admin_profiles row
-  const handleLogin = async (email, password) => {
-    await onAdminLogin(email, password);
-    setFormErrors({});
-  };
+  const handleLogin = (email, password) => onAdminLogin(email, password);
 
-  // Select photo for Member (New or Edit) - Deferred upload on Save only
-  const handleMemberPhotoUpload = (e, isEdit = false) => {
+  // Photo picked in the edit dialog of a member (the create form handles its own photo)
+  const handleMemberPhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const localPreview = URL.createObjectURL(file);
-    if (isEdit) {
-      setEditingItem(prev => prev ? {
-        ...prev,
-        pendingPhoto: file,
-        item: { ...prev.item, image: localPreview }
-      } : null);
-      showToast(`Foto baru "${file.name}" dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
-    } else {
-      setPendingMemberPhoto(file);
-      setMemImage(localPreview);
-      showToast(`Foto "${file.name}" dipilih (akan diunggah saat Anda klik Tambah Personel)`);
-    }
+    setEditingItem(prev => prev ? { ...prev, pendingPhoto: file, item: { ...prev.item, image: localPreview } } : null);
+    showToast(`Foto baru "${file.name}" dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
   };
 
-  const handleCreateMember = async (e) => {
-    e.preventDefault();
-    const targetTenureId = memTenureId || activeTenure?.id || '';
-    const availableRoles = getTenureRoles(targetTenureId, roleQuotas, tenureRoles);
-    const selectedRole = availableRoles.find(r => r.id === memRoleId) || 
-      availableRoles.find(r => String(r?.name || '').toLowerCase() === String(memRole || '').toLowerCase()) ||
-      null;
-    const errs = collectFieldErrors(
-      memberCreateSchema({
-        roleCount: availableRoles.length,
-        selectedRole,
-        divisionIds: divisions.filter(d => d.tenureId === targetTenureId).map(d => d.id),
-        subDivisionIdsOf: (divisionId) => subDivisions.filter(sd => sd.divisionId === divisionId).map(sd => sd.id)
-      }),
-      { memName, memDivisionId, memSubDivisionId }
-    );
-
-    // Validasi kuota dinamis
-    const quotaCheck = validateMemberQuota(
-      {
-        tenureId: targetTenureId,
-        roleId: selectedRole?.id,
-        role: selectedRole?.name || memRole,
-        divisionId: selectedRole?.requiresDivision ? memDivisionId : undefined,
-        subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? memSubDivisionId : undefined
-      },
-      members,
-      divisions,
-      roleQuotas,
-      tenureRoles,
-      subDivisions
-    );
-
-    if (!quotaCheck.isValid) {
-      errs[quotaCheck.field || 'memRole'] = quotaCheck.error;
-      setFormErrors((prev) => ({ ...prev, ...errs }));
-      showToast(quotaCheck.error, 'error');
-      return;
-    }
-
-    if (Object.keys(errs).length > 0) {
-      setFormErrors((prev) => ({ ...prev, ...errs }));
-      showToast('Mohon lengkapi kolom wajib pada form Personel', 'error');
-      return;
-    }
-
-    let finalImageUrl = (memImage || '').trim();
-
-    // Validasi URL foto jika diinput dalam bentuk tautan web
-    if (finalImageUrl && !pendingMemberPhoto && !finalImageUrl.startsWith('blob:')) {
-      setIsUploadingMedia(true);
-      showToast('Memverifikasi tautan foto profil...');
-      const check = await verifyImageUrl(finalImageUrl, { requireHttps: true, allowRelative: false });
-      if (!check.valid) {
-        setIsUploadingMedia(false);
-        setFormErrors((prev) => ({ ...prev, memImage: check.error }));
-        showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
-        return;
-      }
-      setIsUploadingMedia(false);
-    }
-
-    if (pendingMemberPhoto) {
-      setIsUploadingMedia(true);
-      showToast('Mengunggah foto profil ke Cloud Storage...');
-      try {
-        finalImageUrl = await uploadMediaToCloud(pendingMemberPhoto, 'members');
-      } catch (err) {
-        setIsUploadingMedia(false);
-        showToast('Gagal mengunggah foto profil: ' + (err.message || 'Error'), 'error');
-        return;
-      }
-      setIsUploadingMedia(false);
-    }
-
-    const divObj = selectedRole?.requiresDivision ? divisions.find(d => d.id === memDivisionId) : null;
-    const finalRoleName = selectedRole?.requiresDivision && String(selectedRole?.name || '').toLowerCase() === 'pimpro' && divObj
-      ? `Pimpro ${divObj.name}`
-      : (selectedRole?.name || memRole || 'Anggota Divisi');
-    const finalCategory = getCategoryFromLevel(selectedRole?.level ?? 5);
-
-    onAddMember({
-      id: 'mem-' + Date.now(),
-      tenureId: targetTenureId,
-      divisionId: selectedRole?.requiresDivision ? memDivisionId : undefined,
-      subDivisionId: (selectedRole?.requiresDivision && selectedRole?.requiresSubDivision) ? memSubDivisionId : undefined,
-      roleId: selectedRole?.id,
-      category: finalCategory,
-      name: memName,
-      role: finalRoleName,
-      title: divObj?.name || '',
-      image: finalImageUrl,
-      color: divObj?.color || '#FFB800',
-      whatsapp: memWhatsapp.trim(),
-      motto: memMotto.trim() || '',
-      responsibilities: []
-    });
-
-    const savedName = memName;
-    setMemName('');
-    setMemSubDivisionId('');
-    setMemRole('');
-    setMemRoleId('');
-    setMemWhatsapp('');
-    setMemMotto('');
-    setMemImage('');
-    setPendingMemberPhoto(null);
-    showToast(`Pengurus/Anggota "${savedName}" berhasil ditambahkan & tersimpan di Cloud!`);
-  };
-
-  const [uploadedPhotos, setUploadedPhotos] = useState([]);
-
-  // Photos file selector handler - Deferred upload on Submit/Save only
-  const handlePhotoUpload = (e, isEditModal = false) => {
+  // Photos picked in the edit dialog of a gallery (the create form handles its own files)
+  const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-
-    if (isEditModal) {
-      const localPreviews = files.map(f => URL.createObjectURL(f));
-      setEditingItem(prev => {
-        if (!prev) return null;
-        const currentPending = prev.pendingPhotos || [];
-        const existingPhotos = Array.isArray(prev.item.photos) ? prev.item.photos : [];
-        return {
-          ...prev,
-          pendingPhotos: [...currentPending, ...files],
-          item: { ...prev.item, photos: [...existingPhotos, ...localPreviews] }
-        };
-      });
-      showToast(`${files.length} foto baru dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
-    } else {
-      setPendingGalFiles(prev => [...prev, ...files]);
-      const localPreviews = files.map(f => URL.createObjectURL(f));
-      setUploadedPhotos(prev => [...prev, ...localPreviews]);
-      setFormErrors(prev => ({ ...prev, galPhotos: null }));
-      showToast(`${files.length} foto dipilih (akan diunggah saat Anda klik Publikasikan)`);
-    }
+    const localPreviews = files.map(f => URL.createObjectURL(f));
+    setEditingItem(prev => {
+      if (!prev) return null;
+      const existingPhotos = Array.isArray(prev.item.photos) ? prev.item.photos : [];
+      return { ...prev, pendingPhotos: [...(prev.pendingPhotos || []), ...files], item: { ...prev.item, photos: [...existingPhotos, ...localPreviews] } };
+    });
+    showToast(`${files.length} foto baru dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
   };
 
   // Select Brand Asset file or preview - Deferred upload on Save only
-  const handleBrandAssetUpload = (e, field = 'fileUrl', isEditModal = false) => {
+  // File picked in the edit dialog of a brand asset (the create form handles its own files)
+  const handleBrandAssetUpload = (e, field = 'fileUrl') => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const sizeLabel = file.size > 1024 * 1024
-      ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
-      : (file.size / 1024).toFixed(0) + ' KB';
-    const extLabel = (file.name.split('.').pop() || 'FILE').toUpperCase();
     const localBlobUrl = URL.createObjectURL(file);
-
-    if (isEditModal) {
-      if (field === 'fileUrl') {
-        setEditingItem(prev => prev ? {
-          ...prev,
-          pendingFile: file,
-          originalFileUrl: prev.originalFileUrl || prev.item.fileUrl,
-          item: {
-            ...prev.item,
-            fileUrl: localBlobUrl,
-            fileSize: sizeLabel,
-            fileType: extLabel
-          }
-        } : null);
-        showToast(`File baru "${file.name}" dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
-      } else {
-        setEditingItem(prev => prev ? {
-          ...prev,
-          pendingPreviewFile: file,
-          item: { ...prev.item, previewUrl: localBlobUrl }
-        } : null);
-        showToast(`Preview "${file.name}" dipilih`);
-      }
+    if (field === 'fileUrl') {
+      const sizeLabel = file.size > 1024 * 1024
+        ? (file.size / (1024 * 1024)).toFixed(2) + ' MB'
+        : (file.size / 1024).toFixed(0) + ' KB';
+      const extLabel = (file.name.split('.').pop() || 'FILE').toUpperCase();
+      setEditingItem(prev => prev ? {
+        ...prev,
+        pendingFile: file,
+        originalFileUrl: prev.originalFileUrl || prev.item.fileUrl,
+        item: { ...prev.item, fileUrl: localBlobUrl, fileSize: sizeLabel, fileType: extLabel }
+      } : null);
+      showToast(`File baru "${file.name}" dipilih (akan diunggah saat Anda klik Simpan Perubahan)`);
     } else {
-      if (field === 'fileUrl') {
-        setPendingAssetFile(file);
-        setAssetFileUrl(localBlobUrl);
-        setAssetFileSize(sizeLabel);
-        setAssetFileType(extLabel);
-        clearFieldError('assetFileUrl');
-        if (!assetTitle) {
-          const cleanTitle = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
-          setAssetTitle(cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1));
-        }
-        if (!assetPreviewUrl && /\.(png|jpg|jpeg|svg|webp|gif)$/i.test(file.name)) {
-          setPendingPreviewFile(file);
-          setAssetPreviewUrl(localBlobUrl);
-        }
-        showToast(`File "${file.name}" dipilih (akan diunggah saat Anda klik Simpan & Publikasikan)`);
-      } else {
-        setPendingPreviewFile(file);
-        setAssetPreviewUrl(localBlobUrl);
-        showToast(`Gambar preview "${file.name}" dipilih`);
-      }
+      setEditingItem(prev => prev ? { ...prev, pendingPreviewFile: file, item: { ...prev.item, previewUrl: localBlobUrl } } : null);
+      showToast(`Preview "${file.name}" dipilih`);
     }
-  };
-
-  const handleCreateBrandAsset = async (e) => {
-    e.preventDefault();
-    const errs = collectFieldErrors(brandAssetCreateSchema, {
-      assetTitle,
-      assetCategory,
-      assetFileType,
-      assetFileUrl,
-      assetPreviewUrl,
-      hasPendingAssetFile: Boolean(pendingAssetFile),
-      hasPendingPreviewFile: Boolean(pendingPreviewFile)
-    });
-    if (Object.keys(errs).length > 0) {
-      setFormErrors(prev => ({ ...prev, ...errs }));
-      showToast('Mohon lengkapi seluruh kolom wajib pada form Asset', 'error');
-      return;
-    }
-
-    setIsUploadingMedia(true);
-    let finalFileUrl = assetFileUrl.trim();
-    let finalPreviewUrl = assetPreviewUrl.trim();
-
-    try {
-      if (pendingAssetFile) {
-        showToast(`Mengunggah file "${pendingAssetFile.name}" ke Cloud Storage...`);
-        finalFileUrl = await uploadMediaToCloud(pendingAssetFile, 'assets');
-      }
-      if (pendingPreviewFile) {
-        if (pendingPreviewFile === pendingAssetFile) {
-          finalPreviewUrl = finalFileUrl;
-        } else {
-          showToast(`Mengunggah preview "${pendingPreviewFile.name}" ke Cloud Storage...`);
-          finalPreviewUrl = await uploadMediaToCloud(pendingPreviewFile, 'assets');
-        }
-      }
-    } catch (err) {
-      setIsUploadingMedia(false);
-      showToast('Gagal mengunggah file ke Cloud Storage: ' + (err.message || 'Error jaringan'), 'error');
-      return;
-    }
-    setIsUploadingMedia(false);
-
-    const isImageFile = (url) => /\.(png|jpe?g|svg|webp|gif|avif)($|\?)/i.test(url) || (url || '').startsWith('data:image/');
-    const effectiveFileUrl = finalFileUrl || (isImageFile(finalPreviewUrl) ? finalPreviewUrl : '');
-    const effectivePreviewUrl = finalPreviewUrl || (isImageFile(finalFileUrl) ? finalFileUrl : '');
-
-    if (!effectiveFileUrl) {
-      showToast('Gagal: File asset atau URL download tidak boleh kosong. Silakan pilih berkas kembali.', 'error');
-      return;
-    }
-
-    if (onAddBrandAsset) {
-      onAddBrandAsset({
-        id: 'asset-' + Date.now(),
-        title: assetTitle.trim(),
-        category: assetCategory.trim(),
-        badge: assetBadge.trim() || '',
-        fileType: assetFileType.trim(),
-        fileSize: assetFileSize.trim() || '',
-        fileUrl: effectiveFileUrl,
-        previewUrl: effectivePreviewUrl,
-        description: assetDesc.trim() || ''
-      });
-    }
-
-    const saved = assetTitle.trim();
-    setAssetTitle('');
-    setAssetCategory('');
-    setAssetBadge('');
-    setAssetFileType('');
-    setAssetFileUrl('');
-    setAssetPreviewUrl('');
-    setAssetFileSize('');
-    setAssetDesc('');
-    setPendingAssetFile(null);
-    setPendingPreviewFile(null);
-    showToast(`Asset "${saved}" berhasil disimpan & dipublikasikan!`);
-  };
-
-  const removeUploadedPhoto = (idx) => {
-    setUploadedPhotos(prev => prev.filter((_, i) => i !== idx));
-    setPendingGalFiles(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  // Documentation Links (Dynamic multiple links with Link Text & URL)
-  const [galDocLinks, setGalDocLinks] = useState([
-    { text: 'Folder Dokumentasi Full HD (Google Drive)', url: '' }
-  ]);
-
-  const addDocLinkField = () => {
-    setGalDocLinks(prev => [...prev, { text: '', url: '' }]);
-  };
-
-  const removeDocLinkField = (index) => {
-    setGalDocLinks(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const updateDocLinkField = (index, field, value) => {
-    setGalDocLinks(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item));
   };
 
   // Helper to verify if an external image link is reachable and valid
@@ -1074,127 +635,6 @@ export default function AdminPortal({
     showToast(`Berhasil menambahkan ${validUrls.length} link foto ke carousel!`);
   };
 
-  const handleCreateGallery = async (e) => {
-    e.preventDefault();
-    const targetGalTenureId = galTenureId || activeTenure?.id || '';
-    const availableDivsForGal = divisions.filter(d => d.tenureId === targetGalTenureId);
-    const selectedDiv = availableDivsForGal.find(d => d.id === galDivisionId || d.name === galDivision);
-
-    // Parse image URLs from text input
-    const urlPhotos = galPhotos.trim() 
-      ? galPhotos.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
-      : [];
-
-    const hasUpload = pendingGalFiles.length > 0;
-    const hasUrls = urlPhotos.length > 0;
-
-    const errs = collectFieldErrors(
-      galleryCreateSchema({ divisionCount: availableDivsForGal.length, hasSelectedDivision: Boolean(selectedDiv) }),
-      { galTitle, galDesc, photoUrlCount: urlPhotos.length, pendingFileCount: pendingGalFiles.length }
-    );
-
-    if (Object.keys(errs).length > 0) {
-      setFormErrors((prev) => ({ ...prev, ...errs }));
-      showToast('Mohon lengkapi kolom wajib pada form Galeri', 'error');
-      return;
-    }
-
-    // Verify all input photo URLs to make sure they are real accessible images
-    if (hasUrls) {
-      setIsUploadingMedia(true);
-      showToast('Memverifikasi tautan foto...');
-      for (const u of urlPhotos) {
-        const check = await verifyImageUrl(u);
-        if (!check.valid) {
-          setIsUploadingMedia(false);
-          setFormErrors(prev => ({ ...prev, galPhotos: `Tautan "${u}" tidak valid: ${check.error}` }));
-          showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
-          return;
-        }
-      }
-      setIsUploadingMedia(false);
-    }
-
-    let cloudPhotos = [];
-    if (pendingGalFiles.length > 0) {
-      setIsUploadingMedia(true);
-      showToast(`Mengunggah ${pendingGalFiles.length} foto ke Cloud Storage...`);
-      try {
-        for (const file of pendingGalFiles) {
-          const url = await uploadMediaToCloud(file, 'gallery');
-          if (url) cloudPhotos.push(url);
-        }
-      } catch (err) {
-        setIsUploadingMedia(false);
-        showToast('Gagal mengunggah foto galeri: ' + (err.message || 'Error'), 'error');
-        return;
-      }
-      setIsUploadingMedia(false);
-    }
-
-    // Combine cloud uploaded photos, existing uploaded, and text URLs
-    const combinedPhotos = [...cloudPhotos, ...urlPhotos];
-    const photoList = combinedPhotos;
-
-    // Cleaned valid doc links
-    const validDocLinks = galDocLinks.filter(l => l.url.trim() && l.text.trim());
-
-    const finalGalDate = buildFlexibleDate(galDateMode, {
-      date: galDateVal,
-      dates: galDates,
-      startDate: galStartDate,
-      endDate: galEndDate,
-      month: galMonth,
-      year: galYear
-    });
-
-    onAddGallery({
-      id: 'gal-' + Date.now(),
-      tenureId: targetGalTenureId,
-      divisionId: selectedDiv ? selectedDiv.id : (galDivisionId || ''),
-      division: selectedDiv ? selectedDiv.name : galDivision,
-      divisionName: selectedDiv ? selectedDiv.name : galDivision,
-      eventId: galEventId || null,
-      title: galTitle,
-      date: finalGalDate,
-      description: galDesc,
-      photos: photoList,
-      docLinks: validDocLinks
-    });
-
-    const savedGalTitle = galTitle;
-    setGalTitle('');
-    setGalDateMode('date');
-    setGalDateVal(new Date().toISOString().split('T')[0]);
-    setGalDates([
-      new Date().toISOString().split('T')[0],
-      new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0]
-    ]);
-    setGalStartDate(new Date().toISOString().split('T')[0]);
-    setGalEndDate(new Date().toISOString().split('T')[0]);
-    setGalMonth(`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`);
-    setGalYear(String(new Date().getFullYear()));
-    setGalDivisionId('');
-    setGalEventId('');
-    setGalDesc('');
-    setGalPhotos('');
-    setUploadedPhotos([]);
-    setPendingGalFiles([]);
-    setGalDocLinks([{ text: 'Folder Dokumentasi Full HD (Google Drive)', url: '' }]);
-    showToast(`Dokumentasi "${savedGalTitle}" berhasil ditambahkan ke Galeri Kegiatan!`);
-  };
-
-  const handleSaveRecruitment = () => {
-    if (onUpdateRecruitment) {
-      onUpdateRecruitment({
-        ...recruitmentInfo,
-        isOpen: isRecruitOpen,
-        deadline: recruitDeadline
-      });
-    }
-    showToast('Pengaturan Open Recruitment berhasil disimpan!');
-  };
-
   // IF NOT AUTHENTICATED: SHOW LOGIN FORM
   if (!isAuthenticated) {
     return (
@@ -1218,13 +658,16 @@ export default function AdminPortal({
     // Everything the extracted tabs and modals (src/admin/*) read from this component.
   const adminPortalContext = {
     formDrafts,
+    onAddMember,
+    onAddEvent,
+    onAddGallery,
+    onAddBrandAsset,
     onAddTenureRole,
     onAddDivision,
     onAddTenure,
     onAddFaq,
     activeTab,
     activeTenure,
-    addDocLinkField,
     adminEventPage,
     adminEventViewMode,
     adminFaqPage,
@@ -1237,19 +680,10 @@ export default function AdminPortal({
     adminRsvpPage,
     announcementBar,
     applications,
-    assetBadge,
     assetCatFilter,
-    assetCategory,
-    assetDesc,
-    assetFileSize,
-    assetFileType,
-    assetFileUrl,
     assetPage,
-    assetPreviewUrl,
     assetSearchQuery,
-    assetTitle,
     brandAssets,
-    clearFieldError,
     deleteConfirm,
     devotionAuthor,
     devotionBody,
@@ -1271,63 +705,29 @@ export default function AdminPortal({
     editModalError,
     editingItem,
     eventCatFilter,
-    eventCategory,
-    eventDesc,
     eventDivFilter,
-    eventDivId,
-    eventEndDate,
-    eventIsLimited,
-    eventIsPublic,
-    eventKpi,
-    eventLocation,
-    eventMaxQuota,
     eventPublicFilter,
-    eventRab,
     eventRsvps,
     eventSearchQuery,
-    eventStartDate,
-    eventStatus,
     eventStatusFilter,
     eventTenureFilter,
-    eventTenureId,
-    eventTitle,
     events,
     expandedDivSubId,
     faqCatFilter,
     faqSearchQuery,
     faqs,
     formCatFilter,
-    formErrors,
     formPage,
     formSearchQuery,
     formStatusFilter,
     formTenureFilter,
     forms,
-    galDateMode,
-    galDateVal,
-    galDates,
-    galDesc,
-    galDivision,
-    galDivisionId,
-    galDocLinks,
-    galEndDate,
-    galEventId,
-    galMonth,
-    galPhotos,
-    galStartDate,
-    galTenureId,
-    galTitle,
-    galYear,
     galleries,
     galleryDivFilter,
     gallerySearchQuery,
     galleryTenureFilter,
     handleAddPhotoLinkToEditModal,
     handleBrandAssetUpload,
-    handleCreateBrandAsset,
-    handleCreateEvent,
-    handleCreateGallery,
-    handleCreateMember,
     handleDeleteDivisionClick,
     handleDeleteEventClick,
     handleDeleteFormClick,
@@ -1342,29 +742,7 @@ export default function AdminPortal({
     isSuperAdmin,
     isUploadingMedia,
     luckyDraws,
-    memDivisionId,
-    memImage,
-    memMotto,
-    memName,
-    memRole,
-    memRoleId,
-    memSubDivisionId,
-    memTenureId,
-    memWhatsapp,
     members,
-    newFormCategory,
-    newFormDeadline,
-    newFormEventId,
-    newFormIsEventConnected,
-    newFormIsLimited,
-    newFormIsLuckyDraw,
-    newFormMaxQuota,
-    newFormNotes,
-    newFormRequiresTracking,
-    newFormShowAnnouncement,
-    newFormSubtitle,
-    newFormTenureId,
-    newFormTitle,
     onAddDevotion,
     onAddForm,
     onAddSubDivision,
@@ -1401,13 +779,7 @@ export default function AdminPortal({
     onUpdateTenure,
     onUpdateTenureRole,
     pageVisibility,
-    pendingAssetFile,
-    pendingGalFiles,
-    pendingPreviewFile,
     registrationCounts,
-    removeDocLinkField,
-    removeUploadedPhoto,
-    renderFieldError,
     reportTenureId,
     roleLevelFilter,
     rolePage,
@@ -1429,17 +801,9 @@ export default function AdminPortal({
     setAdminMemSearch,
     setAdminMemTenureFilter,
     setAdminRsvpPage,
-    setAssetBadge,
     setAssetCatFilter,
-    setAssetCategory,
-    setAssetDesc,
-    setAssetFileSize,
-    setAssetFileType,
-    setAssetFileUrl,
     setAssetPage,
-    setAssetPreviewUrl,
     setAssetSearchQuery,
-    setAssetTitle,
     setDeleteConfirm,
     setDevotionAuthor,
     setDevotionBody,
@@ -1457,79 +821,24 @@ export default function AdminPortal({
     setEditModalError,
     setEditingItem,
     setEventCatFilter,
-    setEventCategory,
-    setEventDesc,
     setEventDivFilter,
-    setEventDivId,
-    setEventEndDate,
-    setEventIsLimited,
-    setEventIsPublic,
-    setEventKpi,
-    setEventLocation,
-    setEventMaxQuota,
     setEventPublicFilter,
-    setEventRab,
     setEventSearchQuery,
-    setEventStartDate,
-    setEventStatus,
     setEventStatusFilter,
     setEventTenureFilter,
-    setEventTenureId,
-    setEventTitle,
     setExpandedDivSubId,
     setFaqCatFilter,
     setFaqSearchQuery,
     setFormCatFilter,
-    setFormErrors,
     setFormPage,
     setFormSearchQuery,
     setFormStatusFilter,
     setFormTenureFilter,
-    setGalDateMode,
-    setGalDateVal,
-    setGalDates,
-    setGalDesc,
-    setGalDivision,
-    setGalDivisionId,
-    setGalEndDate,
-    setGalEventId,
-    setGalMonth,
-    setGalPhotos,
-    setGalStartDate,
-    setGalTenureId,
-    setGalTitle,
-    setGalYear,
     setGalleryDivFilter,
     setGallerySearchQuery,
     setGalleryTenureFilter,
     setIsAdminMobileMenuOpen,
     setIsUploadingMedia,
-    setMemCategory,
-    setMemDivisionId,
-    setMemImage,
-    setMemMotto,
-    setMemName,
-    setMemRole,
-    setMemRoleId,
-    setMemSubDivisionId,
-    setMemTenureId,
-    setMemWhatsapp,
-    setNewFormCategory,
-    setNewFormDeadline,
-    setNewFormEventId,
-    setNewFormIsEventConnected,
-    setNewFormIsLimited,
-    setNewFormIsLuckyDraw,
-    setNewFormMaxQuota,
-    setNewFormNotes,
-    setNewFormRequiresTracking,
-    setNewFormShowAnnouncement,
-    setNewFormSubtitle,
-    setNewFormTenureId,
-    setNewFormTitle,
-    setPendingAssetFile,
-    setPendingMemberPhoto,
-    setPendingPreviewFile,
     setReportTenureId,
     setRoleLevelFilter,
     setRolePage,
@@ -1577,8 +886,6 @@ export default function AdminPortal({
     tenureStatusFilter,
     tenures,
     theme,
-    updateDocLinkField,
-    uploadedPhotos,
     verifyImageUrl,
     worshipSongs
   };

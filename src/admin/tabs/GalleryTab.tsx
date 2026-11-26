@@ -1,25 +1,117 @@
 import { Edit2, Image as ImageIcon, Link2, Plus, Trash2, X } from 'lucide-react';
-import { formatLastUpdatedWib, formatWibDateTime } from '../../utils/dateUtils';
+import { buildFlexibleDate, formatLastUpdatedWib, formatWibDateTime, toWibIsoDate } from '../../utils/dateUtils';
 import { Badge, Button, Field, Input, Pagination, Select, Textarea } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, FileButton, FilterSelect, IconButton, ListToolbar, SearchBox } from '../AdminUi';
-import { FlexibleDateField } from '../FlexibleDateField';
+import { FlexibleDateField, type FlexibleDateMode, type FlexibleDateValue } from '../FlexibleDateField';
 import { useAdminPortal } from '../AdminPortalContext';
+import { z } from 'zod';
+import { uploadMediaToCloud } from '../../lib/supabase';
+import { galleryCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type DocLink = { text: string; url: string };
+type GalleryForm = {
+  galTitle: string; galTenureId: string; galDateMode: FlexibleDateMode; galDate: FlexibleDateValue; galDivisionId: string; galEventId: string;
+  galDesc: string; galPhotos: string; pendingGalFiles: File[]; uploadedPhotos: string[]; galDocLinks: DocLink[];
+};
+const DEFAULT_DOC_LINK: DocLink = { text: 'Folder Dokumentasi Full HD (Google Drive)', url: '' };
+
+function emptyDate(): FlexibleDateValue {
+  const today = toWibIsoDate();
+  const inTwoDays = toWibIsoDate(new Date(Date.now() + 2 * 86400000));
+  return { date: today, dates: [today, inTwoDays], startDate: today, endDate: today, month: today.slice(0, 7), year: today.slice(0, 4) };
+}
+const splitPhotoUrls = (text: string) => (text.trim() ? text.split(/[\n,]+/).map((u) => u.trim()).filter(Boolean) : []);
 
 const PER_PAGE = 8;
 
 export default function GalleryTab() {
   const {
-    activeTenure, addDocLinkField, adminGalleryPage, clearFieldError, divisions, events, formErrors, galDateMode, galDateVal, galDates, galDesc,
-    galDivision, galDivisionId, galDocLinks, galEndDate, galEventId, galMonth, galPhotos, galStartDate, galTenureId, galTitle, galYear, galleries,
-    galleryDivFilter, gallerySearchQuery, galleryTenureFilter, handleCreateGallery, handleDeleteGalleryClick, handlePhotoUpload, removeDocLinkField,
-    removeUploadedPhoto, setAdminGalleryPage, setEditingItem, setFormErrors, setGalDateMode, setGalDateVal, setGalDates, setGalDesc, setGalDivision,
-    setGalDivisionId, setGalEndDate, setGalEventId, setGalMonth, setGalPhotos, setGalStartDate, setGalTenureId, setGalTitle, setGalYear,
-    setGalleryDivFilter, setGallerySearchQuery, setGalleryTenureFilter, tenures, updateDocLinkField, uploadedPhotos
+    activeTenure, adminGalleryPage, divisions, events, galleries, galleryDivFilter, gallerySearchQuery, galleryTenureFilter,
+    handleDeleteGalleryClick, onAddGallery, setAdminGalleryPage, setEditingItem, setGalleryDivFilter, setGallerySearchQuery, setGalleryTenureFilter,
+    showToast, tenures, verifyImageUrl
   } = useAdminPortal();
 
-  const tenureId = galTenureId || activeTenure?.id || '';
-  const divsForTenure = divisions.filter((d: any) => d.tenureId === tenureId);
-  const currentDivId = galDivisionId || divsForTenure.find((d: any) => d.name === galDivision)?.id || '';
+  const divisionsOf = (tid: string) => divisions.filter((d: any) => d.tenureId === (tid || activeTenure?.id || ''));
+  const { handleSubmit, field, watch, setValue, setError, clearErrors, resetToDefaults, formState: { errors, isSubmitting } } = useAdminDraftForm<GalleryForm>(
+    'gallery',
+    (v) => {
+      const divs = divisionsOf(v.galTenureId);
+      return z.preprocess(
+        (x: any) => ({ ...x, photoUrlCount: splitPhotoUrls(x?.galPhotos || '').length, pendingFileCount: (x?.pendingGalFiles || []).length }),
+        galleryCreateSchema({ divisionCount: divs.length, hasSelectedDivision: divs.some((d: any) => d.id === v.galDivisionId) })
+      );
+    },
+    {
+      galTitle: '', galTenureId: activeTenure?.id || '', galDateMode: 'date', galDate: emptyDate(), galDivisionId: '', galEventId: '',
+      galDesc: '', galPhotos: '', pendingGalFiles: [], uploadedPhotos: [], galDocLinks: [DEFAULT_DOC_LINK]
+    }
+  );
+  const v = watch();
+  const tenureId = v.galTenureId || activeTenure?.id || '';
+  const divsForTenure = divisionsOf(v.galTenureId);
+
+  const pickPhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    setValue('pendingGalFiles', [...v.pendingGalFiles, ...files]);
+    setValue('uploadedPhotos', [...v.uploadedPhotos, ...files.map((f) => URL.createObjectURL(f))]);
+    clearErrors('galPhotos');
+    showToast(`${files.length} foto dipilih (akan diunggah saat Anda klik Publikasikan)`);
+  };
+  const removePhoto = (i: number) => {
+    setValue('pendingGalFiles', v.pendingGalFiles.filter((_, idx) => idx !== i));
+    setValue('uploadedPhotos', v.uploadedPhotos.filter((_, idx) => idx !== i));
+  };
+  const setDocLinks = (links: DocLink[]) => setValue('galDocLinks', links);
+
+  const createGallery = handleSubmit(async (f) => {
+    const targetTenureId = f.galTenureId || activeTenure?.id || '';
+    const selectedDiv = divisionsOf(f.galTenureId).find((d: any) => d.id === f.galDivisionId);
+    const urlPhotos = splitPhotoUrls(f.galPhotos);
+    // Linked photos must be reachable images before the album is published
+    if (urlPhotos.length > 0) {
+      showToast('Memverifikasi tautan foto...');
+      for (const u of urlPhotos) {
+        const check = await verifyImageUrl(u);
+        if (!check.valid) {
+          setError('galPhotos', { message: `Tautan "${u}" tidak valid: ${check.error}` });
+          showToast(`Tautan foto tidak valid: ${check.error}`, 'error');
+          return;
+        }
+      }
+    }
+    const cloudPhotos: string[] = [];
+    if (f.pendingGalFiles.length > 0) {
+      showToast(`Mengunggah ${f.pendingGalFiles.length} foto ke Cloud Storage...`);
+      try {
+        for (const file of f.pendingGalFiles) {
+          const url = await uploadMediaToCloud(file, 'gallery');
+          if (url) cloudPhotos.push(url);
+        }
+      } catch (err) {
+        showToast('Gagal mengunggah foto galeri: ' + ((err as Error).message || 'Error'), 'error');
+        return;
+      }
+    }
+    onAddGallery({
+      id: 'gal-' + Date.now(),
+      tenureId: targetTenureId,
+      divisionId: selectedDiv?.id || '',
+      division: selectedDiv?.name || '',
+      divisionName: selectedDiv?.name || '',
+      eventId: f.galEventId || null,
+      title: f.galTitle,
+      date: buildFlexibleDate(f.galDateMode, f.galDate),
+      description: f.galDesc,
+      photos: [...cloudPhotos, ...urlPhotos],
+      docLinks: f.galDocLinks.filter((l) => l.url.trim() && l.text.trim())
+    });
+    resetToDefaults();
+    setValue('galDate', emptyDate());
+    showToast(`Dokumentasi "${f.galTitle}" berhasil ditambahkan ke Galeri Kegiatan!`);
+  }, () => showToast('Mohon lengkapi kolom wajib pada form Galeri', 'error'));
 
   const q = gallerySearchQuery.trim().toLowerCase();
   const filtered = galleries.filter((g: any) => {
@@ -35,84 +127,71 @@ export default function GalleryTab() {
   return (
     <AdminPanel title={`Galeri kegiatan (${galleries.length})`} description="Album foto kegiatan yang tampil di halaman Galeri, bisa dihubungkan ke acara dan diberi tautan folder dokumentasi lengkap.">
       <AdminSubsection title="Tambah album">
-        <form onSubmit={handleCreateGallery} noValidate className="grid gap-4 md:grid-cols-2">
-          <Field label="Judul kegiatan" required error={formErrors.galTitle}>
-            <Input placeholder="Contoh: Ibadah Paskah 2026" value={galTitle} onChange={(e) => { setGalTitle(e.target.value); clearFieldError('galTitle'); }} />
+        <form onSubmit={createGallery} noValidate className="grid gap-4 md:grid-cols-2">
+          <Field label="Judul kegiatan" required error={errors.galTitle?.message}>
+            <Input placeholder="Contoh: Ibadah Paskah 2026" {...field('galTitle')} />
           </Field>
           <Field label="Periode" required>
-            <Select value={tenureId} onChange={(e) => { setGalTenureId(e.target.value); setGalDivision(''); }}>
+            <Select value={tenureId} onChange={(e) => { setValue('galTenureId', e.target.value); setValue('galDivisionId', ''); }}>
               {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
             </Select>
           </Field>
           <div className="md:col-span-2">
-            <FlexibleDateField mode={galDateMode} onModeChange={setGalDateMode}
-              value={{ date: galDateVal, dates: galDates, startDate: galStartDate, endDate: galEndDate, month: galMonth, year: galYear }}
-              onChange={(p) => {
-                if (p.date !== undefined) setGalDateVal(p.date);
-                if (p.dates !== undefined) setGalDates(p.dates);
-                if (p.startDate !== undefined) setGalStartDate(p.startDate);
-                if (p.endDate !== undefined) setGalEndDate(p.endDate);
-                if (p.month !== undefined) setGalMonth(p.month);
-                if (p.year !== undefined) setGalYear(p.year);
-              }} />
+            <FlexibleDateField mode={v.galDateMode} onModeChange={(m) => setValue('galDateMode', m)}
+              value={v.galDate} onChange={(patch) => setValue('galDate', { ...v.galDate, ...patch })} />
           </div>
-          <Field label="Divisi penyelenggara" required error={formErrors.galDivision || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
-            <Select value={currentDivId} disabled={divsForTenure.length === 0} onChange={(e) => {
-              setGalDivisionId(e.target.value);
-              setGalDivision(divsForTenure.find((d: any) => d.id === e.target.value)?.name || '');
-              clearFieldError('galDivision');
-            }}>
+          <Field label="Divisi penyelenggara" required error={(errors as any).galDivision?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
+            <Select value={v.galDivisionId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('galDivisionId', e.target.value); clearErrors('galDivision' as never); }}>
               <option value="">Pilih divisi</option>
               {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </Select>
           </Field>
           <Field label="Hubungkan ke acara" hint="Opsional. Album akan tampil di halaman acara tersebut.">
-            <Select value={galEventId} onChange={(e) => setGalEventId(e.target.value)}>
+            <Select {...field('galEventId')}>
               <option value="">Tidak terhubung</option>
-              {(events || []).filter((ev: any) => !galTenureId || ev.tenureId === galTenureId).map((ev: any) => <option key={ev.id} value={ev.id}>{ev.title}{ev.date ? ` (${ev.date})` : ''}</option>)}
+              {(events || []).filter((ev: any) => !v.galTenureId || ev.tenureId === v.galTenureId).map((ev: any) => <option key={ev.id} value={ev.id}>{ev.title}{ev.date ? ` (${ev.date})` : ''}</option>)}
             </Select>
           </Field>
           <div className="md:col-span-2">
-            <Field label="Deskripsi" required error={formErrors.galDesc}>
-              <Textarea rows={3} value={galDesc} onChange={(e) => { setGalDesc(e.target.value); clearFieldError('galDesc'); }} />
+            <Field label="Deskripsi" required error={errors.galDesc?.message}>
+              <Textarea rows={3} {...field('galDesc')} />
             </Field>
           </div>
 
           <div className="flex flex-col gap-3 md:col-span-2">
             <p className="text-[0.86rem] font-semibold text-ink">Foto <span className="text-danger" aria-hidden="true">*</span> <span className="font-normal text-muted">— unggah berkas, tempel tautan, atau keduanya</span></p>
-            <div><FileButton icon={<ImageIcon size={15} aria-hidden="true" />} accept="image/*" multiple onChange={handlePhotoUpload}>Pilih foto (bisa banyak)</FileButton></div>
-            {uploadedPhotos.length > 0 && (
+            <div><FileButton icon={<ImageIcon size={15} aria-hidden="true" />} accept="image/*" multiple onChange={pickPhotos}>Pilih foto (bisa banyak)</FileButton></div>
+            {v.uploadedPhotos.length > 0 && (
               <ul className="flex list-none flex-wrap gap-2">
-                {uploadedPhotos.map((src: string, i: number) => (
+                {v.uploadedPhotos.map((src: string, i: number) => (
                   <li key={i} className="relative">
                     <img src={src} alt={`Foto ${i + 1}`} className="h-14 w-20 rounded-md border border-line object-cover" />
-                    <button type="button" onClick={() => removeUploadedPhoto(i)} aria-label={`Hapus foto ${i + 1}`}
+                    <button type="button" onClick={() => removePhoto(i)} aria-label={`Hapus foto ${i + 1}`}
                       className="absolute -right-1.5 -top-1.5 inline-flex size-6 cursor-pointer items-center justify-center rounded-full border-0 bg-danger text-white"><X size={13} aria-hidden="true" /></button>
                   </li>
                 ))}
               </ul>
             )}
-            <Field label="Tautan foto" error={formErrors.galPhotos} hint="Satu tautan per baris. Tautan diperiksa sebelum disimpan.">
-              <Textarea rows={2} placeholder={'https://…/foto-1.jpg\nhttps://…/foto-2.png'} value={galPhotos}
-                onChange={(e) => { setGalPhotos(e.target.value); if (formErrors.galPhotos && e.target.value.trim()) setFormErrors((prev: any) => ({ ...prev, galPhotos: null })); }} />
+            <Field label="Tautan foto" error={errors.galPhotos?.message} hint="Satu tautan per baris. Tautan diperiksa sebelum disimpan.">
+              <Textarea rows={2} placeholder={'https://…/foto-1.jpg\nhttps://…/foto-2.png'} {...field('galPhotos')} />
             </Field>
           </div>
 
           <div className="flex flex-col gap-3 rounded-md border border-line bg-surface p-3 md:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="inline-flex items-center gap-2 text-[0.88rem] font-semibold text-ink"><Link2 size={15} aria-hidden="true" className="text-gold-ink" />Folder dokumentasi lengkap</p>
-              <Button type="button" size="sm" variant="secondary" icon={<Plus size={14} aria-hidden="true" />} onClick={addDocLinkField}>Tambah tautan</Button>
+              <Button type="button" size="sm" variant="secondary" icon={<Plus size={14} aria-hidden="true" />} onClick={() => setDocLinks([...v.galDocLinks, { text: '', url: '' }])}>Tambah tautan</Button>
             </div>
             <p className="text-[0.82rem] text-muted">Google Drive, OneDrive, atau Teams, beserta teks tombolnya.</p>
-            {galDocLinks.map((link: any, i: number) => (
+            {v.galDocLinks.map((link: DocLink, i: number) => (
               <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto] sm:items-center">
-                <Input aria-label={`Teks tombol ${i + 1}`} placeholder="Teks tombol, mis. Foto HD" value={link.text} onChange={(e) => updateDocLinkField(i, 'text', e.target.value)} />
-                <Input type="url" aria-label={`Tautan ${i + 1}`} placeholder="https://drive.google.com/…" value={link.url} onChange={(e) => updateDocLinkField(i, 'url', e.target.value)} />
-                {galDocLinks.length > 1 ? <IconButton label={`Hapus tautan ${i + 1}`} tone="danger" onClick={() => removeDocLinkField(i)}><Trash2 size={15} aria-hidden="true" /></IconButton> : <span className="hidden sm:block sm:w-9" />}
+                <Input aria-label={`Teks tombol ${i + 1}`} placeholder="Teks tombol, mis. Foto HD" value={link.text} onChange={(e) => setDocLinks(v.galDocLinks.map((l, idx) => (idx === i ? { ...l, text: e.target.value } : l)))} />
+                <Input type="url" aria-label={`Tautan ${i + 1}`} placeholder="https://drive.google.com/…" value={link.url} onChange={(e) => setDocLinks(v.galDocLinks.map((l, idx) => (idx === i ? { ...l, url: e.target.value } : l)))} />
+                {v.galDocLinks.length > 1 ? <IconButton label={`Hapus tautan ${i + 1}`} tone="danger" onClick={() => setDocLinks(v.galDocLinks.filter((_, idx) => idx !== i))}><Trash2 size={15} aria-hidden="true" /></IconButton> : <span className="hidden sm:block sm:w-9" />}
               </div>
             ))}
           </div>
-          <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Terbitkan album</Button></div>
+          <div className="flex justify-end md:col-span-2"><Button type="submit" loading={isSubmitting} icon={<Plus size={16} aria-hidden="true" />}>{isSubmitting ? 'Mengunggah…' : 'Terbitkan album'}</Button></div>
         </form>
       </AdminSubsection>
 

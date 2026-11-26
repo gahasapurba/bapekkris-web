@@ -260,7 +260,7 @@ export default function MemberFields() {
           >
             <Upload size={13} />
             <span>{editingItem.pendingPhoto ? 'Ganti Foto Pilihan' : 'Pilih Foto Baru'}</span>
-            <input type="file" accept="image/*" onChange={(e) => handleMemberPhotoUpload(e, true)} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" onChange={handleMemberPhotoUpload} style={{ display: 'none' }} />
           </label>
           <Input className="min-w-0 flex-1"
             type="text"

@@ -1,46 +1,96 @@
 import { CalendarDays, Download, Edit2, List, MapPin, Plus, Trash2, Users, Wallet } from 'lucide-react';
 import EventCalendarView from '../../components/events/EventCalendarView';
-import { formatLastUpdatedWib, formatWibEventRange, formatWibTimestamp, toDatetimeLocalValue } from '../../utils/dateUtils';
+import { formatLastUpdatedWib, formatWibEventRange, formatWibTimestamp, toDatetimeLocalValue, toWibIsoDate } from '../../utils/dateUtils';
 import { getUnifiedEventAttendees } from '../../utils/quotaUtils';
 import { Badge, Button, Field, Input, Pagination, Select, Textarea, cn } from '../../ui';
 import { AdminEmpty, AdminPanel, AdminSubsection, CheckField, FilterSelect, IconButton, ListToolbar, SearchBox, Switch } from '../AdminUi';
 import { downloadCsv } from '../csv';
 import { useAdminPortal } from '../AdminPortalContext';
+import { EVENT_CATEGORIES as CATEGORIES } from '../adminConstants';
+import { eventCreateSchema } from '../validation/schemas';
+import { useAdminDraftForm } from '../useAdminDraftForm';
+
+type EventForm = {
+  eventTitle: string; eventTenureId: string; eventDivId: string; eventCategory: string; eventStartDate: string; eventEndDate: string;
+  eventLocation: string; eventKpi: string; eventRab: string; eventStatus: string; eventIsLimited: boolean; eventMaxQuota: string;
+  eventIsPublic: boolean; eventDesc: string;
+};
 
 const EVENTS_PER_PAGE = 8;
 const RSVPS_PER_PAGE = 10;
-const CATEGORIES = ['Program Budaya', 'Workshop & Sharing Session', 'Social & Engagement', 'Olahraga & Well-being', 'Kompetisi & Inovasi', 'Apresiasi & Rekognisi', 'Townhall & Perayaan'];
 const STATUS_LABEL: Record<string, string> = { Upcoming: 'Akan datang', Ongoing: 'Berjalan', Completed: 'Selesai' };
 
 export default function EventsTab() {
   const {
-    activeTenure, adminEventPage, adminEventViewMode, adminRsvpPage, clearFieldError, divisions, eventCatFilter, eventCategory, eventDesc,
-    eventDivFilter, eventDivId, eventEndDate, eventIsLimited, eventIsPublic, eventKpi, eventLocation, eventMaxQuota, eventPublicFilter, eventRab,
-    eventRsvps, eventSearchQuery, eventStartDate, eventStatus, eventStatusFilter, eventTenureFilter, eventTenureId, eventTitle, events, formErrors,
-    forms, handleCreateEvent, handleDeleteEventClick, onDeleteEvent, onDeleteEventRsvp, onUpdateEvent, registrationCounts, rsvpEventFilter,
-    rsvpModeFilter, rsvpSearchQuery, setAdminEventPage, setAdminEventViewMode, setAdminRsvpPage, setDeleteConfirm, setEditingItem, setEventCatFilter,
-    setEventCategory, setEventDesc, setEventDivFilter, setEventDivId, setEventEndDate, setEventIsLimited, setEventIsPublic, setEventKpi,
-    setEventLocation, setEventMaxQuota, setEventPublicFilter, setEventRab, setEventSearchQuery, setEventStartDate, setEventStatus,
-    setEventStatusFilter, setEventTenureFilter, setEventTenureId, setEventTitle, setFormErrors, setRsvpEventFilter, setRsvpModeFilter,
-    setRsvpSearchQuery, showToast, tenures, theme
+    activeTenure, adminEventPage, adminEventViewMode, adminRsvpPage, divisions, eventCatFilter, eventDivFilter, eventPublicFilter,
+    eventRsvps, eventSearchQuery, eventStatusFilter, eventTenureFilter, events, forms, handleDeleteEventClick, onAddEvent, onDeleteEvent,
+    onDeleteEventRsvp, onUpdateEvent, registrationCounts, rsvpEventFilter, rsvpModeFilter, rsvpSearchQuery, setAdminEventPage,
+    setAdminEventViewMode, setAdminRsvpPage, setDeleteConfirm, setEditingItem, setEventCatFilter, setEventDivFilter, setEventPublicFilter,
+    setEventSearchQuery, setEventStatusFilter, setEventTenureFilter, setRsvpEventFilter, setRsvpModeFilter, setRsvpSearchQuery, showToast, tenures, theme
   } = useAdminPortal();
 
   const tenureOfEvent = (e: any) => e?.tenureId || divisions.find((d: any) => d.id === e?.divisionId)?.tenureId || '';
-  const formTenure = eventTenureId || activeTenure?.id || '';
-  const divsForTenure = divisions.filter((d: any) => d.tenureId === formTenure);
+  const divisionsOf = (tenureId: string) => divisions.filter((d: any) => d.tenureId === (tenureId || activeTenure?.id || ''));
+  const { handleSubmit, field, watch, setValue, setError, clearErrors, resetToDefaults, formState: { errors } } = useAdminDraftForm<EventForm>(
+    'event',
+    (v) => eventCreateSchema({ divisionIds: divisionsOf(v.eventTenureId).map((d: any) => d.id) }),
+    {
+      eventTitle: '', eventTenureId: activeTenure?.id || '', eventDivId: '', eventCategory: '', eventStartDate: '', eventEndDate: '',
+      eventLocation: '', eventKpi: '', eventRab: '', eventStatus: 'Upcoming', eventIsLimited: false, eventMaxQuota: '', eventIsPublic: false, eventDesc: ''
+    }
+  );
+  const ev = watch();
+  const formTenure = ev.eventTenureId || activeTenure?.id || '';
+  const divsForTenure = divisionsOf(ev.eventTenureId);
 
+  // Start/end are checked against each other as soon as either changes
   const onStart = (val: string) => {
-    setEventStartDate(val);
-    const s = toDatetimeLocalValue(val); const e = toDatetimeLocalValue(eventEndDate);
-    if (s && e && s > e) setFormErrors((prev: any) => ({ ...prev, eventStartDate: 'Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir' }));
-    else { clearFieldError('eventStartDate'); clearFieldError('eventEndDate'); }
+    setValue('eventStartDate', val);
+    const s = toDatetimeLocalValue(val); const e = toDatetimeLocalValue(ev.eventEndDate);
+    if (s && e && s > e) setError('eventStartDate', { message: 'Tanggal & Jam Mulai tidak boleh melebihi Tanggal & Jam Berakhir' });
+    else clearErrors(['eventStartDate', 'eventEndDate']);
   };
   const onEnd = (val: string) => {
-    setEventEndDate(val);
-    const s = toDatetimeLocalValue(eventStartDate); const e = toDatetimeLocalValue(val);
-    if (s && e && e < s) setFormErrors((prev: any) => ({ ...prev, eventEndDate: 'Tanggal & Jam Berakhir tidak boleh kurang dari Tanggal & Jam Mulai' }));
-    else { clearFieldError('eventEndDate'); clearFieldError('eventStartDate'); }
+    setValue('eventEndDate', val);
+    const s = toDatetimeLocalValue(ev.eventStartDate); const e = toDatetimeLocalValue(val);
+    if (s && e && e < s) setError('eventEndDate', { message: 'Tanggal & Jam Berakhir tidak boleh kurang dari Tanggal & Jam Mulai' });
+    else clearErrors(['eventEndDate', 'eventStartDate']);
   };
+
+  const createEvent = handleSubmit((f) => {
+    const divObj = divisions.find((d: any) => d.id === f.eventDivId);
+    const sDate = toDatetimeLocalValue(f.eventStartDate) || toWibIsoDate();
+    const eDate = toDatetimeLocalValue(f.eventEndDate) || sDate;
+    const category = f.eventCategory.trim();
+    onAddEvent?.({
+      id: 'evt-' + Date.now(),
+      tenureId: formTenure,
+      divisionId: f.eventDivId,
+      divisionName: divObj?.name || '',
+      title: f.eventTitle.trim(),
+      date: formatWibEventRange(sDate, eDate),
+      startDate: sDate,
+      endDate: eDate,
+      category,
+      kategori: category,
+      badge: category,
+      location: f.eventLocation.trim(),
+      peserta: f.eventKpi.trim(),
+      kpi: f.eventKpi.trim(),
+      description: f.eventDesc.trim(),
+      status: f.eventStatus,
+      isPublic: f.eventIsPublic,
+      isLimited: f.eventIsLimited,
+      maxQuota: f.eventIsLimited ? Number(f.eventMaxQuota || 0) : 0,
+      totalRab: Number(f.eventRab)
+    });
+    // Period, division and status stay selected for the next event, as before.
+    resetToDefaults();
+    setValue('eventTenureId', f.eventTenureId);
+    setValue('eventDivId', f.eventDivId);
+    setValue('eventStatus', f.eventStatus);
+    showToast(`Event "${f.eventTitle.trim()}" berhasil ditambahkan & disinkronkan!`);
+  }, (errs) => showToast(errs.eventStartDate?.message || errs.eventEndDate?.message || 'Mohon lengkapi kolom wajib pada form Event', 'error'));
 
   // events list
   const q = eventSearchQuery.trim().toLowerCase();
@@ -85,58 +135,58 @@ export default function EventsTab() {
     <>
       <AdminPanel title={`Ibadah & acara (${events.length})`} description="Agenda dengan tanggal mulai dan selesai untuk daftar dan kalender acara. Acara baru tersimpan sebagai draf sampai dipublikasikan.">
         <AdminSubsection title="Tambah acara">
-          <form onSubmit={handleCreateEvent} noValidate className="grid gap-4 md:grid-cols-2">
-            <Field label="Nama acara" required error={formErrors.eventTitle}>
-              <Input placeholder="Contoh: Ibadah Natal 2026" value={eventTitle} onChange={(e) => { setEventTitle(e.target.value); clearFieldError('eventTitle'); }} />
+          <form onSubmit={createEvent} noValidate className="grid gap-4 md:grid-cols-2">
+            <Field label="Nama acara" required error={errors.eventTitle?.message}>
+              <Input placeholder="Contoh: Ibadah Natal 2026" {...field('eventTitle')} />
             </Field>
             <Field label="Periode" required>
-              <Select value={formTenure} onChange={(e) => { setEventTenureId(e.target.value); setEventDivId(''); clearFieldError('eventDivId'); }}>
+              <Select value={formTenure} onChange={(e) => { setValue('eventTenureId', e.target.value); setValue('eventDivId', ''); clearErrors('eventDivId'); }}>
                 {tenures.map((t: any) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
               </Select>
             </Field>
-            <Field label="Divisi penyelenggara" required error={formErrors.eventDivId || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
-              <Select value={eventDivId} disabled={divsForTenure.length === 0} onChange={(e) => { setEventDivId(e.target.value); clearFieldError('eventDivId'); }}>
+            <Field label="Divisi penyelenggara" required error={errors.eventDivId?.message || (divsForTenure.length === 0 ? 'Belum ada divisi di periode ini. Buat dulu di menu Divisi.' : undefined)}>
+              <Select value={ev.eventDivId} disabled={divsForTenure.length === 0} onChange={(e) => { setValue('eventDivId', e.target.value); clearErrors('eventDivId'); }}>
                 <option value="">Pilih divisi</option>
                 {divsForTenure.map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
               </Select>
             </Field>
-            <Field label="Kategori" required error={formErrors.eventCategory}>
-              <Select value={eventCategory} onChange={(e) => { setEventCategory(e.target.value); clearFieldError('eventCategory'); }}>
+            <Field label="Kategori" required error={errors.eventCategory?.message}>
+              <Select {...field('eventCategory')}>
                 <option value="">Pilih kategori</option>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
             </Field>
-            <Field label="Mulai (WIB)" required error={formErrors.eventStartDate}>
-              <Input type="datetime-local" value={toDatetimeLocalValue(eventStartDate)} max={eventEndDate ? toDatetimeLocalValue(eventEndDate) : undefined} onChange={(e) => onStart(e.target.value)} />
+            <Field label="Mulai (WIB)" required error={errors.eventStartDate?.message}>
+              <Input type="datetime-local" value={toDatetimeLocalValue(ev.eventStartDate)} max={ev.eventEndDate ? toDatetimeLocalValue(ev.eventEndDate) : undefined} onChange={(e) => onStart(e.target.value)} />
             </Field>
-            <Field label="Selesai (WIB)" required error={formErrors.eventEndDate}>
-              <Input type="datetime-local" value={toDatetimeLocalValue(eventEndDate)} min={eventStartDate ? toDatetimeLocalValue(eventStartDate) : undefined} onChange={(e) => onEnd(e.target.value)} />
+            <Field label="Selesai (WIB)" required error={errors.eventEndDate?.message}>
+              <Input type="datetime-local" value={toDatetimeLocalValue(ev.eventEndDate)} min={ev.eventStartDate ? toDatetimeLocalValue(ev.eventStartDate) : undefined} onChange={(e) => onEnd(e.target.value)} />
             </Field>
-            <Field label="Lokasi"><Input placeholder="Contoh: Plaza Mandiri Lt. 3 / Zoom" value={eventLocation} onChange={(e) => setEventLocation(e.target.value)} /></Field>
-            <Field label="Peserta"><Input placeholder="Contoh: 150+ jemaat" value={eventKpi} onChange={(e) => setEventKpi(e.target.value)} /></Field>
-            <Field label="Estimasi RAB (Rp)" required error={formErrors.eventRab} hint="Angka tanpa titik.">
-              <Input type="number" min={0} inputMode="numeric" placeholder="15000000" value={eventRab} onChange={(e) => { setEventRab(e.target.value); clearFieldError('eventRab'); }} />
+            <Field label="Lokasi"><Input placeholder="Contoh: Plaza Mandiri Lt. 3 / Zoom" {...field('eventLocation')} /></Field>
+            <Field label="Peserta"><Input placeholder="Contoh: 150+ jemaat" {...field('eventKpi')} /></Field>
+            <Field label="Estimasi RAB (Rp)" required error={errors.eventRab?.message} hint="Angka tanpa titik.">
+              <Input type="number" min={0} inputMode="numeric" placeholder="15000000" {...field('eventRab')} />
             </Field>
             <Field label="Status">
-              <Select value={eventStatus} onChange={(e) => setEventStatus(e.target.value)}>
+              <Select {...field('eventStatus')}>
                 {Object.entries(STATUS_LABEL).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </Select>
             </Field>
             <div className="flex flex-col gap-3">
-              <CheckField checked={eventIsLimited} onChange={setEventIsLimited} label="Batasi kuota RSVP" description="RSVP otomatis tertutup saat kuota terpenuhi." />
-              {eventIsLimited && (
-                <Field label="Kuota maksimal" required error={formErrors.eventMaxQuota}>
-                  <Input type="number" min={1} placeholder="100" value={eventMaxQuota} onChange={(e) => { setEventMaxQuota(e.target.value); clearFieldError('eventMaxQuota'); }} />
+              <CheckField checked={ev.eventIsLimited} onChange={(on) => setValue('eventIsLimited', on)} label="Batasi kuota RSVP" description="RSVP otomatis tertutup saat kuota terpenuhi." />
+              {ev.eventIsLimited && (
+                <Field label="Kuota maksimal" required error={errors.eventMaxQuota?.message}>
+                  <Input type="number" min={1} placeholder="100" {...field('eventMaxQuota')} />
                 </Field>
               )}
             </div>
             <div className="flex items-start justify-between gap-4 rounded-md border border-line bg-surface p-3">
-              <span className="text-[0.88rem] leading-snug text-ink"><strong className="font-semibold">Publikasikan di situs</strong><span className="mt-0.5 block text-[0.82rem] text-muted">{eventIsPublic ? 'Langsung tampil untuk publik.' : 'Draf, hanya terlihat oleh pengurus.'}</span></span>
-              <Switch checked={Boolean(eventIsPublic)} onChange={setEventIsPublic} label="Publikasikan acara di situs" />
+              <span className="text-[0.88rem] leading-snug text-ink"><strong className="font-semibold">Publikasikan di situs</strong><span className="mt-0.5 block text-[0.82rem] text-muted">{ev.eventIsPublic ? 'Langsung tampil untuk publik.' : 'Draf, hanya terlihat oleh pengurus.'}</span></span>
+              <Switch checked={Boolean(ev.eventIsPublic)} onChange={(on) => setValue('eventIsPublic', on)} label="Publikasikan acara di situs" />
             </div>
             <div className="md:col-span-2">
-              <Field label="Deskripsi" required error={formErrors.eventDesc}>
-                <Textarea rows={3} value={eventDesc} onChange={(e) => { setEventDesc(e.target.value); clearFieldError('eventDesc'); }} />
+              <Field label="Deskripsi" required error={errors.eventDesc?.message}>
+                <Textarea rows={3} {...field('eventDesc')} />
               </Field>
             </div>
             <div className="flex justify-end md:col-span-2"><Button type="submit" icon={<Plus size={16} aria-hidden="true" />}>Simpan acara</Button></div>

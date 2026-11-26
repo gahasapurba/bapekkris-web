@@ -1,4 +1,5 @@
 import { formatWibEventRange, toDatetimeLocalValue } from '../../../utils/dateUtils';
+import { EVENT_CATEGORIES } from '../../adminConstants';
 import { useAdminPortal } from '../../AdminPortalContext';
 import { Input, Select, Textarea } from '../../../ui';
 
@@ -230,15 +231,7 @@ export default function EventFields() {
         </label>
         {(() => {
           const currentCat = editingItem.item.kategori || editingItem.item.category || editingItem.item.badge || '';
-          const standardCats = [
-            'Program Budaya',
-            'Workshop & Sharing Session',
-            'Social & Engagement',
-            'Olahraga & Well-being',
-            'Kompetisi & Inovasi',
-            'Apresiasi & Rekognisi',
-            'Townhall & Perayaan'
-          ];
+          const standardCats = EVENT_CATEGORIES;
           const hasCustomCat = currentCat && !standardCats.includes(currentCat);
           return (
             <Select id="ef-event-cat"

@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { buildFlexibleDate, formatWibDateTime } from '../utils/dateUtils';
+import { buildFlexibleDate, formatWibDateTime, toWibIsoDate } from '../utils/dateUtils';
 import { Button, Input, cn } from '../ui';
 import { IconButton } from './AdminUi';
 
@@ -41,7 +41,7 @@ export function FlexibleDateField({ mode, onModeChange, value, onChange, label =
               {value.dates.length > 1 && <IconButton label={`Hapus hari ke-${i + 1}`} tone="danger" onClick={() => onChange({ dates: value.dates.filter((_, j) => j !== i) })}><Trash2 size={15} aria-hidden="true" /></IconButton>}
             </div>
           ))}
-          <div><Button type="button" size="sm" variant="secondary" icon={<Plus size={14} aria-hidden="true" />} onClick={() => onChange({ dates: [...value.dates, new Date().toISOString().split('T')[0]] })}>Tambah tanggal</Button></div>
+          <div><Button type="button" size="sm" variant="secondary" icon={<Plus size={14} aria-hidden="true" />} onClick={() => onChange({ dates: [...value.dates, toWibIsoDate()] })}>Tambah tanggal</Button></div>
         </div>
       )}
       {mode === 'range' && (

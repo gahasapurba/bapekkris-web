@@ -380,7 +380,7 @@ export default function GalleryFields() {
           }}>
             <Upload size={12} />
             <span>+ Pilih Foto Baru</span>
-            <input type="file" accept="image/*" multiple onChange={(e) => handlePhotoUpload(e, true)} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} style={{ display: 'none' }} />
           </label>
         </div>
         {editingItem.pendingPhotos && editingItem.pendingPhotos.length > 0 && (

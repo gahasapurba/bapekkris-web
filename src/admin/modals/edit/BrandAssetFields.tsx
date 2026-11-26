@@ -81,7 +81,7 @@ export default function BrandAssetFields() {
             <input
               type="file"
               accept="*/*,.zip,.rar,.7z,.pdf,.pptx,.ppt,.png,.jpg,.jpeg,.svg,.docx,.xlsx"
-              onChange={(e) => handleBrandAssetUpload(e, 'fileUrl', true)}
+              onChange={(e) => handleBrandAssetUpload(e, 'fileUrl')}
               style={{ display: 'none' }}
             />
           </label>
@@ -137,7 +137,7 @@ export default function BrandAssetFields() {
           }}>
             <ImageIcon size={13} />
             <span>{editingItem.pendingPreviewFile ? 'Ganti Preview' : 'Pilih Gambar'}</span>
-            <input type="file" accept="image/*" onChange={(e) => handleBrandAssetUpload(e, 'previewUrl', true)} style={{ display: 'none' }} />
+            <input type="file" accept="image/*" onChange={(e) => handleBrandAssetUpload(e, 'previewUrl')} style={{ display: 'none' }} />
           </label>
           <Input className="min-w-0 flex-1"
             type="text"
