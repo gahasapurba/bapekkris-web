@@ -5,7 +5,6 @@ import { Input, Textarea } from '../../../ui';
 export default function SubDivisionFields() {
   const {
     editingItem,
-    isDark,
     setEditingItem
   } = useEditDialogContext();
 

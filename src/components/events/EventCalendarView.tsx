@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, MapPin, Pencil } from 'lucide-react';
 import type { AppItem, RegistrationCounts } from '../../lib/supabase';
-import { formatWibEventRange, isEventPassed, toWibIsoDate } from '../../utils/dateUtils';
+import { INDONESIAN_MONTHS, formatWibEventRange, isEventPassed, toWibIsoDate } from '../../utils/dateUtils';
 import { getUnifiedEventAttendees } from '../../utils/quotaUtils';
 import { Badge, Button, Card, EmptyState, Pagination, cn, type BadgeTone } from '../../ui';
 
-const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 const DAYS = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 const EVENTS_PER_PAGE = 9;
 const FALLBACK_COLOR = '#0b2f5e';
+
+/** Year and 0-based month of a stored WIB date ("YYYY-MM-DD..."), read from the text itself. */
+function yearMonthOf(value: unknown): { year: number; month: number } | null {
+  const match = String(value || '').match(/^(\d{4})-(\d{2})/);
+  return match ? { year: +match[1], month: +match[2] - 1 } : null;
+}
+
+/** Today's year and 0-based month in WIB. */
+function currentYearMonth(): { year: number; month: number } {
+  return yearMonthOf(toWibIsoDate()) as { year: number; month: number };
+}
 
 /** rgba() tint of a division colour (#rgb / #rrggbb); html2canvas-safe, unlike color-mix(). */
 function tint(color: string | undefined, alpha: number): string {
@@ -41,21 +51,18 @@ export default function EventCalendarView({
 }: EventCalendarViewProps) {
   const [currentYear, setCurrentYear] = useState(() => {
     const first = events.find((e) => e.startDate && e.status !== 'Completed') || events.find((e) => e.startDate);
-    if (first?.startDate) {
-      const y = new Date(first.startDate).getFullYear();
-      if (!isNaN(y) && y > 2000 && y < 2100) return y;
-    }
+    const y = yearMonthOf(first?.startDate)?.year;
+    if (y && y > 2000 && y < 2100) return y;
     const tenureYear = parseInt(activeTenure?.code, 10);
     if (!isNaN(tenureYear) && tenureYear > 2000 && tenureYear < 2100) return tenureYear;
-    return new Date().getFullYear();
+    return currentYearMonth().year;
   });
   const [currentMonth, setCurrentMonth] = useState(() => {
-    const nowM = new Date().getMonth();
-    const inYear = events.filter((e) => e.startDate && e.status !== 'Completed' && new Date(e.startDate).getFullYear() === currentYear);
-    if (inYear.length > 0) {
-      const upcoming = inYear.filter((e) => new Date(e.startDate).getMonth() >= nowM);
-      return new Date((upcoming[0] || inYear[0]).startDate).getMonth();
-    }
+    const nowM = currentYearMonth().month;
+    const inYear = events
+      .filter((e) => e.status !== 'Completed' && yearMonthOf(e.startDate)?.year === currentYear)
+      .map((e) => (yearMonthOf(e.startDate) as { month: number }).month);
+    if (inYear.length > 0) return inYear.find((m) => m >= nowM) ?? inYear[0];
     return nowM;
   });
   const [page, setPage] = useState(1);
@@ -66,24 +73,25 @@ export default function EventCalendarView({
     if (!activeTenure?.id) return;
     const tenureEvents = events.filter((e) => e.tenureId === activeTenure.id && e.startDate);
     if (tenureEvents.length > 0) {
-      const target = tenureEvents.find((e) => e.status !== 'Completed' && new Date(e.startDate) >= new Date()) || tenureEvents[0];
-      const d = new Date(target.startDate);
-      if (!isNaN(d.getFullYear())) { setCurrentYear(d.getFullYear()); setCurrentMonth(d.getMonth()); setPage(1); }
+      const target = tenureEvents.find((e) => e.status !== 'Completed' && !isEventPassed(e.startDate, e.startDate)) || tenureEvents[0];
+      const ym = yearMonthOf(target.startDate);
+      if (ym) { setCurrentYear(ym.year); setCurrentMonth(ym.month); setPage(1); }
     } else {
       const y = parseInt(activeTenure?.code, 10);
       if (!isNaN(y) && y > 2000 && y < 2100) { setCurrentYear(y); setPage(1); }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTenure?.id, activeTenure?.code]);
 
+  // Calendar math in UTC so the grid does not depend on the browser's time zone
+  const totalDays = new Date(Date.UTC(currentYear, currentMonth + 1, 0)).getUTCDate();
+  const offset = new Date(Date.UTC(currentYear, currentMonth, 1)).getUTCDay();
+  const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
   const monthEvents = events.filter((evt) => {
     if (!evt.startDate) return false;
-    const s = new Date(evt.startDate);
-    const e = evt.endDate ? new Date(evt.endDate) : s;
-    return s <= new Date(currentYear, currentMonth + 1, 0, 23, 59, 59, 999) && e >= new Date(currentYear, currentMonth, 1);
+    const start = String(evt.startDate).slice(0, 10);
+    const end = String(evt.endDate || evt.startDate).slice(0, 10);
+    return start <= `${monthKey}-${String(totalDays).padStart(2, '0')}` && end >= `${monthKey}-01`;
   });
-  const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const offset = new Date(currentYear, currentMonth, 1).getDay();
   const today = toWibIsoDate();
 
   const goMonth = (delta: number) => {
@@ -107,14 +115,14 @@ export default function EventCalendarView({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-[1.8rem] font-semibold leading-tight text-ink" aria-live="polite">{MONTHS[currentMonth]} {currentYear}</h2>
+          <h2 className="font-display text-[1.8rem] font-semibold leading-tight text-ink" aria-live="polite">{INDONESIAN_MONTHS[currentMonth]} {currentYear}</h2>
           <p className="text-[0.88rem] text-muted">
             {monthEvents.length} acara bulan ini{isAdmin && ` · ${publicCount} publik, ${monthEvents.length - publicCount} draft`}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={() => goMonth(-1)} aria-label="Bulan sebelumnya" className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-navy-ink"><ChevronLeft size={18} aria-hidden="true" /></button>
-          <Button variant="secondary" onClick={() => { const n = new Date(); setCurrentMonth(n.getMonth()); setCurrentYear(n.getFullYear()); setPage(1); }}>Bulan ini</Button>
+          <Button variant="secondary" onClick={() => { const now = currentYearMonth(); setCurrentMonth(now.month); setCurrentYear(now.year); setPage(1); }}>Bulan ini</Button>
           <button type="button" onClick={() => goMonth(1)} aria-label="Bulan berikutnya" className="inline-flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-surface text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-navy-ink"><ChevronRight size={18} aria-hidden="true" /></button>
         </div>
       </div>
@@ -175,7 +183,7 @@ export default function EventCalendarView({
                       className={cn('absolute z-20 w-64 rounded-lg border border-line bg-surface p-3 shadow-card',
                         slot < 14 ? 'top-full mt-1' : 'bottom-full mb-1', col <= 1 ? 'left-0' : col >= 5 ? 'right-0' : 'left-1/2 -translate-x-1/2')}>
                       <p className="mb-2 flex items-center justify-between text-[0.8rem] font-semibold text-ink">
-                        <span>{day} {MONTHS[currentMonth]}</span><span className="text-dim">{dayEvents.length} agenda</span>
+                        <span>{day} {INDONESIAN_MONTHS[currentMonth]}</span><span className="text-dim">{dayEvents.length} agenda</span>
                       </p>
                       <ul className="flex list-none flex-col gap-1.5">
                         {dayEvents.map((ev) => (
@@ -201,10 +209,10 @@ export default function EventCalendarView({
         </div>
       </Card>
 
-      <section aria-label={`Acara bulan ${MONTHS[currentMonth]} ${currentYear}`}>
-        <h3 className="mb-4 font-display text-[1.25rem] font-semibold text-ink">Acara bulan {MONTHS[currentMonth]}</h3>
+      <section aria-label={`Acara bulan ${INDONESIAN_MONTHS[currentMonth]} ${currentYear}`}>
+        <h3 className="mb-4 font-display text-[1.25rem] font-semibold text-ink">Acara bulan {INDONESIAN_MONTHS[currentMonth]}</h3>
         {monthEvents.length === 0 ? (
-          <EmptyState icon={<CalendarDays size={22} />} title={`Tidak ada acara di bulan ${MONTHS[currentMonth]} ${currentYear}`} description="Gunakan tombol bulan untuk melihat agenda bulan lainnya." />
+          <EmptyState icon={<CalendarDays size={22} />} title={`Tidak ada acara di bulan ${INDONESIAN_MONTHS[currentMonth]} ${currentYear}`} description="Gunakan tombol bulan untuk melihat agenda bulan lainnya." />
         ) : (
           <div className="flex flex-col gap-6">
             <ul className="grid list-none gap-4 md:grid-cols-2 lg:grid-cols-3">

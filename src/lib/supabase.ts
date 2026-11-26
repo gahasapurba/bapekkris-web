@@ -639,9 +639,9 @@ export interface RegistrationCounts {
 }
 
 export interface PageSettings {
-  pageVisibility?: AppItem;
+  pageVisibility?: AppRecord;
   activeTenureId?: string;
-  announcementBar?: AppItem;
+  announcementBar?: AppRecord;
   roleQuotas?: Json;
 }
 

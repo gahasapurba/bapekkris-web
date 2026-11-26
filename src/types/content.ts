@@ -41,9 +41,9 @@ export interface FormField {
 }
 
 /** File attached to a submission; dataUrl is the storage URL once uploaded. */
-export interface SubmittedFile {
+export type SubmittedFile = {
   name: string;
   size: string;
   type: string;
   dataUrl: string;
-}
+};

@@ -1,5 +1,4 @@
 import { ChevronRight, Lock } from 'lucide-react';
-import type { AppItem } from '../../../lib/supabase';
 import { formatDeadlineWib, getDeadlineStatus } from '../../../utils/dateUtils';
 import { getUnifiedFormQuota } from '../../../utils/quotaUtils';
 import { Badge, Card, cn } from '../../../ui';

@@ -27,7 +27,7 @@ export default function EventsTab() {
     eventRsvps, eventSearchQuery, eventStatusFilter, eventTenureFilter, events, forms, handleDeleteEventClick, onAddEvent, onDeleteEvent,
     onDeleteEventRsvp, onUpdateEvent, registrationCounts, rsvpEventFilter, rsvpModeFilter, rsvpSearchQuery, setAdminEventPage,
     setAdminEventViewMode, setAdminRsvpPage, setDeleteConfirm, setEditingItem, setEventCatFilter, setEventDivFilter, setEventPublicFilter,
-    setEventSearchQuery, setEventStatusFilter, setEventTenureFilter, setRsvpEventFilter, setRsvpModeFilter, setRsvpSearchQuery, showToast, tenures, theme
+    setEventSearchQuery, setEventStatusFilter, setEventTenureFilter, setRsvpEventFilter, setRsvpModeFilter, setRsvpSearchQuery, showToast, tenures
   } = useAdminPortal();
 
   const tenureOfEvent = (e: AppItem | null | undefined) => e?.tenureId || divisions.find((d) => d.id === e?.divisionId)?.tenureId || '';

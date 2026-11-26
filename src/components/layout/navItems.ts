@@ -21,7 +21,8 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'assets', label: 'Aset & Logo', icon: Download, secondary: true }
 ];
 
-export type PageVisibility = Record<string, boolean | undefined>;
+/** Page on/off switches from page_settings; `_updatedAt` records the last change. */
+export type PageVisibility = { [page: string]: boolean | string | undefined; _updatedAt?: string };
 
 /** Admins can hide pages; event/program and form/oprec are aliases of one page each. */
 export function isPageShown(id: string, visibility: PageVisibility): boolean {

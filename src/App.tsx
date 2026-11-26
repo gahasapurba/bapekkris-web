@@ -23,13 +23,6 @@ const DynamicFormSection = lazy(() => import('./components/dynamic-form/DynamicF
 const AdminPortal = lazy(() => import('./components/AdminPortal'));
 const EventRegistrationStats = lazy(() => import('./components/registration-stats/EventRegistrationStats'));
 
-const DEFAULT_ANNOUNCEMENT_BAR = {
-  badge: '',
-  message: '',
-  ctaText: '',
-  ctaTab: 'home',
-  isActive: false,
-};
 import {
   supabase,
   insertRow,
@@ -44,9 +37,17 @@ import {
   deleteRow,
   deleteRowsWhere,
   saveSetting,
-  deleteMediaFromCloud
+  deleteMediaFromCloud,
+  type AppItem,
+  type AppRecord
 } from './lib/supabase';
+import type { AdminSessionState } from './admin/useAdminPortalState';
+import type { PageVisibility } from './components/layout/navItems';
+import type { RsvpInput } from './components/events/useProgramSection';
+import type { SubmissionInput } from './components/dynamic-form/useDynamicForm';
+import type { ProjectorItem, Song } from './types/content';
 import { useLocation } from 'react-router';
+import type { Session } from '@supabase/supabase-js';
 import { getInitialTheme, getSavedTheme, saveTheme, watchSystemTheme } from './lib/theme';
 import {
   AppNavigationContext,
@@ -64,59 +65,68 @@ import {
   useSyncStatus,
   useTableData
 } from './lib/queries';
+import type { TableKey } from './lib/supabase';
 import { isEventPassed } from './utils/dateUtils';
 import { getDivisionLead, getCategoryFromLevel } from './utils/memberQuotaUtils';
 import { buildPageMeta, useDocumentMeta } from './lib/seo';
 import { useTrackPageView } from './lib/analytics';
 import { deriveRegistrationCounts, isFormConnectedToEvent } from './utils/quotaUtils';
 
-const EMPTY_ROLE_QUOTAS = {};
+const DEFAULT_ANNOUNCEMENT_BAR: AppRecord = {
+  badge: '',
+  message: '',
+  ctaText: '',
+  ctaTab: 'home',
+  isActive: false
+};
+
+const EMPTY_ROLE_QUOTAS: AppRecord = {};
 
 // Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
 const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'organisasi', 'galeri', 'assets', 'event-stats', 'admin']);
 
 // Parents are restored before children so foreign keys always resolve.
-const RESTORE_ORDER = [
+const RESTORE_ORDER: TableKey[] = [
   'tenures', 'tenureRoles', 'divisions', 'subDivisions', 'members', 'events', 'forms',
   'submissions', 'eventRsvps', 'luckyDraws', 'galleries', 'devotions', 'worshipSongs',
   'easyWorshipSchedules', 'brandAssets', 'faqs'
 ];
 
-function replaceById(list, updates) {
+function replaceById(list: AppItem[], updates: AppItem[]): AppItem[] {
   if (updates.length === 0) return list;
   const byId = new Map(updates.map(item => [item.id, item]));
   return list.map(item => byId.get(item.id) || item);
 }
 
 // Member category (pembina, inti, pimpro, anggota, ...) follows the level of the member's role.
-function withMemberCategories(members, roles) {
+function withMemberCategories(members: AppItem[], roles: AppItem[]): AppItem[] {
   return members.map(m => {
     const role = roles.find(r => r.id === m.roleId);
-    return role ? { ...m, category: getCategoryFromLevel(role.level) } : m;
+    return role ? { ...m, id: m.id, category: getCategoryFromLevel(role.level) } : m;
   });
 }
 
-function withDerivedEventStatus(event) {
+function withDerivedEventStatus(event: AppItem): AppItem {
   return event.status !== 'Completed' && isEventPassed(event.startDate, event.endDate)
     ? { ...event, status: 'Completed' }
     : event;
 }
 
-function getSubmissionFileUrls(files) {
+function getSubmissionFileUrls(files: unknown): string[] {
   if (!files || typeof files !== 'object') return [];
-  return Object.values(files)
-    .map(f => (typeof f === 'string' ? f : (f?.dataUrl || f?.url || f?.fileUrl || '')))
+  return Object.values(files as Record<string, unknown>)
+    .map(f => (typeof f === 'string' ? f : String((f as AppRecord | null)?.dataUrl || (f as AppRecord | null)?.url || (f as AppRecord | null)?.fileUrl || '')))
     .filter(Boolean);
 }
 
 // Returns the other forms currently connected to an event, disconnected from it.
-function detachFormsFromEvent(forms, eventId, exceptFormId, updatedAt) {
+function detachFormsFromEvent(forms: AppItem[], eventId: string, exceptFormId: string, updatedAt: string): AppItem[] {
   return forms
     .filter(f => f.id !== exceptFormId && isFormConnectedToEvent(f, eventId))
     .map(f => ({ ...f, isEventConnected: false, eventId: '', isLuckyDraw: false, updatedAt }));
 }
 
-const DEFAULT_PAGE_VISIBILITY = {
+const DEFAULT_PAGE_VISIBILITY: PageVisibility = {
   navbar: true,
   home: true,
   organisasi: true,
@@ -134,7 +144,7 @@ const DEFAULT_PAGE_VISIBILITY = {
 };
 
 // Helper to consistently sort tenures descending by year (e.g. 2028 -> 2027 -> 2026)
-const sortTenuresDesc = (list = []) => {
+const sortTenuresDesc = (list: AppItem[] = []) => {
   return [...list].sort((a, b) => {
     const numA = parseInt(a.code || a.id?.replace(/\D/g, '') || '0', 10);
     const numB = parseInt(b.code || b.id?.replace(/\D/g, '') || '0', 10);
@@ -178,7 +188,13 @@ function MainApp() {
   const pathnameRef = useRef(location.pathname);
   pathnameRef.current = location.pathname;
 
-  const setCurrentTab = useCallback((nextTab, formIdParam = null, eventIdParam = null, shouldScroll = true, galleryIdParam = null) => {
+  const setCurrentTab = useCallback((
+    nextTab: string,
+    formIdParam: string | null = null,
+    eventIdParam: string | null = null,
+    shouldScroll = true,
+    galleryIdParam: string | null = null
+  ) => {
     const url = buildTabUrl(
       { tab: nextTab, formId: formIdParam, eventId: eventIdParam, galleryId: galleryIdParam },
       pathnameRef.current
@@ -188,21 +204,21 @@ function MainApp() {
 
   // Page & Navbar Visibility State (View / Hide per page & navbar), stored in page_settings
   const [pageSettings, updatePageSettings] = usePageSettings();
-  const [legacyPageVisibility] = useState(() => {
+  const [legacyPageVisibility] = useState<PageVisibility | null>(() => {
     try {
       const legacy = localStorage.getItem('bapekkris_page_visibility');
       return legacy ? JSON.parse(legacy) : null;
-    } catch (e) {
+    } catch {
       return null;
     }
   });
-  const pageVisibility = useMemo(() => {
+  const pageVisibility = useMemo<PageVisibility>(() => {
     const stored = pageSettings?.pageVisibility;
     if (stored && typeof stored === 'object') return { ...DEFAULT_PAGE_VISIBILITY, ...stored };
     if (legacyPageVisibility) return { ...DEFAULT_PAGE_VISIBILITY, ...legacyPageVisibility };
     return DEFAULT_PAGE_VISIBILITY;
   }, [pageSettings?.pageVisibility, legacyPageVisibility]);
-  const setPageVisibilityState = (nextVisibility) => updatePageSettings({ pageVisibility: nextVisibility });
+  const setPageVisibilityState = (nextVisibility: PageVisibility) => updatePageSettings({ pageVisibility: nextVisibility });
 
   // Follows the OS setting until the visitor picks a theme (src/lib/theme.ts)
   const [theme, setTheme] = useState(getInitialTheme);
@@ -222,7 +238,7 @@ function MainApp() {
   };
 
   // Supabase Auth session of an admin: 'loading' | 'signedOut' | 'admin'
-  const [adminSession, setAdminSession] = useState({ status: 'loading', profile: null });
+  const [adminSession, setAdminSession] = useState<AdminSessionState>({ status: 'loading', profile: null });
   const isAdmin = adminSession.status === 'admin';
 
   // Server data lives in the TanStack Query cache (src/lib/queries.ts). Each table is used like
@@ -237,6 +253,8 @@ function MainApp() {
   const [subDivisions, setSubDivisions] = useTableData('subDivisions');
   const [devotions, setDevotions] = useTableData('devotions');
   const [worshipSongs, setWorshipSongs] = useTableData('worshipSongs');
+  // Rows mapped by tableMappers.worshipSongs, so every song has an id and a title
+  const songs = worshipSongs as Song[];
   const [easyWorshipSchedules, setEasyWorshipSchedules] = useTableData('easyWorshipSchedules');
   const [forms, setForms] = useTableData('forms');
   const [brandAssets, setBrandAssets] = useTableData('brandAssets');
@@ -254,7 +272,7 @@ function MainApp() {
 
   // Derived views: cross-table fields are recomputed whenever their source tables change.
   const members = useMemo(() => withMemberCategories(rawMembers, tenureRoles), [rawMembers, tenureRoles]);
-  const divisions = useMemo(() => rawDivisions.map(d => {
+  const divisions = useMemo(() => rawDivisions.map((d): AppItem => {
     const lead = getDivisionLead(d, members, tenureRoles);
     return {
       ...d,
@@ -264,7 +282,7 @@ function MainApp() {
   }), [rawDivisions, members, tenureRoles]);
   // eventsUpdatedAt re-evaluates the "Completed" display status on every refresh, even when the
   // rows themselves did not change.
-  const events = useMemo(() => rawEvents.map(e => {
+  const events = useMemo(() => rawEvents.map((e): AppItem => {
     const divObj = rawDivisions.find(d => d.id === e.divisionId) || rawDivisions.find(d => d.name === e.divisionName);
     return {
       ...withDerivedEventStatus(e),
@@ -272,7 +290,7 @@ function MainApp() {
       divisionName: divObj?.name || e.divisionName || 'Bapekkris Bank Mandiri'
     };
   }), [rawEvents, rawDivisions, eventsUpdatedAt]);
-  const galleries = useMemo(() => rawGalleries.map(g => {
+  const galleries = useMemo(() => rawGalleries.map((g): AppItem => {
     const matchedDiv = rawDivisions.find(d => d.id === g.divisionId) || rawDivisions.find(d => d.name === g.division);
     const resolvedName = matchedDiv?.name || g.divisionName || g.division || 'Bapekkris Bank Mandiri';
     return { ...g, divisionId: g.divisionId || matchedDiv?.id, division: resolvedName, divisionName: resolvedName };
@@ -283,10 +301,10 @@ function MainApp() {
   const tenures = useMemo(() => {
     const sorted = sortTenuresDesc(rawTenures);
     const official = sorted.find(t => t.id === officialTenureId) || sorted.find(t => t.isActive) || sorted[0] || null;
-    return sorted.map(t => ({ ...t, isActive: Boolean(official) && t.id === official.id }));
+    return sorted.map((t): AppItem => ({ ...t, isActive: Boolean(official) && t.id === official.id }));
   }, [rawTenures, officialTenureId]);
   // The tenure being browsed (a view filter that never changes the official one).
-  const [activeTenure, setActiveTenure] = useState(() => tenures.find(t => t.isActive) || null);
+  const [activeTenure, setActiveTenure] = useState<AppItem | null>(() => tenures.find(t => t.isActive) || null);
   useEffect(() => {
     // Keep the browsing selection when it still exists, otherwise fall back to the official tenure.
     setActiveTenure(curr => {
@@ -303,16 +321,16 @@ function MainApp() {
   const roleQuotas = pageSettings?.roleQuotas && typeof pageSettings.roleQuotas === 'object'
     ? pageSettings.roleQuotas
     : EMPTY_ROLE_QUOTAS;
-  const setAnnouncementBar = (bar) => updatePageSettings({ announcementBar: bar });
+  const setAnnouncementBar = (bar: AppRecord) => updatePageSettings({ announcementBar: bar });
 
-  const [easyWorshipInitialItem, setEasyWorshipInitialItem] = useState(null);
+  const [easyWorshipInitialItem, setEasyWorshipInitialItem] = useState<ProjectorItem | null>(null);
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [quickSearchQuery, setQuickSearchQuery] = useState('');
 
   // Global keyboard shortcut Ctrl+K / Cmd+K for Quick Search
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsQuickSearchOpen(prev => !prev);
@@ -324,17 +342,17 @@ function MainApp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const [persistError, setPersistError] = useState(null);
+  const [persistError, setPersistError] = useState<string | null>(null);
 
   // Runs a database write for an optimistic UI change. On failure the user is informed
   // and local state is reloaded from the server so the screen never shows unsaved data.
-  const persist = useCallback(async (label, task) => {
+  const persist = useCallback(async (label: string, task: () => Promise<unknown>) => {
     try {
       await task();
       return true;
     } catch (err) {
       console.error(err);
-      setPersistError(`${label} gagal disimpan ke server (${err.message}). Data dimuat ulang dari server.`);
+      setPersistError(`${label} gagal disimpan ke server (${(err as Error).message}). Data dimuat ulang dari server.`);
       refreshAllData();
       return false;
     }
@@ -343,7 +361,7 @@ function MainApp() {
   // Track the Supabase Auth session and the admin role attached to it.
   useEffect(() => {
     let cancelled = false;
-    const resolveSession = async (session) => {
+    const resolveSession = async (session: Session | null) => {
       if (!session) {
         if (!cancelled) setAdminSession({ status: 'signedOut', profile: null });
         return;
@@ -400,7 +418,7 @@ function MainApp() {
     };
   }, [adminDivisionId, divisions, forms, galleries, members, events, subDivisions]);
 
-  const handleAdminLogin = async (email, password) => {
+  const handleAdminLogin = async (email: string, password: string) => {
     const profile = await signInAdmin(email, password);
     setAdminSession({ status: 'admin', profile });
     return profile;
@@ -410,19 +428,18 @@ function MainApp() {
     setAdminSession({ status: 'signedOut', profile: null });
   };
 
-  const bumpPublicCount = (kind, id) => {
+  const bumpPublicCount = (kind: 'forms' | 'events', id: string) => {
     setPublicRegistrationCounts(prev => ({
       ...prev,
       [kind]: { ...prev[kind], [id]: (prev[kind][id] || 0) + 1 }
     }));
   };
 
-  const setPageVisibility = (nextVis) => {
-    const resolved = typeof nextVis === 'function' ? nextVis(pageVisibility) : nextVis;
+  const setPageVisibility = (resolved: PageVisibility) => {
     const now = new Date().toISOString();
 
     // Check what was toggled to reliably sync dual keys (event/program, form/oprec)
-    let targetEvent = pageVisibility.event !== false && pageVisibility.program !== false;
+    let targetEvent: unknown = pageVisibility.event !== false && pageVisibility.program !== false;
     if (resolved.event !== undefined && resolved.event !== pageVisibility.event) {
       targetEvent = resolved.event;
     } else if (resolved.program !== undefined && resolved.program !== pageVisibility.program) {
@@ -433,7 +450,7 @@ function MainApp() {
       targetEvent = resolved.program;
     }
 
-    let targetForm = pageVisibility.form !== false && pageVisibility.oprec !== false;
+    let targetForm: unknown = pageVisibility.form !== false && pageVisibility.oprec !== false;
     if (resolved.form !== undefined && resolved.form !== pageVisibility.form) {
       targetForm = resolved.form;
     } else if (resolved.oprec !== undefined && resolved.oprec !== pageVisibility.oprec) {
@@ -444,31 +461,31 @@ function MainApp() {
       targetForm = resolved.oprec;
     }
 
-    const merged = {
+    const merged: PageVisibility = {
       ...DEFAULT_PAGE_VISIBILITY,
       ...resolved,
-      event: targetEvent,
-      program: targetEvent,
-      form: targetForm,
-      oprec: targetForm,
+      event: targetEvent !== false,
+      program: targetEvent !== false,
+      form: targetForm !== false,
+      oprec: targetForm !== false,
       _updatedAt: now
     };
 
     setPageVisibilityState(merged);
-    try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(merged)); } catch (e) { /* storage unavailable */ }
+    try { localStorage.setItem('bapekkris_page_visibility', JSON.stringify(merged)); } catch { /* storage unavailable */ }
     persist('Pengaturan tampilan halaman', () => saveSetting('pageVisibility', merged));
   };
 
   // Visitor / Admin local view mode (filters the page display without mutating the official active tenure in database)
-  const handleSelectTenure = (tenureObj) => {
+  const handleSelectTenure = (tenureObj: AppItem) => {
     setActiveTenure(tenureObj);
   };
 
   // Divisions
-  const handleAddDivision = (newDiv) => {
+  const handleAddDivision = (newDiv: AppItem) => {
     const pimpro = newDiv.memberId ? members.find(m => m.id === newDiv.memberId) : null;
     const now = new Date().toISOString();
-    const finalDiv = {
+    const finalDiv: AppItem = {
       ...newDiv,
       leadName: pimpro ? pimpro.name : newDiv.leadName,
       createdAt: newDiv.createdAt || now,
@@ -483,16 +500,16 @@ function MainApp() {
       if (relinkedMember) await saveRow('members', relinkedMember);
     });
   };
-  const handleUpdateDivision = (updatedDiv) => {
+  const handleUpdateDivision = (updatedDiv: AppItem) => {
     const pimpro = updatedDiv.memberId ? members.find(m => m.id === updatedDiv.memberId) : null;
-    const finalDiv = {
+    const finalDiv: AppItem = {
       ...updatedDiv,
       leadName: pimpro ? pimpro.name : updatedDiv.leadName,
       updatedAt: new Date().toISOString()
     };
 
     // Keep the linked Pimpro pointing at this division, or sync the Pimpro name from the division lead name.
-    let memberUpdates = [];
+    let memberUpdates: AppItem[] = [];
     if (finalDiv.memberId) {
       if (pimpro && pimpro.divisionId !== finalDiv.id) memberUpdates = [{ ...pimpro, divisionId: finalDiv.id }];
     } else if (finalDiv.leadName) {
@@ -502,7 +519,7 @@ function MainApp() {
     }
 
     // Galleries matched only by the old division name get linked by id.
-    let galleryUpdates = [];
+    let galleryUpdates: AppItem[] = [];
     if (updatedDiv.name) {
       const previousDiv = divisions.find(d => d.id === updatedDiv.id);
       galleryUpdates = galleries
@@ -523,7 +540,7 @@ function MainApp() {
       await saveRows('galleries', galleriesToSave);
     });
   };
-  const handleDeleteDivision = (divId) => {
+  const handleDeleteDivision = (divId: string) => {
     const targetDiv = divisions.find(d => d.id === divId);
     // Defense-in-depth safety checks: do not delete division if members, events, or galleries still depend on it
     const hasMem = members.some(m => m.divisionId === divId);
@@ -536,9 +553,9 @@ function MainApp() {
   };
 
   // Tenures
-  const handleAddTenure = (newTenure) => {
+  const handleAddTenure = (newTenure: AppItem) => {
     const now = new Date().toISOString();
-    const stampedTenure = { ...newTenure, createdAt: newTenure.createdAt || now, updatedAt: newTenure.updatedAt || now };
+    const stampedTenure: AppItem = { ...newTenure, createdAt: newTenure.createdAt || now, updatedAt: newTenure.updatedAt || now };
     const isActivating = Boolean(stampedTenure.isActive);
     const deactivated = isActivating ? tenures.filter(t => t.isActive).map(t => ({ ...t, isActive: false, updatedAt: now })) : [];
 
@@ -552,9 +569,9 @@ function MainApp() {
       if (isActivating) await saveSetting('activeTenureId', stampedTenure.id);
     });
   };
-  const handleUpdateTenure = (updatedTenure) => {
+  const handleUpdateTenure = (updatedTenure: AppItem) => {
     const now = new Date().toISOString();
-    const stampedTenure = { ...updatedTenure, updatedAt: now };
+    const stampedTenure: AppItem = { ...updatedTenure, updatedAt: now };
     const isActivating = Boolean(stampedTenure.isActive);
     // Strict exclusivity: when a tenure becomes active, all other tenures must become inactive
     const deactivated = isActivating
@@ -569,7 +586,7 @@ function MainApp() {
       if (isActivating) await saveSetting('activeTenureId', stampedTenure.id);
     });
   };
-  const handleDeleteTenure = (tenureId) => {
+  const handleDeleteTenure = (tenureId: string) => {
     // Defense-in-depth safety checks: do not delete if only 1 tenure, active, or has dependencies
     if (tenures.length <= 1) return;
     if (activeTenure?.id === tenureId) return;
@@ -584,24 +601,24 @@ function MainApp() {
   };
 
   // Galleries
-  const handleAddGallery = (newGal) => {
+  const handleAddGallery = (newGal: AppItem) => {
     const now = new Date().toISOString();
-    const stampedGal = { ...newGal, createdAt: newGal.createdAt || now, updatedAt: newGal.updatedAt || now };
+    const stampedGal: AppItem = { ...newGal, createdAt: newGal.createdAt || now, updatedAt: newGal.updatedAt || now };
     setGalleries(prev => [stampedGal, ...prev]);
     persist('Galeri', () => saveRow('galleries', stampedGal));
   };
-  const handleUpdateGallery = async (updatedGal) => {
+  const handleUpdateGallery = async (updatedGal: AppItem) => {
     const oldGal = galleries.find(g => g.id === updatedGal.id);
     const currentPhotos = Array.isArray(updatedGal.photos) ? updatedGal.photos : [];
-    const removedPhotos = (oldGal?.photos || []).filter(p => !currentPhotos.includes(p));
-    const stampedGal = { ...updatedGal, updatedAt: new Date().toISOString() };
+    const removedPhotos = ((oldGal?.photos || []) as string[]).filter(p => !currentPhotos.includes(p));
+    const stampedGal: AppItem = { ...updatedGal, updatedAt: new Date().toISOString() };
 
     setGalleries(prev => replaceById(prev, [stampedGal]));
     if (await persist('Galeri', () => saveRow('galleries', stampedGal))) {
       removedPhotos.forEach(deleteMediaFromCloud);
     }
   };
-  const handleDeleteGallery = async (galId) => {
+  const handleDeleteGallery = async (galId: string) => {
     const target = galleries.find(g => g.id === galId);
     setGalleries(prev => prev.filter(g => g.id !== galId));
     if (await persist('Penghapusan galeri', () => deleteRow('galleries', galId))) {
@@ -610,29 +627,29 @@ function MainApp() {
   };
 
   // Members. Division lead links (memberId / leadName) are derived locally and not stored on divisions.
-  const linkPimproToDivision = (member) => {
+  const linkPimproToDivision = (member: AppItem) => {
     if (member.category !== 'pimpro' || !member.divisionId) return;
     setDivisions(prev => prev.map(d => (
       d.id === member.divisionId ? { ...d, memberId: member.id, leadName: member.name || d.leadName } : d
     )));
   };
-  const handleAddMember = (newMem) => {
+  const handleAddMember = (newMem: AppItem) => {
     const now = new Date().toISOString();
-    const stampedMem = { ...newMem, createdAt: newMem.createdAt || now, updatedAt: newMem.updatedAt || now };
+    const stampedMem: AppItem = { ...newMem, createdAt: newMem.createdAt || now, updatedAt: newMem.updatedAt || now };
     setMembers(prev => [...prev, stampedMem]);
     linkPimproToDivision(stampedMem);
     persist('Pengurus', () => saveRow('members', stampedMem));
   };
-  const handleUpdateMember = async (updatedMem) => {
+  const handleUpdateMember = async (updatedMem: AppItem) => {
     const oldImage = members.find(m => m.id === updatedMem.id)?.image;
-    const stampedMem = { ...updatedMem, updatedAt: new Date().toISOString() };
+    const stampedMem: AppItem = { ...updatedMem, updatedAt: new Date().toISOString() };
     setMembers(prev => replaceById(prev, [stampedMem]));
     linkPimproToDivision(stampedMem);
     if (await persist('Pengurus', () => saveRow('members', stampedMem))) {
       if (oldImage && oldImage !== stampedMem.image) deleteMediaFromCloud(oldImage);
     }
   };
-  const handleDeleteMember = async (memId) => {
+  const handleDeleteMember = async (memId: string) => {
     const target = members.find(m => m.id === memId);
     if (!target) return;
     // Defense-in-depth safety check: do not delete a Pimpro if their division still has active squad members
@@ -648,18 +665,18 @@ function MainApp() {
   };
 
   // Events
-  const handleAddEvent = (newEvt) => {
+  const handleAddEvent = (newEvt: AppItem) => {
     const now = new Date().toISOString();
-    const stampedEvt = { ...newEvt, createdAt: newEvt.createdAt || now, updatedAt: newEvt.updatedAt || now };
+    const stampedEvt: AppItem = { ...newEvt, createdAt: newEvt.createdAt || now, updatedAt: newEvt.updatedAt || now };
     setEvents(prev => [...prev, stampedEvt]);
     persist('Acara', () => saveRow('events', stampedEvt));
   };
-  const handleUpdateEvent = (updatedEvt) => {
-    const stampedEvt = { ...updatedEvt, updatedAt: new Date().toISOString() };
+  const handleUpdateEvent = (updatedEvt: AppItem) => {
+    const stampedEvt: AppItem = { ...updatedEvt, updatedAt: new Date().toISOString() };
     setEvents(prev => replaceById(prev, [stampedEvt]));
     persist('Acara', () => saveRow('events', stampedEvt));
   };
-  const handleDeleteEvent = (evtId) => {
+  const handleDeleteEvent = (evtId: string) => {
     // Defense-in-depth safety check: do not delete event if RSVP records still exist
     if (eventRsvps.some(r => r.eventId === evtId)) return;
     setEvents(prev => prev.filter(e => e.id !== evtId));
@@ -667,7 +684,7 @@ function MainApp() {
   };
 
   // Dynamic Forms. A form connected to an event takes over that event from any previously connected form (one-to-one).
-  const saveFormWithEventTakeover = (stampedForm, isNew) => {
+  const saveFormWithEventTakeover = (stampedForm: AppItem, isNew: boolean) => {
     const detached = stampedForm.isEventConnected && stampedForm.eventId
       ? detachFormsFromEvent(forms, stampedForm.eventId, stampedForm.id, stampedForm.updatedAt)
       : [];
@@ -677,15 +694,15 @@ function MainApp() {
     });
     persist('Formulir', () => saveRows('forms', [stampedForm, ...detached]));
   };
-  const handleAddForm = (newForm) => {
+  const handleAddForm = (newForm: AppItem) => {
     const now = new Date().toISOString();
     saveFormWithEventTakeover({ ...newForm, createdAt: newForm.createdAt || now, updatedAt: newForm.updatedAt || now }, true);
   };
-  const handleUpdateForm = (updatedForm) => {
+  const handleUpdateForm = (updatedForm: AppItem) => {
     saveFormWithEventTakeover({ ...updatedForm, updatedAt: new Date().toISOString() }, false);
   };
   // Deleting a form removes its submissions as well (database cascade), including their uploaded files.
-  const handleDeleteForm = async (formId) => {
+  const handleDeleteForm = async (formId: string) => {
     const removedSubs = submissions.filter(s => s.formId === formId);
     setForms(prev => prev.filter(f => f.id !== formId));
     setSubmissions(prev => prev.filter(s => s.formId !== formId));
@@ -696,7 +713,7 @@ function MainApp() {
 
   // Submissions. Public registrations go through the submit_form RPC, which enforces deadline, quota
   // and unique fields atomically. Returns the registration id generated by the database.
-  const handleSubmitSubmission = async ({ formId, data, files }) => {
+  const handleSubmitSubmission = async ({ formId, data, files }: SubmissionInput) => {
     const id = await submitFormRegistration(formId, data, files);
     if (isAdmin) {
       const now = new Date().toISOString();
@@ -709,16 +726,16 @@ function MainApp() {
     }
     return id;
   };
-  const handleUpdateSubmission = async (updatedSub) => {
+  const handleUpdateSubmission = async (updatedSub: AppItem) => {
     const oldUrls = getSubmissionFileUrls(submissions.find(s => s.id === updatedSub.id)?.files);
     const newUrls = getSubmissionFileUrls(updatedSub.files);
-    const stampedSub = { ...updatedSub, updatedAt: new Date().toISOString() };
+    const stampedSub: AppItem = { ...updatedSub, updatedAt: new Date().toISOString() };
     setSubmissions(prev => replaceById(prev, [stampedSub]));
     if (await persist('Data pendaftaran', () => saveRow('submissions', stampedSub))) {
       oldUrls.filter(url => !newUrls.includes(url)).forEach(deleteMediaFromCloud);
     }
   };
-  const handleDeleteSubmission = async (subId) => {
+  const handleDeleteSubmission = async (subId: string) => {
     const fileUrls = getSubmissionFileUrls(submissions.find(s => s.id === subId)?.files);
     setSubmissions(prev => prev.filter(s => s.id !== subId));
     if (await persist('Penghapusan data pendaftaran', () => deleteRow('submissions', subId))) {
@@ -727,30 +744,29 @@ function MainApp() {
   };
 
   // Lucky Draw
-  const handleAddLuckyDraw = useCallback((newDraws) => {
-    const draws = Array.isArray(newDraws) ? newDraws : [newDraws];
+  const handleAddLuckyDraw = useCallback((draws: AppItem[]) => {
     setLuckyDraws(prev => [...draws, ...prev]);
     persist('Hasil undian', () => insertRows('luckyDraws', draws));
   }, [persist]);
-  const handleDeleteLuckyDraw = useCallback((id) => {
+  const handleDeleteLuckyDraw = useCallback((id: string) => {
     setLuckyDraws(prev => prev.filter(ld => ld.id !== id));
     persist('Penghapusan pemenang undian', () => deleteRow('luckyDraws', id));
   }, [persist]);
-  const handleResetLuckyDraw = useCallback((eventId) => {
+  const handleResetLuckyDraw = useCallback((eventId: string) => {
     setLuckyDraws(prev => prev.filter(ld => ld.eventId !== eventId));
     persist('Reset undian', () => deleteRowsWhere('luckyDraws', 'event_id', eventId));
   }, [persist]);
 
   // Brand Assets
-  const handleAddBrandAsset = (newAsset) => {
+  const handleAddBrandAsset = (newAsset: AppItem) => {
     const now = new Date().toISOString();
-    const stampedAsset = { ...newAsset, createdAt: newAsset.createdAt || now, updatedAt: newAsset.updatedAt || now };
+    const stampedAsset: AppItem = { ...newAsset, createdAt: newAsset.createdAt || now, updatedAt: newAsset.updatedAt || now };
     setBrandAssets(prev => [...prev, stampedAsset]);
     persist('Aset brand', () => saveRow('brandAssets', stampedAsset));
   };
-  const handleUpdateBrandAsset = async (updatedAsset) => {
+  const handleUpdateBrandAsset = async (updatedAsset: AppItem) => {
     const oldAsset = brandAssets.find(a => a.id === updatedAsset.id);
-    const stampedAsset = { ...updatedAsset, updatedAt: new Date().toISOString() };
+    const stampedAsset: AppItem = { ...updatedAsset, updatedAt: new Date().toISOString() };
     setBrandAssets(prev => replaceById(prev, [stampedAsset]));
     if (!(await persist('Aset brand', () => saveRow('brandAssets', stampedAsset))) || !oldAsset) return;
     // Remove replaced files only when they are no longer referenced by either field
@@ -760,7 +776,7 @@ function MainApp() {
       deleteMediaFromCloud(oldAsset.previewUrl);
     }
   };
-  const handleDeleteBrandAsset = async (assetId) => {
+  const handleDeleteBrandAsset = async (assetId: string) => {
     const targetAsset = brandAssets.find(a => a.id === assetId);
     setBrandAssets(prev => prev.filter(a => a.id !== assetId));
     if (!(await persist('Penghapusan aset brand', () => deleteRow('brandAssets', assetId))) || !targetAsset) return;
@@ -768,69 +784,57 @@ function MainApp() {
     if (targetAsset.previewUrl && targetAsset.previewUrl !== targetAsset.fileUrl) deleteMediaFromCloud(targetAsset.previewUrl);
   };
 
-  const handleSendToEasyWorship = (item) => {
+  const handleSendToEasyWorship = (item: ProjectorItem) => {
     setEasyWorshipInitialItem(item);
     setCurrentTab('easyworship');
   };
 
   // Sub-divisions
-  const handleAddSubDivision = async (newSub) => {
+  const handleAddSubDivision = async (newSub: AppItem) => {
     setSubDivisions(prev => [...prev, newSub]);
     await persist('Sub-divisi', () => saveRow('subDivisions', newSub));
   };
-  const handleUpdateSubDivision = async (updatedSub) => {
+  const handleUpdateSubDivision = async (updatedSub: AppItem) => {
     setSubDivisions(prev => replaceById(prev, [updatedSub]));
     await persist('Sub-divisi', () => saveRow('subDivisions', updatedSub));
   };
-  const handleDeleteSubDivision = async (subId) => {
+  const handleDeleteSubDivision = async (subId: string) => {
     setSubDivisions(prev => prev.filter(s => s.id !== subId));
     await persist('Penghapusan sub-divisi', () => deleteRow('subDivisions', subId));
   };
 
   // Daily devotions
-  const handleAddDevotion = async (newDev) => {
+  const handleAddDevotion = async (newDev: AppItem) => {
     setDevotions(prev => [newDev, ...prev]);
     await persist('Renungan', () => saveRow('devotions', newDev));
   };
-  const handleUpdateDevotion = async (updatedDev) => {
+  const handleUpdateDevotion = async (updatedDev: AppItem) => {
     setDevotions(prev => replaceById(prev, [updatedDev]));
     await persist('Renungan', () => saveRow('devotions', updatedDev));
   };
-  const handleDeleteDevotion = async (devId) => {
+  const handleDeleteDevotion = async (devId: string) => {
     setDevotions(prev => prev.filter(d => d.id !== devId));
     await persist('Penghapusan renungan', () => deleteRow('devotions', devId));
   };
 
   // Worship songs
-  const handleAddWorshipSong = async (newSong) => {
+  const handleAddWorshipSong = async (newSong: AppItem) => {
     setWorshipSongs(prev => [...prev, newSong]);
     await persist('Lagu', () => saveRow('worshipSongs', newSong));
   };
-  const handleUpdateWorshipSong = async (updatedSong) => {
-    setWorshipSongs(prev => replaceById(prev, [updatedSong]));
-    await persist('Lagu', () => saveRow('worshipSongs', updatedSong));
-  };
-  const handleDeleteWorshipSong = async (songId) => {
+  const handleDeleteWorshipSong = async (songId: string) => {
     setWorshipSongs(prev => prev.filter(s => s.id !== songId));
     await persist('Penghapusan lagu', () => deleteRow('worshipSongs', songId));
   };
 
   // EasyWorship schedules
-  const handleAddEasyWorshipSchedule = async (newSch) => {
-    setEasyWorshipSchedules(prev => [newSch, ...prev]);
-    await persist('Jadwal EasyWorship', () => saveRow('easyWorshipSchedules', newSch));
-  };
-  const handleUpdateEasyWorshipSchedule = async (updatedSch) => {
-    setEasyWorshipSchedules(prev => replaceById(prev, [updatedSch]));
-    await persist('Jadwal EasyWorship', () => saveRow('easyWorshipSchedules', updatedSch));
-  };
-  const handleDeleteEasyWorshipSchedule = async (schId) => {
+  const handleDeleteEasyWorshipSchedule = async (schId: string) => {
     setEasyWorshipSchedules(prev => prev.filter(s => s.id !== schId));
     await persist('Penghapusan jadwal EasyWorship', () => deleteRow('easyWorshipSchedules', schId));
   };
 
   // Event RSVP via the submit_rsvp RPC (event quota enforced in the database). Returns the stored RSVP.
-  const handleAddEventRsvp = async ({ eventId, attendeeName, attendanceMode, notes }) => {
+  const handleAddEventRsvp = async ({ eventId, attendeeName, attendanceMode, notes }: RsvpInput) => {
     const id = await submitEventRsvp(eventId, attendeeName, attendanceMode, notes);
     const now = new Date().toISOString();
     const stored = { id, eventId, attendeeName, attendanceMode, notes, createdAt: now, updatedAt: now };
@@ -841,65 +845,64 @@ function MainApp() {
     }
     return stored;
   };
-  const handleDeleteEventRsvp = (rsvpId) => {
+  const handleDeleteEventRsvp = (rsvpId: string) => {
     setEventRsvps(prev => prev.filter(r => r.id !== rsvpId));
     persist('Penghapusan RSVP', () => deleteRow('eventRsvps', rsvpId));
   };
 
   // Announcement Bar
-  const handleUpdateAnnouncementBar = (nextBar) => {
-    const resolved = typeof nextBar === 'function' ? nextBar(announcementBar) : nextBar;
-    const merged = { ...DEFAULT_ANNOUNCEMENT_BAR, ...resolved, _updatedAt: new Date().toISOString() };
+  const handleUpdateAnnouncementBar = (nextBar: AppRecord) => {
+    const merged = { ...DEFAULT_ANNOUNCEMENT_BAR, ...nextBar, _updatedAt: new Date().toISOString() };
     setAnnouncementBar(merged);
     setIsBannerDismissed(false);
     persist('Pengumuman', () => saveSetting('announcementBar', merged));
   };
 
   // FAQs
-  const handleAddFaq = (newFaq) => {
+  const handleAddFaq = (newFaq: AppItem) => {
     const now = new Date().toISOString();
-    const stampedFaq = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
+    const stampedFaq: AppItem = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
     setFaqs(prev => [...prev, stampedFaq]);
     persist('FAQ', () => saveRow('faqs', stampedFaq));
   };
-  const handleSubmitPublicFaq = async (newFaq) => {
+  const handleSubmitPublicFaq = async (newFaq: AppItem) => {
     const now = new Date().toISOString();
-    const stampedFaq = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
+    const stampedFaq: AppItem = { ...newFaq, createdAt: newFaq.createdAt || now, updatedAt: newFaq.updatedAt || now };
     await insertRow('faqs', stampedFaq);
     setFaqs(prev => [stampedFaq, ...prev.filter(f => f.id !== stampedFaq.id)]);
   };
-  const handleUpdateFaq = (updatedFaq) => {
-    const stampedFaq = { ...updatedFaq, updatedAt: new Date().toISOString() };
+  const handleUpdateFaq = (updatedFaq: AppItem) => {
+    const stampedFaq: AppItem = { ...updatedFaq, updatedAt: new Date().toISOString() };
     setFaqs(prev => replaceById(prev, [stampedFaq]));
     persist('FAQ', () => saveRow('faqs', stampedFaq));
   };
-  const handleDeleteFaq = (faqId) => {
+  const handleDeleteFaq = (faqId: string) => {
     setFaqs(prev => prev.filter(f => f.id !== faqId));
     persist('Penghapusan FAQ', () => deleteRow('faqs', faqId));
   };
 
   // Tenure Roles
-  const handleAddTenureRole = (newRole) => {
+  const handleAddTenureRole = (newRole: AppItem) => {
     const now = new Date().toISOString();
-    const stampedRole = { ...newRole, createdAt: newRole.createdAt || now, updatedAt: newRole.updatedAt || now };
+    const stampedRole: AppItem = { ...newRole, createdAt: newRole.createdAt || now, updatedAt: newRole.updatedAt || now };
     setTenureRoles(prev => [...prev, stampedRole]);
     persist('Jabatan', () => saveRow('tenureRoles', stampedRole));
   };
-  const handleUpdateTenureRole = (updatedRole) => {
+  const handleUpdateTenureRole = (updatedRole: AppItem) => {
     const existing = tenureRoles.find(r => r.id === updatedRole.id);
     if (!existing) return;
-    const stampedRole = { ...existing, ...updatedRole, updatedAt: new Date().toISOString() };
+    const stampedRole: AppItem = { ...existing, ...updatedRole, updatedAt: new Date().toISOString() };
     setTenureRoles(prev => replaceById(prev, [stampedRole]));
     persist('Jabatan', () => saveRow('tenureRoles', stampedRole));
   };
-  const handleDeleteTenureRole = (roleId) => {
+  const handleDeleteTenureRole = (roleId: string) => {
     setTenureRoles(prev => prev.filter(r => r.id !== roleId));
     persist('Penghapusan jabatan', () => deleteRow('tenureRoles', roleId));
   };
 
   // Restore a backup snapshot (.json). Rows are upserted table by table in foreign-key order;
   // rows created after the backup are kept. Throws on the first failure so the caller can report it.
-  const handleRestoreBackup = async (backupData) => {
+  const handleRestoreBackup = async (backupData: AppRecord) => {
     if (!backupData || typeof backupData !== 'object') return;
     try {
       for (const key of RESTORE_ORDER) {
@@ -907,7 +910,7 @@ function MainApp() {
       }
       if (Array.isArray(backupData.tenures) && backupData.tenures.length > 0) {
         const targetId = backupData.meta?.activeTenureId || backupData.tenures[0].id;
-        const restoredActive = backupData.tenures.find(t => t.id === targetId) || backupData.tenures[0];
+        const restoredActive = backupData.tenures.find((t: AppItem) => t.id === targetId) || backupData.tenures[0];
         await saveSetting('activeTenureId', restoredActive.id);
       }
       if (backupData.announcementBar && typeof backupData.announcementBar === 'object') {
@@ -931,7 +934,7 @@ function MainApp() {
   };
 
   // Helper to check page visibility with alias support
-  const isPageVisible = (id) => {
+  const isPageVisible = (id: string) => {
     if (id === 'event' || id === 'program') return pageVisibility.event !== false && pageVisibility.program !== false;
     if (id === 'form' || id === 'oprec') return pageVisibility.form !== false && pageVisibility.oprec !== false;
     return pageVisibility[id] !== false;
@@ -1215,7 +1218,7 @@ function MainApp() {
 
           {effectiveTab === 'lagu' && (
             <WorshipSongSection
-              songs={worshipSongs}
+              songs={songs}
               onSendToEasyWorship={handleSendToEasyWorship}
             />
           )}
@@ -1224,7 +1227,7 @@ function MainApp() {
 
           {effectiveTab === 'easyworship' && (
             <EasyWorshipSection
-              songs={worshipSongs}
+              songs={songs}
               initialItem={easyWorshipInitialItem}
             />
           )}
@@ -1279,14 +1282,14 @@ function MainApp() {
                 galleries={adminScope.galleries}
                 onAddGallery={handleAddGallery}
                 onUpdateGallery={handleUpdateGallery}
-                onDeleteGallery={handleUpdateGallery ? handleDeleteGallery : undefined}
+                onDeleteGallery={handleDeleteGallery}
                 members={adminScope.members}
                 onAddMember={handleAddMember}
                 onUpdateMember={handleUpdateMember}
                 onDeleteMember={handleDeleteMember}
                 events={adminScope.events}
                 onAddEvent={handleAddEvent}
-                onUpdateEvent={handleAddEvent ? handleUpdateEvent : undefined}
+                onUpdateEvent={handleUpdateEvent}
                 onDeleteEvent={handleDeleteEvent}
                 subDivisions={adminScope.subDivisions}
                 onAddSubDivision={handleAddSubDivision}
@@ -1298,11 +1301,8 @@ function MainApp() {
                 onDeleteDevotion={handleDeleteDevotion}
                 worshipSongs={worshipSongs}
                 onAddWorshipSong={handleAddWorshipSong}
-                onUpdateWorshipSong={handleUpdateWorshipSong}
                 onDeleteWorshipSong={handleDeleteWorshipSong}
                 easyWorshipSchedules={easyWorshipSchedules}
-                onAddEasyWorshipSchedule={handleAddEasyWorshipSchedule}
-                onUpdateEasyWorshipSchedule={handleUpdateEasyWorshipSchedule}
                 onDeleteEasyWorshipSchedule={handleDeleteEasyWorshipSchedule}
                 brandAssets={brandAssets}
                 onAddBrandAsset={handleAddBrandAsset}
@@ -1319,7 +1319,6 @@ function MainApp() {
                 pageVisibility={pageVisibility}
                 onUpdatePageVisibility={setPageVisibility}
                 syncStatus={syncStatus}
-                onForceSync={refreshAllData}
                 onResetDefault={handleResetDefault}
                 onRestoreBackup={handleRestoreBackup}
                 theme={theme}

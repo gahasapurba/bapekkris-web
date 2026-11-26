@@ -1,5 +1,4 @@
 import { Lock, Search, X } from 'lucide-react';
-import type { AppItem } from '../../../lib/supabase';
 import { formatWibTimestamp } from '../../../utils/dateUtils';
 import { getFormFields } from '../../../utils/formMeta';
 import { Badge, Card, Input } from '../../../ui';

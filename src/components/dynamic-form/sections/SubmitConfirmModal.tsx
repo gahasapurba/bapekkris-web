@@ -1,5 +1,4 @@
 import { Paperclip, Send } from 'lucide-react';
-import type { AppItem } from '../../../lib/supabase';
 import { Button, Dialog } from '../../../ui';
 import { useDynamicFormContext } from '../DynamicFormContext';
 

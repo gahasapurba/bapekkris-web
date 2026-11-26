@@ -28,7 +28,6 @@ export default function EditItemModal() {
     divisions,
     editModalError,
     editingItem,
-    isDark,
     isUploadingMedia,
     members,
     onUpdateBrandAsset,

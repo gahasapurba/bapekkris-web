@@ -28,6 +28,7 @@ interface RegistrationRow {
   formId?: Id | null;
   eventId?: Id | null;
   status?: string;
+  [column: string]: unknown;
 }
 
 export interface EventAttendees<F extends QuotaForm> {

@@ -1,5 +1,4 @@
 import { Clock } from 'lucide-react';
-import type { AppItem } from '../../lib/supabase';
 import { EmptyState, PageHeader, cn } from '../../ui';
 import { useDynamicForm, type UseDynamicFormProps } from './useDynamicForm';
 import { DynamicFormContext } from './DynamicFormContext';

@@ -6,11 +6,9 @@ import { soundFx } from '../utils/audio';
 import { toWibIsoDate } from '../utils/dateUtils';
 import { useFeedback } from '../ui';
 import { DIVISION_ADMIN_TABS, SYNC_BADGE } from './adminConstants';
+import type { PageVisibility } from '../components/layout/navItems';
 
 type Save = (item: AppItem) => unknown;
-
-/** Page on/off switches; `_updatedAt` records the last change. */
-export type PageVisibility = { [page: string]: boolean | string | undefined; _updatedAt?: string };
 type Remove = (id: string) => unknown;
 
 export interface AdminSessionState {
