@@ -1,44 +1,16 @@
-import { useEditDialogContext } from '../../AdminPortalContext';
-import { Input, Textarea } from '../../../ui';
+import { Field, Input, Textarea } from '../../../ui';
+import { useEditBinding } from './useEditBinding';
 
 /** Fields of the edit dialog for `sub_division` items. */
 export default function SubDivisionFields() {
-  const {
-    editingItem,
-    setEditingItem
-  } = useEditDialogContext();
-
+  const { bind } = useEditBinding();
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div className="mobile-two-col" style={{ gap: '10px' }}>
-        <div>
-          <label htmlFor="ef-subdivision-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Sub-Divisi <span style={{ color: '#f43f5e' }}>*</span></label>
-          <Input id="ef-subdivision-1"
-            type="text"
-            value={editingItem.item.name || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
-            placeholder="Contoh: Sie Multimedia / Sie Musik"
-          />
-        </div>
-        <div>
-          <label htmlFor="ef-subdivision-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Kode Singkat</label>
-          <Input id="ef-subdivision-2"
-            type="text"
-            value={editingItem.item.code || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, code: e.target.value.toUpperCase() } })}
-            placeholder="Contoh: MULTI"
-          />
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nama sub-divisi" required><Input placeholder="Contoh: Sie Multimedia" {...bind('name')} /></Field>
+        <Field label="Kode singkat"><Input placeholder="Contoh: MULTI" {...bind('code', (v) => v.toUpperCase())} /></Field>
       </div>
-      <div>
-        <label htmlFor="ef-subdivision-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Deskripsi Tugas / Lingkup Kerja (Opsional)</label>
-        <Textarea id="ef-subdivision-3"
-          rows={3}
-          value={editingItem.item.description || ''}
-          onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, description: e.target.value } })}
-          placeholder="Deskripsi tugas atau tanggung jawab sub-divisi ini..."
-        />
-      </div>
+      <Field label="Deskripsi tugas (opsional)"><Textarea rows={3} placeholder="Tugas atau tanggung jawab sub-divisi ini" {...bind('description')} /></Field>
     </div>
   );
 }

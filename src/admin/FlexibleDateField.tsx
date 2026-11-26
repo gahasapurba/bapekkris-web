@@ -1,9 +1,9 @@
 import { Plus, Trash2 } from 'lucide-react';
-import { buildFlexibleDate, formatWibDateTime, toWibIsoDate } from '../utils/dateUtils';
+import { buildFlexibleDate, formatWibDateTime, toWibIsoDate, type FlexibleDateMode } from '../utils/dateUtils';
 import { Button, Input, cn } from '../ui';
 import { IconButton } from './AdminUi';
 
-export type FlexibleDateMode = 'date' | 'dates' | 'range' | 'month' | 'year';
+export type { FlexibleDateMode };
 export interface FlexibleDateValue { date: string; dates: string[]; startDate: string; endDate: string; month: string; year: string }
 
 const MODES: { id: FlexibleDateMode; label: string }[] = [

@@ -19,7 +19,7 @@ export function OrgMemberCard({ member, roleName, subDivisionName, onClick, comp
   const [imageError, setImageError] = useState(false);
   return (
     <button type="button" onClick={onClick}
-      className={cn('crew-member-card glass-panel flex w-full cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface text-left shadow-card transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink',
+      data-pdf-card className={cn('flex w-full cursor-pointer items-center gap-3 rounded-lg border border-line bg-surface text-left shadow-card transition-[border-color,transform] duration-200 hover:-translate-y-0.5 hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink',
         compact ? 'p-3' : 'p-4')}>
       <span className={cn('relative flex shrink-0 items-center justify-center overflow-hidden rounded-full border border-line bg-subtle font-display font-semibold text-muted', compact ? 'size-11 text-[0.95rem]' : 'size-14 text-[1.1rem]')}>
         {member.image && !imageError

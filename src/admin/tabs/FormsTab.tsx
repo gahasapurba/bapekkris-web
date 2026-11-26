@@ -17,7 +17,7 @@ type NewForm = {
 };
 
 const PER_PAGE = 6;
-const CATEGORIES: [string, string][] = [['Kegiatan & Event', 'Kegiatan & acara'], ['Rekrutmen', 'Rekrutmen & oprec'], ['Ibadah & Kebaktian', 'Ibadah & kebaktian'], ['Pelayanan & Diakonia', 'Pelayanan & diakonia'], ['Workshop & Sharing', 'Workshop & sharing']];
+export const FORM_CATEGORIES: [string, string][] = [['Kegiatan & Event', 'Kegiatan & acara'], ['Rekrutmen', 'Rekrutmen & oprec'], ['Ibadah & Kebaktian', 'Ibadah & kebaktian'], ['Pelayanan & Diakonia', 'Pelayanan & diakonia'], ['Workshop & Sharing', 'Workshop & sharing']];
 // Default questions of a new form: with status tracking (NIP as search index) or a simple form.
 const TRACKED_FIELDS = [
   { id: 'f-name', label: 'Nama Lengkap (HCM Mandiri)', type: 'text', placeholder: 'Nama sesuai HCM Mandiri', required: true, isSearchIndex: false, isUnique: false },
@@ -118,7 +118,7 @@ export default function FormsTab() {
           <Field label="Kategori" required error={errors.newFormCategory?.message}>
             <Select {...field('newFormCategory')}>
               <option value="">Pilih kategori</option>
-              {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              {FORM_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </Select>
           </Field>
           <Field label="Batas waktu (WIB)" required error={errors.newFormDeadline?.message} hint={nf.newFormDeadline ? `Tampil di situs: ${formatDeadlineWib(nf.newFormDeadline)}` : undefined}>
@@ -183,7 +183,7 @@ export default function FormsTab() {
           </FilterSelect>
           <FilterSelect label="Saring kategori" value={formCatFilter} onChange={(v) => { setFormCatFilter(v); setFormPage(1); }}>
             <option value="all">Semua kategori</option>
-            {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            {FORM_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </FilterSelect>
           <FilterSelect label="Saring status" value={formStatusFilter} onChange={(v) => { setFormStatusFilter(v); setFormPage(1); }}>
             <option value="all">Semua status</option>

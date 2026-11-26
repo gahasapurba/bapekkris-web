@@ -1,299 +1,102 @@
-import { LEVEL_OPTIONS, getCategoryFromLevel, getTenureRoles } from '../../../utils/memberQuotaUtils';
 import { Upload } from 'lucide-react';
-import { useEditDialogContext } from '../../AdminPortalContext';
-import { Input, Select, Textarea } from '../../../ui';
+import { LEVEL_OPTIONS, getCategoryFromLevel, getTenureRoles } from '../../../utils/memberQuotaUtils';
+import { Field, Input, Select, Textarea } from '../../../ui';
+import { FileButton, PendingFile } from '../../AdminUi';
+import { useEditBinding } from './useEditBinding';
 
 /** Fields of the edit dialog for `member` items. */
 export default function MemberFields() {
   const {
-    activeTenure,
-    divisions,
-    editModalError,
-    editingItem,
-    handleMemberPhotoUpload,
-    roleQuotas,
-    setEditModalError,
-    setEditingItem,
-    subDivisions,
-    tenureRoles,
-    tenures
-  } = useEditDialogContext();
+    activeTenure, bind, divisions, editModalError, editingItem, handleMemberPhotoUpload, item, roleQuotas, set,
+    setEditModalError, setEditingItem, subDivisions, tenureRoles, tenures
+  } = useEditBinding();
+
+  const tenureId = item.tenureId || activeTenure?.id || '';
+  const availableRoles = getTenureRoles(tenureId, roleQuotas, tenureRoles);
+  const selectedRole = availableRoles.find((r) => r.id === item.roleId)
+    || availableRoles.find((r) => String(r?.name || '').toLowerCase() === String(item.role || '').toLowerCase())
+    || null;
+  const requiresDivision = selectedRole ? selectedRole.requiresDivision : (item.category === 'anggota' || item.category === 'pimpro');
+  const tenureDivisions = divisions.filter((d) => d.tenureId === tenureId);
+  const divisionSubs = subDivisions.filter((sd) => sd.divisionId === item.divisionId);
+  const responsibilitiesText = item.rawResponsibilities !== undefined ? item.rawResponsibilities : Array.isArray(item.responsibilities) ? item.responsibilities.join('\n') : '';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div className="mobile-two-col" style={{ gap: '10px' }}>
-        <div>
-          <label htmlFor="ef-member-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Lengkap <span style={{ color: '#f43f5e' }}>*</span></label>
-          <Input id="ef-member-1"
-            type="text"
-            value={editingItem.item.name || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, name: e.target.value } })}
-          />
-        </div>
-        <div>
-          <label htmlFor="ef-member-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Periode Kepengurusan <span style={{ color: '#f43f5e' }}>*</span></label>
-          <Select id="ef-member-2"
-            value={editingItem.item.tenureId || activeTenure?.id || ''}
-            onChange={(e) => {
-              const newTenure = e.target.value;
-              const validDivs = divisions.filter(d => d.tenureId === newTenure);
-              const keepDiv = validDivs.some(d => d.id === editingItem.item.divisionId);
-              setEditingItem({
-                ...editingItem,
-                item: {
-                  ...editingItem.item,
-                  tenureId: newTenure,
-                  divisionId: keepDiv ? editingItem.item.divisionId : undefined
-                }
-              });
-            }}
-          >
-            {tenures.map(t => (
-              <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>
-            ))}
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nama lengkap" required><Input {...bind('name')} /></Field>
+        <Field label="Periode kepengurusan" required>
+          <Select value={tenureId} onChange={(e) => {
+            const next = e.target.value;
+            const keepDivision = divisions.some((d) => d.tenureId === next && d.id === item.divisionId);
+            set({ tenureId: next, divisionId: keepDivision ? item.divisionId : undefined });
+          }}>
+            {tenures.map((t) => <option key={t.id} value={t.id}>{t.title || t.code} ({t.code})</option>)}
           </Select>
-        </div>
+        </Field>
+
+        <Field label="Jabatan / role" required
+          error={availableRoles.length === 0 ? 'Periode ini belum memiliki role. Buat dulu di tab Role & jabatan.' : undefined}>
+          <Select value={selectedRole?.id || ''} disabled={availableRoles.length === 0} onChange={(e) => {
+            const role = availableRoles.find((r) => r.id === e.target.value);
+            if (role) set({ roleId: role.id, role: role.name, category: getCategoryFromLevel(role.level), divisionId: role.requiresDivision ? item.divisionId : undefined });
+          }}>
+            <option value="">Pilih jabatan</option>
+            {availableRoles.map((r) => {
+              const level = LEVEL_OPTIONS.find((l) => l.level === r.level);
+              return <option key={r.id} value={r.id}>{r.name} ({level?.shortLabel || `Level ${r.level}`} · {r.max > 0 ? `maks ${r.max}` : 'tanpa batas'}{r.requiresDivision ? ' · butuh divisi' : ''})</option>;
+            })}
+          </Select>
+        </Field>
+
+        {requiresDivision ? (
+          <Field label="Divisi penugasan" required error={tenureDivisions.length === 0 ? 'Periode ini belum memiliki divisi.' : undefined}>
+            <Select value={item.divisionId || ''} onChange={(e) => set({ divisionId: e.target.value || undefined, subDivisionId: undefined })}>
+              <option value="">Pilih divisi</option>
+              {tenureDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </Select>
+          </Field>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[0.84rem] font-semibold text-muted">Lingkup tugas</span>
+            <p className="m-0 flex h-11 items-center rounded-md border border-line bg-subtle px-3.5 text-[0.9rem] text-muted">Lintas divisi</p>
+          </div>
+        )}
+
+        {requiresDivision && selectedRole?.requiresSubDivision && (
+          <Field label="Sub-divisi penugasan" required
+            error={item.divisionId && divisionSubs.length === 0 ? 'Divisi ini belum memiliki sub-divisi. Buat dulu di tab Divisi.' : undefined}>
+            <Select value={item.subDivisionId || ''} disabled={!item.divisionId || divisionSubs.length === 0}
+              onChange={(e) => set({ subDivisionId: e.target.value || undefined })}>
+              <option value="">{item.divisionId ? 'Pilih sub-divisi' : 'Pilih divisi terlebih dahulu'}</option>
+              {divisionSubs.map((sd) => <option key={sd.id} value={sd.id}>{sd.name}{sd.code ? ` (${sd.code})` : ''}</option>)}
+            </Select>
+          </Field>
+        )}
+
+        <Field label="Nomor WhatsApp (opsional)"><Input inputMode="tel" placeholder="Contoh: 08123456789" {...bind('whatsapp')} /></Field>
+        <Field label="Motto (opsional)"><Input placeholder="Contoh: Melayani dengan kasih" {...bind('motto')} /></Field>
       </div>
 
-      {/* ROLE & DIVISI SELECTION IN EDIT MODAL */}
-      {(() => {
-        const editMemberTenureId = editingItem.item.tenureId || activeTenure?.id || '';
-        const availableRoles = getTenureRoles(editMemberTenureId, roleQuotas, tenureRoles);
-        const selectedRole = availableRoles.find(r => r.id === editingItem.item.roleId) ||
-          availableRoles.find(r => String(r?.name || '').toLowerCase() === String(editingItem.item.role || '').toLowerCase()) ||
-          null;
-        const requiresDiv = selectedRole ? selectedRole.requiresDivision : (editingItem.item.category === 'anggota' || editingItem.item.category === 'pimpro');
-        const editMemberDivs = divisions.filter(d => d.tenureId === editMemberTenureId);
+      <Field label="Tanggung jawab utama" hint="Satu poin per baris.">
+        <Textarea rows={3} value={responsibilitiesText}
+          onChange={(e) => set({ rawResponsibilities: e.target.value, responsibilities: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} />
+      </Field>
 
-        return (
-          <div className="mobile-two-col" style={{ gap: '10px' }}>
-            <div>
-              <label htmlFor="ef-member-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
-                Jabatan / Role <span style={{ color: '#f43f5e' }}>*</span>
-              </label>
-              <Select id="ef-member-3"
-                value={selectedRole?.id || ''}
-                onChange={(e) => {
-                  const rId = e.target.value;
-                  const rObj = availableRoles.find(r => r.id === rId);
-                  if (rObj) {
-                    const newCat = getCategoryFromLevel(rObj.level);
-                    setEditingItem({
-                      ...editingItem,
-                      item: {
-                        ...editingItem.item,
-                        roleId: rObj.id,
-                        role: rObj.name,
-                        category: newCat,
-                        divisionId: rObj.requiresDivision ? editingItem.item.divisionId : undefined
-                      }
-                    });
-                  }
-                }}
-              >
-                {availableRoles.length === 0 ? (
-                  <option value="" disabled>-- Role kepengurusan masih kosong di periode ini. Silakan buat role baru di menu Kelola Role & Jabatan --</option>
-                ) : (
-                  <>
-                    <option value="">-- Pilih Jabatan / Role --</option>
-                    {availableRoles.map((r) => {
-                      const levelInfo = LEVEL_OPTIONS.find(l => l.level === r.level);
-                      const quotaText = r.max > 0 ? `Maks ${r.max}` : 'Unlimited';
-                      const divText = r.requiresDivision ? ' • Butuh Divisi' : '';
-                      return (
-                        <option key={r.id} value={r.id}>
-                          {r.name} ({levelInfo?.shortLabel || `Level ${r.level}`} • {quotaText}{divText})
-                        </option>
-                      );
-                    })}
-                  </>
-                )}
-              </Select>
-              {availableRoles.length === 0 && (
-                <div style={{ fontSize: '0.74rem', color: '#f59e0b', marginTop: '6px', lineHeight: 1.4 }}>
-                  <strong>Role kepengurusan masih kosong</strong> pada periode kepengurusan ini. Silakan buat role baru terlebih dahulu di menu <strong>Kelola Role & Jabatan</strong>.
-                </div>
-              )}
-            </div>
-
-            {requiresDiv ? (
-              <div>
-                <label htmlFor="ef-member-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
-                  Divisi Penugasan <span style={{ color: '#f43f5e' }}>*</span>
-                </label>
-                <Select id="ef-member-4"
-                  value={editingItem.item.divisionId || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, divisionId: e.target.value || undefined } })}
-                >
-                  <option value="">-- Pilih Divisi --</option>
-                  {editMemberDivs.map(d => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </Select>
-                {editMemberDivs.length === 0 && (
-                  <span style={{ fontSize: '0.72rem', color: '#f59e0b', display: 'block', marginTop: '3px' }}>
-                    Periode ini belum memiliki divisi.
-                  </span>
-                )}
-              </div>
-            ) : (
-              <div>
-                <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
-                  Lingkup Tugas
-                </label>
-                <div style={{ padding: '9px 12px', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-card)', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  Lintas Divisi / Tidak Memerlukan Divisi Khusus
-                </div>
-              </div>
-            )}
-
-
-            {requiresDiv && selectedRole?.requiresSubDivision ? (
-              <div>
-                <label htmlFor="ef-member-sub" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">
-                  Sub-Divisi Penugasan <span style={{ color: '#f43f5e' }}>*</span>
-                </label>
-                {(() => {
-                  const curDivId = editingItem.item.divisionId;
-                  const availableSubs = subDivisions.filter(sd => sd.divisionId === curDivId);
-                  return (
-                    <>
-                      <Select id="ef-member-sub"
-                        value={editingItem.item.subDivisionId || ''}
-                        onChange={(e) => setEditingItem({
-                          ...editingItem,
-                          item: { ...editingItem.item, subDivisionId: e.target.value || undefined }
-                        })}
-                        disabled={!curDivId}
-                      >
-                        {!curDivId ? (
-                          <option value="" disabled>-- Pilih Divisi terlebih dahulu --</option>
-                        ) : availableSubs.length === 0 ? (
-                          <option value="" disabled>-- Belum ada sub-divisi di divisi ini. Buat di tab Kelola Divisi --</option>
-                        ) : (
-                          <>
-                            <option value="">-- Pilih Sub-Divisi --</option>
-                            {availableSubs.map(sd => (
-                              <option key={sd.id} value={sd.id}>{sd.name} {sd.code ? `(${sd.code})` : ''}</option>
-                            ))}
-                          </>
-                        )}
-                      </Select>
-                      {curDivId && availableSubs.length === 0 && (
-                        <div style={{ fontSize: '0.72rem', color: '#f59e0b', marginTop: '4px' }}>
-                          Divisi ini belum memiliki sub-divisi. Buat terlebih dahulu di tab Kelola Divisi.
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            ) : null}                    </div>
-        );
-      })()}
-
-      <div className="mobile-two-col" style={{ gap: '10px' }}>
-        <div>
-          <label htmlFor="ef-member-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nomor WhatsApp (Opsional)</label>
-          <Input id="ef-member-5"
-            type="text"
-            placeholder="Contoh: 08123456789 atau 628123456789"
-            value={editingItem.item.whatsapp || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, whatsapp: e.target.value } })}
-          />
-        </div>
-        <div>
-          <label htmlFor="ef-member-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Motto / Pesan Semangat (Opsional)</label>
-          <Input id="ef-member-6"
-            type="text"
-            placeholder="Contoh: Siap melayani dengan integritas dan kasih sesama insan Mandiri"
-            value={editingItem.item.motto || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, motto: e.target.value } })}
-          />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="ef-member-7" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Tanggung Jawab Utama (1 baris per poin)</label>
-        <Textarea id="ef-member-7"
-          rows={3}
-          placeholder="Tulis tanggung jawab utama (satu poin per baris)..."
-          value={editingItem.item.rawResponsibilities !== undefined ? editingItem.item.rawResponsibilities : (Array.isArray(editingItem.item.responsibilities) ? editingItem.item.responsibilities.join('\n') : '')}
-          onChange={(e) => {
-            const textVal = e.target.value;
-            setEditingItem({
-              ...editingItem,
-              item: {
-                ...editingItem.item,
-                rawResponsibilities: textVal,
-                responsibilities: textVal.split('\n').map(s => s.trim()).filter(Boolean)
-              }
-            });
-          }}
-        />
-      </div>
-
-      <div>
-        <label className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Foto Profil Personel (Cloud Storage)</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-          {editingItem.item.image && (
-            <img
-              src={editingItem.item.image}
-              alt="Avatar"
-              style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--mandiri-gold)' }}
-            />
-          )}
-          <label
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '7px 12px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(56, 189, 248, 0.12)',
-              border: '1px solid var(--neon-cyan)',
-              color: 'var(--neon-cyan)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            <Upload size={13} />
-            <span>{editingItem.pendingPhoto ? 'Ganti Foto Pilihan' : 'Pilih Foto Baru'}</span>
-            <input type="file" accept="image/*" onChange={handleMemberPhotoUpload} style={{ display: 'none' }} />
-          </label>
-          <Input className="min-w-0 flex-1"
-            type="text"
-            aria-label="URL Foto (https://...)" placeholder="URL Foto (https://...)"
-            value={editingItem.item.image || ''}
-            onChange={(e) => {
-              setEditingItem({ ...editingItem, item: { ...editingItem.item, image: e.target.value } });
-              if (editModalError) setEditModalError('');
-            }}
-          />
+      <div className="flex flex-col gap-2">
+        <span className="text-[0.84rem] font-semibold text-muted">Foto profil</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {item.image && <img src={item.image} alt="" className="size-11 shrink-0 rounded-full border-2 border-gold object-cover" />}
+          <FileButton icon={<Upload size={15} aria-hidden="true" />} accept="image/*" onChange={handleMemberPhotoUpload}>
+            {editingItem.pendingPhoto ? 'Ganti foto' : 'Pilih foto baru'}
+          </FileButton>
+          <Input className="min-w-0 flex-1" aria-label="URL foto (https://…)" placeholder="URL foto (https://…)" value={item.image || ''}
+            onChange={(e) => { set({ image: e.target.value }); if (editModalError) setEditModalError(''); }} />
         </div>
         {editingItem.pendingPhoto && (
-          <div style={{
-            marginTop: '6px',
-            padding: '6px 10px',
-            borderRadius: 'var(--radius-sm)',
-            background: 'rgba(56, 189, 248, 0.08)',
-            border: '1px dashed var(--neon-cyan)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '0.75rem',
-            color: 'var(--text-main)'
-          }}>
-            <span>Foto baru: <strong>{editingItem.pendingPhoto.name}</strong> &bull; <span style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>Akan diunggah saat Anda klik Simpan Perubahan</span></span>
-            <button
-              type="button"
-              onClick={() => setEditingItem((prev) => prev ? ({ ...prev, pendingPhoto: null, item: { ...prev.item, image: '' } }) : null)}
-              style={{ background: 'transparent', border: 'none', color: '#f43f5e', cursor: 'pointer', fontWeight: 700 }}
-            >
-              ✕ Batalkan
-            </button>
-          </div>
+          <PendingFile onCancel={() => setEditingItem((prev) => prev ? { ...prev, pendingPhoto: null, item: { ...prev.item, image: '' } } : null)}>
+            Foto baru <strong>{editingItem.pendingPhoto.name}</strong> diunggah saat Anda klik Simpan perubahan.
+          </PendingFile>
         )}
       </div>
     </div>

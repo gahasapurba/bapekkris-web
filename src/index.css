@@ -1,16 +1,15 @@
 /*
  * Style entry point.
  *
- * Cascade layers, lowest priority first: Tailwind theme, the pre-redesign styles (legacy), then
- * Tailwind utilities — so utility classes on new components win over legacy rules without
- * !important. Tailwind's preflight reset is deliberately not loaded: hundreds of existing
- * elements rely on browser defaults. Inline styles still win over everything.
+ * Cascade layers, lowest priority first: Tailwind theme, global element styles (base.css), then
+ * Tailwind utilities, so utility classes always win over the element defaults. Tailwind's
+ * preflight is not loaded; base.css holds the small reset the site relies on.
  */
-@layer theme, legacy, utilities;
+@layer theme, base, utilities;
 
 @import 'tailwindcss/theme.css' layer(theme);
 @import './styles/tokens.css';
-@import './styles/legacy.css' layer(legacy);
+@import './styles/base.css' layer(base);
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 /* Utilities map onto our tokens (and only those — Tailwind's oklch palette is switched off,
@@ -23,6 +22,7 @@
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-white: #ffffff;
+  --color-black: #000000;
 
   --color-page: var(--bg-page);
   --color-surface: var(--bg-card);

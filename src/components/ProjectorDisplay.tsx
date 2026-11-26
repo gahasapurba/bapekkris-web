@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { BookOpen, Cross, Music } from 'lucide-react';
+import { cn } from '../ui';
 import { normalizeRoomCode, sanitizeLiveState, useProjectorRoomScreen, ROOM_CODE_LENGTH, type ProjectorLiveState, type ScreenConnection } from '../lib/projectorSync';
 import { buildPageMeta, useDocumentMeta } from '../lib/seo';
 
@@ -38,19 +40,20 @@ function RoomPanel({ roomCode, connection, onConnect }: { roomCode: string | nul
   const code = normalizeRoomCode(draft);
 
   return (
-    <div style={{ position: 'fixed', right: '20px', bottom: '20px', zIndex: 1000000, maxWidth: '360px', padding: '14px 16px', borderRadius: '12px', background: 'rgba(5, 12, 28, 0.88)', border: '1px solid rgba(255, 255, 255, 0.18)', color: '#ffffff', fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.9rem', lineHeight: 1.45 }}>
+    <div className="fixed bottom-5 right-5 z-[1000000] max-w-[360px] rounded-xl border border-[rgba(255,255,255,0.18)] bg-[rgba(5,12,28,0.88)] px-4 py-3.5 font-sans text-[0.9rem] leading-snug text-white">
       {roomCode ? (
         <div role="status">
-          <strong style={{ display: 'block', letterSpacing: '0.2em' }}>RUANG {roomCode}</strong>
-          <span style={{ color: connection === 'error' ? '#fca5a5' : '#cbd5e1' }}>{CONNECTION_LABEL[connection] || ''}</span>
+          <strong className="block tracking-[0.2em]">RUANG {roomCode}</strong>
+          <span className={connection === 'error' ? 'text-[#fca5a5]' : 'text-[#cbd5e1]'}>{CONNECTION_LABEL[connection] || ''}</span>
         </div>
       ) : (
-        <form onSubmit={(e) => { e.preventDefault(); if (code) onConnect(code); }} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label htmlFor="projector-room-code" style={{ color: '#cbd5e1' }}>Sambungkan ke konsol di perangkat lain</label>
-          <div style={{ display: 'flex', gap: '8px' }}>
+        <form onSubmit={(e) => { e.preventDefault(); if (code) onConnect(code); }} className="flex flex-col gap-2">
+          <label htmlFor="projector-room-code" className="text-[#cbd5e1]">Sambungkan ke konsol di perangkat lain</label>
+          <div className="flex gap-2">
             <input id="projector-room-code" value={draft} onChange={(e) => setDraft(e.target.value.toUpperCase())} maxLength={ROOM_CODE_LENGTH + 2} placeholder="KODE RUANG" autoComplete="off"
-              style={{ flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.08)', color: '#ffffff', letterSpacing: '0.2em', fontWeight: 700 }} />
-            <button type="submit" disabled={!code} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: code ? '#e3b341' : '#64748b', color: '#0b1320', fontWeight: 700, cursor: code ? 'pointer' : 'not-allowed' }}>Sambungkan</button>
+              className="min-w-0 flex-1 rounded-lg border border-[rgba(255,255,255,0.3)] bg-[rgba(255,255,255,0.08)] px-2.5 py-2 font-bold tracking-[0.2em] text-white placeholder:text-[rgba(255,255,255,0.5)]" />
+            <button type="submit" disabled={!code}
+              className={cn('rounded-lg border-0 px-3.5 py-2 font-bold text-[#0b1320]', code ? 'cursor-pointer bg-[#e3b341]' : 'cursor-not-allowed bg-[#64748b]')}>Sambungkan</button>
           </div>
         </form>
       )}
@@ -149,137 +152,43 @@ export default function ProjectorDisplay() {
   };
 
   if (liveState.isBlackout) {
-    return <div style={{ width: '100vw', height: '100vh', background: '#000000' }}>{roomPanel}</div>;
+    return <div className="h-screen w-screen bg-black">{roomPanel}</div>;
   }
 
+  const lowerThird = liveState.isLowerThird;
   return (
-    <div style={{
-      width: '100vw',
-      height: '100vh',
-      margin: 0,
-      padding: 0,
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: liveState.isLowerThird ? 'flex-end' : 'center',
-      alignItems: 'center',
-      overflow: 'hidden',
-      color: '#ffffff',
-      fontFamily: "'Inter', system-ui, sans-serif",
-      transition: 'background 0.4s ease',
-      zIndex: 999999,
-      ...getBackgroundStyle()
-    }}>
-      {/* Decorative Subtle Cross & Light Rays Background */}
-      {!liveState.isLowerThird && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '70vw',
-          height: '70vw',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255, 184, 0, 0.12) 0%, rgba(56, 189, 248, 0.05) 50%, rgba(0,0,0,0) 70%)',
-          pointerEvents: 'none'
-        }} />
+    <div className={cn('fixed inset-0 z-[999999] m-0 flex h-screen w-screen flex-col items-center overflow-hidden p-0 font-sans text-white transition-[background] duration-500',
+      lowerThird ? 'justify-end' : 'justify-center')} style={getBackgroundStyle()}>
+      {/* Soft light behind the text */}
+      {!lowerThird && (
+        <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-1/2 size-[70vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,184,0,0.12)_0%,rgba(56,189,248,0.05)_50%,transparent_70%)]" />
       )}
 
-      {/* 1. Logo Mode */}
       {liveState.isLogo && !liveState.isClearText && (
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          zIndex: 2,
-          padding: '40px'
-        }}>
-          <div style={{
-            width: '120px',
-            height: '120px',
-            borderRadius: '32px',
-            background: 'linear-gradient(135deg, #003d79 0%, #001c3d 100%)',
-            border: '3px solid #ffb800',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '4rem',
-            boxShadow: '0 10px 40px rgba(0, 61, 121, 0.7)',
-            marginBottom: '28px'
-          }}>
-            ✝️
+        <div className="z-[2] flex flex-col items-center justify-center p-10 text-center">
+          <div className="mb-7 flex size-[120px] items-center justify-center rounded-[32px] border-[3px] border-[#ffb800] bg-[linear-gradient(135deg,#003d79_0%,#001c3d_100%)] shadow-[0_10px_40px_rgba(0,61,121,0.7)]">
+            <Cross size={60} aria-hidden="true" className="text-[#ffb800]" />
           </div>
-          <h1 style={{
-            fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-            fontWeight: 900,
-            letterSpacing: '0.04em',
-            color: '#ffffff',
-            margin: '0 0 14px 0',
-            textShadow: '0 4px 20px rgba(0,0,0,0.8)'
-          }}>
-            BAPEKKRIS BANK MANDIRI
-          </h1>
-          <p style={{
-            fontSize: 'clamp(1.1rem, 2vw, 1.8rem)',
-            color: '#ffb800',
-            fontWeight: 700,
-            margin: 0,
-            textShadow: '0 2px 10px rgba(0,0,0,0.8)'
-          }}>
-            Badan Pembinaan Kerohanian Kristen • PT Bank Mandiri (Persero) Tbk.
-          </p>
+          <h1 className="m-0 mb-3.5 text-[clamp(2.5rem,5vw,4.5rem)] font-black tracking-[0.04em] text-white [text-shadow:0_4px_20px_rgba(0,0,0,0.8)]">BAPEKKRIS BANK MANDIRI</h1>
+          <p className="m-0 text-[clamp(1.1rem,2vw,1.8rem)] font-bold text-[#ffb800] [text-shadow:0_2px_10px_rgba(0,0,0,0.8)]">Badan Pembinaan Kerohanian Kristen • PT Bank Mandiri (Persero) Tbk.</p>
         </div>
       )}
 
-      {/* 2. Slide Content Mode (Songs, Bible, Announcements) */}
       {!liveState.isLogo && !liveState.isClearText && (
-        <div style={{
-          width: liveState.isLowerThird ? '100%' : '90%',
-          maxWidth: liveState.isLowerThird ? '100%' : '1400px',
-          padding: liveState.isLowerThird ? '30px 60px' : '40px',
-          background: liveState.isLowerThird ? 'linear-gradient(180deg, rgba(0, 30, 60, 0.88) 0%, rgba(0, 15, 35, 0.96) 100%)' : 'transparent',
-          borderTop: liveState.isLowerThird ? '3px solid #ffb800' : 'none',
-          boxShadow: liveState.isLowerThird ? '0 -10px 30px rgba(0,0,0,0.6)' : 'none',
-          textAlign: 'center',
-          zIndex: 2
-        }}>
-          {/* Header Title / Scripture Reference */}
+        <div className={cn('z-[2] text-center',
+          lowerThird
+            ? 'w-full border-t-[3px] border-[#ffb800] bg-[linear-gradient(180deg,rgba(0,30,60,0.88)_0%,rgba(0,15,35,0.96)_100%)] px-[60px] py-[30px] shadow-[0_-10px_30px_rgba(0,0,0,0.6)]'
+            : 'w-[90%] max-w-[1400px] p-10')}>
           {liveState.title && (
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '6px 20px',
-              borderRadius: '9999px',
-              background: 'rgba(255, 184, 0, 0.22)',
-              border: '1.5px solid #ffb800',
-              color: '#ffb800',
-              fontSize: liveState.isLowerThird ? '1.1rem' : '1.4rem',
-              fontWeight: 800,
-              marginBottom: liveState.isLowerThird ? '14px' : '28px',
-              textShadow: '0 2px 8px rgba(0,0,0,0.7)'
-            }}>
-              <span>{liveState.type === 'bible' ? '📖' : '🎵'}</span>
+            <div className={cn('inline-flex items-center gap-2.5 rounded-full border-[1.5px] border-[#ffb800] bg-[rgba(255,184,0,0.22)] px-5 py-1.5 font-extrabold text-[#ffb800] [text-shadow:0_2px_8px_rgba(0,0,0,0.7)]',
+              lowerThird ? 'mb-3.5 text-[1.1rem]' : 'mb-7 text-[1.4rem]')}>
+              {liveState.type === 'bible' ? <BookOpen size={22} aria-hidden="true" /> : <Music size={22} aria-hidden="true" />}
               <span>{liveState.title}</span>
             </div>
           )}
-
-          {/* Main Slide Text */}
-          <div style={{
-            fontSize: liveState.isLowerThird ? 'clamp(1.4rem, 2.5vw, 2.2rem)' : `clamp(2rem, ${liveState.fontSize || 48}px, 3.8rem)`,
-            fontWeight: 800,
-            lineHeight: 1.45,
-            color: '#ffffff',
-            textShadow: '0 4px 16px rgba(0, 0, 0, 0.9), 0 2px 4px rgba(0,0,0,0.8)',
-            whiteSpace: 'pre-line',
-            letterSpacing: '0.01em'
-          }}>
+          {/* Font size follows the operator's setting (live state) */}
+          <div className="whitespace-pre-line font-extrabold leading-[1.45] tracking-[0.01em] text-white [text-shadow:0_4px_16px_rgba(0,0,0,0.9),0_2px_4px_rgba(0,0,0,0.8)]"
+            style={{ fontSize: lowerThird ? 'clamp(1.4rem, 2.5vw, 2.2rem)' : `clamp(2rem, ${liveState.fontSize || 48}px, 3.8rem)` }}>
             {liveState.text}
           </div>
         </div>

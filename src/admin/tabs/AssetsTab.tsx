@@ -19,7 +19,7 @@ const EMPTY_ASSET: AssetForm = {
 const isImageUrl = (url: string) => /\.(png|jpe?g|svg|webp|gif|avif)($|\?)/i.test(url) || (url || '').startsWith('data:image/');
 
 const PER_PAGE = 9;
-const CATEGORIES: [string, string][] = [['Logo & Brand', 'Logo & brand'], ['Template Presentasi', 'Template presentasi (PPT)'], ['Virtual Background', 'Virtual background (Teams / Zoom)'], ['Media & Publikasi', 'Media, twibbon & publikasi']];
+export const ASSET_CATEGORIES: [string, string][] = [['Logo & Brand', 'Logo & brand'], ['Template Presentasi', 'Template presentasi (PPT)'], ['Virtual Background', 'Virtual background (Teams / Zoom)'], ['Media & Publikasi', 'Media, twibbon & publikasi']];
 
 export default function AssetsTab() {
   const {
@@ -120,7 +120,7 @@ export default function AssetsTab() {
           <Field label="Kategori" required error={errors.assetCategory?.message}>
             <Select {...field('assetCategory')}>
               <option value="">Pilih kategori</option>
-              {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              {ASSET_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </Select>
           </Field>
           <Field label="Label tambahan" hint="Contoh: Official Asset, HD"><Input {...field('assetBadge')} /></Field>
@@ -175,7 +175,7 @@ export default function AssetsTab() {
           <SearchBox label="Cari aset" placeholder="Cari judul atau format" value={assetSearchQuery} onChange={(v) => { setAssetSearchQuery(v); setAssetPage(1); }} />
           <FilterSelect label="Saring kategori" value={assetCatFilter} onChange={(v) => { setAssetCatFilter(v); setAssetPage(1); }}>
             <option value="all">Semua kategori</option>
-            {CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            {ASSET_CATEGORIES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </FilterSelect>
         </ListToolbar>
         {filtered.length === 0 ? <AdminEmpty>{brandAssets.length === 0 ? 'Belum ada aset.' : 'Tidak ada aset yang cocok.'}</AdminEmpty> : (

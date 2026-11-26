@@ -9,7 +9,7 @@ import { formatWaNumber, useOrganization, type UseOrganizationProps } from './us
 
 /** Thin vertical connector between tiers (plain colour for the PDF export). */
 function Connector() {
-  return <div className="org-tree-line mx-auto h-8 w-px bg-line-strong opacity-40" aria-hidden="true" />;
+  return <div className="mx-auto hidden h-8 w-px bg-line-strong opacity-40 lg:block" aria-hidden="true" />;
 }
 
 function Tier({ label, children }: { label: string; children: ReactNode }) {
@@ -98,7 +98,7 @@ export default function OrganizationSection(props: UseOrganizationProps) {
       {activeMembers.length === 0 ? (
         <EmptyState icon={<Users size={22} />} title="Belum ada struktur organisasi" description={`Belum ada pengurus terdaftar pada periode ${periodLabel || 'ini'}.`} />
       ) : (
-        <div id="org-tree-export-container" className="org-tree-wrapper flex flex-col items-center gap-0 rounded-xl bg-page px-2 py-8 md:px-6">
+        <div id="org-tree-export-container" className="flex flex-col items-center gap-6 rounded-xl bg-page px-2 py-8 md:px-6 lg:gap-0">
           <header className="mb-10 text-center">
             <p className="text-[0.74rem] font-semibold uppercase tracking-[0.18em] text-gold-ink">PT Bank Mandiri (Persero) Tbk.</p>
             <h2 className="mt-2 font-display text-[clamp(1.5rem,3vw,2.1rem)] font-semibold text-ink">Struktur Organisasi Bapekkris Bank Mandiri</h2>
@@ -119,13 +119,13 @@ export default function OrganizationSection(props: UseOrganizationProps) {
                   const effectiveLeaders: AppItem[] = leaders.length > 0 ? leaders : lead.member ? [lead.member] : div.leadName ? activeMembers.filter((m) => m.name === div.leadName) : [];
                   const accent = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(div.color || '') ? div.color : '#0b2f5e';
                   return (
-                    <div key={div.id} className="glass-panel flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 shadow-card" style={{ borderTopWidth: 3, borderTopColor: accent }}>
+                    <div key={div.id} data-pdf-card className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4 shadow-card" style={{ borderTopWidth: 3, borderTopColor: accent }}>
                       <p className="font-display text-[1.15rem] font-semibold text-ink">{div.name}</p>
                       {effectiveLeaders.length > 0
                         ? <div className="flex flex-col gap-2">{effectiveLeaders.map((m) => card(m, true))}</div>
                         : <p className="text-[0.86rem] text-dim">Belum ada pimpinan</p>}
                       {divisionMembers.length > 0 && (
-                        <div className="org-anggota-box rounded-md border border-line bg-page p-3">
+                        <div data-pdf-card className="rounded-md border border-line bg-page p-3">
                           <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-dim">Anggota ({divisionMembers.length})</p>
                           <ul className="flex list-none flex-col divide-y divide-line">
                             {divisionMembers.map((m) => (

@@ -1,25 +1,16 @@
-import { useEditDialogContext } from '../../AdminPortalContext';
 import { Field, Input, Textarea } from '../../../ui';
-import type { DevotionValues } from '../../contentItems';
 import { devotionThemeOptions } from '../../tabs/DevotionsTab';
+import { useEditBinding } from './useEditBinding';
 
 /** Fields of the edit dialog for `devotion` items (same fields as the create form). */
 export default function DevotionFields() {
-  const { devotions, editingItem, setEditingItem } = useEditDialogContext();
-  const item = editingItem.item;
-  const bind = (key: keyof DevotionValues) => ({
-    value: String(item[key] ?? ''),
-    onChange: (e: { target: { value: string } }) => setEditingItem({ ...editingItem, item: { ...item, [key]: e.target.value } })
-  });
-
+  const { bind, devotions } = useEditBinding();
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Tanggal" required><Input type="date" {...bind('devotionDate')} /></Field>
         <Field label="Judul" required><Input {...bind('title')} /></Field>
-        <Field label="Tema" required hint="Pilih dari daftar atau ketik tema baru.">
-          <Input list="edit-devotion-theme-options" {...bind('theme')} />
-        </Field>
+        <Field label="Tema" required hint="Pilih dari daftar atau ketik tema baru."><Input list="edit-devotion-theme-options" {...bind('theme')} /></Field>
         <Field label="Nats Alkitab"><Input {...bind('scriptureRef')} /></Field>
         <Field label="Penulis" className="md:col-span-2"><Input {...bind('author')} /></Field>
       </div>

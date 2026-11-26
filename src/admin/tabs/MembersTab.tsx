@@ -239,13 +239,13 @@ export default function MembersTab() {
           </FilterSelect>
         </ListToolbar>
         {visible.length === 0 ? <AdminEmpty>Tidak ada personel yang cocok.</AdminEmpty> : (
-          <ul className="grid list-none gap-3 lg:grid-cols-2">
+          <ul className="grid list-none grid-cols-1 gap-3 lg:grid-cols-2">
             {visible.map((m) => {
               const roleName = findMatchingRole(m, tenureRoles)?.name || m.role || 'Anggota';
               const div = (divisions || []).find((d) => d.id === m.divisionId);
               const subtitle = div?.name && !roleName.toLowerCase().includes(div.name.toLowerCase()) ? `${roleName} · ${div.name}` : roleName;
               return (
-                <li key={m.id} className="flex items-center justify-between gap-3 rounded-md border border-line bg-surface p-3">
+                <li key={m.id} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-line bg-surface p-3">
                   <div className="flex min-w-0 items-center gap-3">
                     {m.image
                       ? <img src={m.image} alt="" className="size-10 shrink-0 rounded-full border border-line object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />

@@ -1,78 +1,23 @@
-import { useEditDialogContext } from '../../AdminPortalContext';
-import { Input, Textarea } from '../../../ui';
+import { Field, Input, Textarea } from '../../../ui';
+import { useEditBinding } from './useEditBinding';
 
 /** Fields of the edit dialog for `tenure` items. */
 export default function TenureFields() {
-  const {
-    editingItem,
-    setEditingItem
-  } = useEditDialogContext();
-
+  const { bind, item, set } = useEditBinding();
+  const misiText = item.rawMisi !== undefined ? item.rawMisi : Array.isArray(item.misi) ? item.misi.join('\n') : (item.misi || '');
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div className="mobile-two-col" style={{ gap: '10px' }}>
-        <div>
-          <label htmlFor="ef-tenure-1" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Nama Kepengurusan <span style={{ color: '#f43f5e' }}>*</span></label>
-          <Input id="ef-tenure-1"
-            type="text"
-            value={editingItem.item.title || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, title: e.target.value } })}
-          />
-        </div>
-        <div>
-          <label htmlFor="ef-tenure-2" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Tagline Budaya</label>
-          <Input id="ef-tenure-2"
-            type="text"
-            value={editingItem.item.themeTagline || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, themeTagline: e.target.value } })}
-          />
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Nama kepengurusan" required><Input {...bind('title')} /></Field>
+        <Field label="Tagline tema"><Input {...bind('themeTagline')} /></Field>
+        <Field label="Judul hero beranda"><Input {...bind('heroHeadline')} /></Field>
+        <Field label="Sorotan judul hero"><Input {...bind('heroHighlight')} /></Field>
       </div>
-      <div className="mobile-two-col" style={{ gap: '10px' }}>
-        <div>
-          <label htmlFor="ef-tenure-3" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Headline Hero</label>
-          <Input id="ef-tenure-3"
-            type="text"
-            value={editingItem.item.heroHeadline || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, heroHeadline: e.target.value } })}
-          />
-        </div>
-        <div>
-          <label htmlFor="ef-tenure-4" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Highlight Hero</label>
-          <Input id="ef-tenure-4"
-            type="text"
-            value={editingItem.item.heroHighlight || ''}
-            onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, heroHighlight: e.target.value } })}
-          />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="ef-tenure-5" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Visi Bapekkris (Dinamis)</label>
-        <Textarea id="ef-tenure-5"
-          rows={3}
-          value={editingItem.item.visi || ''}
-          onChange={(e) => setEditingItem({ ...editingItem, item: { ...editingItem.item, visi: e.target.value } })}
-        />
-      </div>
-      <div>
-        <label htmlFor="ef-tenure-6" className="mb-1.5 block text-[0.86rem] font-semibold text-ink">Misi Bapekkris (1 baris per misi)</label>
-        <Textarea id="ef-tenure-6"
-          rows={4}
-          placeholder="Tulis poin misi (satu baris per misi)..."
-          value={editingItem.item.rawMisi !== undefined ? editingItem.item.rawMisi : (Array.isArray(editingItem.item.misi) ? editingItem.item.misi.join('\n') : (editingItem.item.misi || ''))}
-          onChange={(e) => {
-            const textVal = e.target.value;
-            setEditingItem({
-              ...editingItem,
-              item: {
-                ...editingItem.item,
-                rawMisi: textVal,
-                misi: textVal.split('\n').map(s => s.trim()).filter(Boolean)
-              }
-            });
-          }}
-        />
-      </div>
+      <Field label="Visi"><Textarea rows={3} {...bind('visi')} /></Field>
+      <Field label="Misi" hint="Satu baris untuk setiap poin misi.">
+        <Textarea rows={4} placeholder="Tulis poin misi, satu per baris" value={misiText}
+          onChange={(e) => set({ rawMisi: e.target.value, misi: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) })} />
+      </Field>
     </div>
   );
 }

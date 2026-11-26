@@ -7,9 +7,9 @@ export function formatWaPhone(raw: string | number | null = ''): string {
 }
 
 export const SYNC_BADGE = {
-  syncing: { label: 'Menyinkronkan Cloud...', color: 'var(--mandiri-gold)', background: 'rgba(255, 184, 0, 0.15)' },
-  synced: { label: 'Cloud Sync Aktif (Multi-Device)', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)' },
-  error: { label: 'Sebagian data gagal dimuat dari Cloud', color: '#dc2626', background: 'rgba(220, 38, 38, 0.12)' }
+  syncing: { label: 'Menyinkronkan Cloud...' },
+  synced: { label: 'Cloud Sync Aktif (Multi-Device)' },
+  error: { label: 'Sebagian data gagal dimuat dari Cloud' }
 } as const;
 
 /** Ministry categories offered for events (older events may carry other, free-text categories). */

@@ -295,15 +295,8 @@ export default function EditItemModal() {
                   showToast('Dokumentasi kegiatan wajib memiliki minimal 1 foto!', 'error');
                   return;
                 }
-                const {
-                  _dateMode,
-                  _dateVal,
-                  _startDate,
-                  _endDate,
-                  _month,
-                  _year,
-                  ...cleanGalItem
-                } = editingItem.item;
+                // _dateMode / _dateParts only hold the date picker state of GalleryFields
+                const { _dateMode, _dateParts, ...cleanGalItem } = editingItem.item;
                 onUpdateGallery({ ...cleanGalItem, photos: finalPhotos });
               }
               if (editingItem.type === 'tenure' && onUpdateTenure) {
@@ -488,7 +481,7 @@ export default function EditItemModal() {
             <AlertCircle size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-danger" />{editModalError}
           </p>
         )}
-        <div className="admin-edit-body flex-1 overflow-y-auto px-5 py-5 md:px-6">
+        <div className="flex-1 overflow-y-auto px-5 py-5 md:px-6">
           {editingItem.type === 'member' && <MemberFields />}
           {editingItem.type === 'division' && <DivisionFields />}
           {editingItem.type === 'sub_division' && <SubDivisionFields />}

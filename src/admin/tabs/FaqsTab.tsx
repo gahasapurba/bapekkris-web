@@ -7,7 +7,7 @@ import { AdminEmpty, AdminPanel, AdminSubsection, IconButton } from '../AdminUi'
 import { useAdminPortal } from '../AdminPortalContext';
 
 const PER_PAGE = 10;
-const CATEGORIES = ['Tentang Bapekkris', 'Kegiatan & Event', 'Pelayanan & Operasional', 'Doa & Pelayanan Kasih', 'Pendaftaran & Oprec', 'Umum'];
+export const FAQ_CATEGORIES = ['Tentang Bapekkris', 'Kegiatan & Event', 'Pelayanan & Operasional', 'Doa & Pelayanan Kasih', 'Pendaftaran & Oprec', 'Umum'];
 type FaqForm = { faqCategory: string; faqQuestion: string; faqAnswer: string };
 
 const selectClass = 'h-11 cursor-pointer rounded-full border border-line bg-surface pl-4 pr-3 text-[0.86rem] font-medium text-ink hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy-ink';
@@ -40,7 +40,7 @@ export default function FaqsTab() {
           <Field label="Kategori" required error={errors.faqCategory?.message}>
             <Select {...field('faqCategory')}>
               <option value="">Pilih kategori</option>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {FAQ_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </Select>
           </Field>
           <Field label="Pertanyaan" required error={errors.faqQuestion?.message}>
@@ -63,7 +63,7 @@ export default function FaqsTab() {
             </div>
             <select aria-label="Saring kategori" value={faqCatFilter} onChange={(e) => { setFaqCatFilter(e.target.value); setAdminFaqPage(1); }} className={selectClass}>
               <option value="all">Semua kategori</option>
-              {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+              {FAQ_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
         </div>

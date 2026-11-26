@@ -37,7 +37,7 @@ export async function exportPresentationToPdf(
         if (isDark) {
           clonedDoc.documentElement.style.backgroundColor = '#070d1e';
           clonedElement.style.backgroundColor = '#070d1e';
-          clonedElement.querySelectorAll<HTMLElement>('.glass-panel, .crew-member-card, .org-anggota-box').forEach(el => {
+          clonedElement.querySelectorAll<HTMLElement>('[data-pdf-card]').forEach(el => {
             el.style.backgroundColor = '#0e1937';
             el.style.borderColor = 'rgba(56, 189, 248, 0.35)';
           });
@@ -47,7 +47,7 @@ export async function exportPresentationToPdf(
         } else {
           clonedDoc.documentElement.style.backgroundColor = '#f8fafc';
           clonedElement.style.backgroundColor = '#f8fafc';
-          clonedElement.querySelectorAll<HTMLElement>('.glass-panel, .crew-member-card, .org-anggota-box').forEach(el => {
+          clonedElement.querySelectorAll<HTMLElement>('[data-pdf-card]').forEach(el => {
             el.style.backgroundColor = '#ffffff';
             el.style.borderColor = '#e2e8f0';
           });

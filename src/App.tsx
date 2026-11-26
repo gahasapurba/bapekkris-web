@@ -7,6 +7,7 @@ import QuickSearch from './components/layout/QuickSearch';
 import HomePage from './components/home/HomePage';
 import SiteFooter from './components/layout/SiteFooter';
 import ErrorBoundary from './components/ErrorBoundary';
+import { Badge, Card } from './ui';
 import AdminOnlyNotice from './components/AdminOnlyNotice';
 
 const OrganizationSection = lazy(() => import('./components/organization/OrganizationSection'));
@@ -81,9 +82,6 @@ const DEFAULT_ANNOUNCEMENT_BAR: AppRecord = {
 };
 
 const EMPTY_ROLE_QUOTAS: AppRecord = {};
-
-// Pages rebuilt in the Fase 3 redesign set their own width; older pages still sit in .container.
-const FULL_BLEED_TABS = new Set(['home', 'event', 'form', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'organisasi', 'galeri', 'assets', 'event-stats', 'admin']);
 
 // Parents are restored before children so foreign keys always resolve.
 const RESTORE_ORDER: TableKey[] = [
@@ -164,7 +162,7 @@ export default function App() {
   const isProjectorMode = location.hash === '#projector' || new URLSearchParams(location.search).get('mode') === 'projector';
   if (isProjectorMode) {
     return (
-      <Suspense fallback={<div style={{ background: '#000', color: '#fff', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Memuat Display Projector Bapekkris...</div>}>
+      <Suspense fallback={<div className="flex h-screen items-center justify-center bg-black text-white">Memuat layar proyektor…</div>}>
         <ProjectorDisplay />
       </Suspense>
     );
@@ -972,28 +970,12 @@ function MainApp() {
 
   return (
     <AppNavigationContext.Provider value={navigateTo}>
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative', width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
+    <div className="relative flex min-h-screen w-full max-w-[100vw] flex-col overflow-x-clip">
 
       {persistError && (
-        <div
-          role="alert"
-          style={{
-            position: 'fixed', left: '50%', bottom: '24px', transform: 'translateX(-50%)', zIndex: 10000,
-            width: 'min(560px, calc(100vw - 32px))', display: 'flex', alignItems: 'flex-start', gap: '12px',
-            padding: '14px 16px', borderRadius: 'var(--radius-md)', background: '#fef2f2',
-            border: '1px solid #fca5a5', color: '#991b1b', fontSize: '0.88rem', lineHeight: 1.5,
-            boxShadow: 'var(--shadow-card)'
-          }}
-        >
-          <span style={{ flex: 1 }}>{persistError}</span>
-          <button
-            type="button"
-            onClick={() => setPersistError(null)}
-            aria-label="Tutup pesan kesalahan"
-            style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}
-          >
-            <X size={18} />
-          </button>
+        <div role="alert" className="fixed bottom-6 left-1/2 z-[10000] flex w-[min(560px,calc(100vw-32px))] -translate-x-1/2 items-start gap-3 rounded-md border border-danger-line bg-danger-tint px-4 py-3.5 text-[0.88rem] leading-relaxed text-ink shadow-card">
+          <span className="flex-1">{persistError}</span>
+          <button type="button" onClick={() => setPersistError(null)} aria-label="Tutup pesan kesalahan" className="cursor-pointer border-0 bg-transparent p-0 text-inherit"><X size={18} aria-hidden="true" /></button>
         </div>
       )}
 
@@ -1019,92 +1001,30 @@ function MainApp() {
         <AnnouncementBar bar={announcementBar} onCta={(tab) => setCurrentTab(tab)} onDismiss={() => setIsBannerDismissed(true)} />
       )}
 
-      {/* Floating Quick Utility Pill when Navbar is Hidden */}
+      {/* Theme switch stays reachable when the navbar is hidden */}
       {!isNavbarVisible && currentTab !== 'admin' && (
-        <div style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 90,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '6px',
-          borderRadius: 'var(--radius-full)',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-card)',
-          boxShadow: 'var(--shadow-card)',
-          backdropFilter: 'blur(12px)'
-        }}>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            title={isDark ? 'Ganti ke Light Mode' : 'Ganti ke Dark Mode'}
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              background: 'var(--input-bg)',
-              border: '1px solid var(--border-card)',
-              color: isDark ? 'var(--mandiri-gold)' : 'var(--mandiri-blue)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer'
-            }}
-          >
-            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+        <div className="fixed bottom-5 right-5 z-[90] rounded-full border border-line bg-surface p-1.5 shadow-card">
+          <button type="button" onClick={toggleTheme} aria-label={isDark ? 'Ganti ke mode terang' : 'Ganti ke mode gelap'}
+            className="flex size-9 cursor-pointer items-center justify-center rounded-full border border-line bg-field text-navy-ink">
+            {isDark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
           </button>
         </div>
       )}
 
       {/* Main Content Area */}
-      <main className={FULL_BLEED_TABS.has(effectiveTab) ? undefined : 'container'} style={{ flex: 1, position: 'relative' }}>
+      <main className="relative flex-1">
         {effectiveTab === 'all-hidden' && (
-          <div style={{ maxWidth: '620px', margin: '60px auto 80px auto', textAlign: 'center', padding: '0 16px' }}>
-            <div className="glass-panel" style={{
-              padding: '48px 32px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '18px',
-              border: '1.5px solid var(--border-card)'
-            }}>
-              <img 
-                src={isDark ? "/assets/mandiri-club-bapekkris-white.png" : "/assets/mandiri-club-bapekkris-original.png"} 
-                alt="Bapekkris Bank Mandiri"
-                style={{ height: '52px', objectFit: 'contain', marginBottom: '4px' }}
-                onError={(e) => {
-                  e.currentTarget.src = "/assets/mandiri-club-bapekkris-original.png";
-                }}
-              />
-
-              <div style={{
-                width: '60px',
-                height: '60px',
-                borderRadius: '50%',
-                background: 'rgba(255, 184, 0, 0.14)',
-                border: '1px solid rgba(255, 184, 0, 0.4)',
-                color: 'var(--mandiri-gold)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <EyeOff size={28} />
-              </div>
-
-              <span className="badge-gold">
-                Mode Standby • Halaman Disembunyikan
-              </span>
-
-              <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-                Seluruh Halaman Sedang Disembunyikan
-              </h2>
-
-              <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', lineHeight: 1.65, maxWidth: '480px', margin: 0 }}>
-                Saat ini seluruh halaman publik portal <strong>Bapekkris Bank Mandiri</strong> sedang dinonaktifkan sementara. Silakan kembali lagi nanti.
+          <div className="mx-auto mb-20 mt-14 w-full max-w-[620px] px-4">
+            <Card padding="lg" className="flex flex-col items-center gap-4 text-center">
+              <img src={isDark ? '/assets/mandiri-club-bapekkris-white.png' : '/assets/mandiri-club-bapekkris-original.png'} alt="Bapekkris Bank Mandiri"
+                className="h-13 w-auto object-contain" onError={(e) => { e.currentTarget.src = '/assets/mandiri-club-bapekkris-original.png'; }} />
+              <span className="flex size-15 items-center justify-center rounded-full bg-gold-tint text-gold-ink"><EyeOff size={28} aria-hidden="true" /></span>
+              <Badge tone="gold">Halaman sedang disembunyikan</Badge>
+              <h2 className="font-display text-[1.65rem] font-semibold text-ink">Seluruh halaman sedang disembunyikan</h2>
+              <p className="max-w-[480px] text-[0.94rem] leading-relaxed text-muted">
+                Halaman publik <strong>Bapekkris Bank Mandiri</strong> sedang dinonaktifkan sementara oleh pengurus. Silakan kembali lagi nanti.
               </p>
-            </div>
+            </Card>
           </div>
         )}
 
@@ -1127,13 +1047,7 @@ function MainApp() {
           )}
         </ErrorBoundary>
 
-        <Suspense
-          fallback={
-            <div style={{ padding: '80px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.92rem' }}>
-              Memuat halaman Bapekkris Bank Mandiri...
-            </div>
-          }
-        >
+        <Suspense fallback={<p role="status" className="px-5 py-20 text-center text-[0.92rem] text-muted">Memuat halaman…</p>}>
           <ErrorBoundary onResetTab={() => setCurrentTab('home')}>
             {effectiveTab === 'organisasi' && (
             <OrganizationSection

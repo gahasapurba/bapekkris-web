@@ -20,8 +20,10 @@ export function useModalBehavior(panelRef: RefObject<HTMLElement | null>, open: 
     const panel = panelRef.current;
     if (panel) openPanels.push(panel);
     (panel?.querySelector<HTMLElement>('[data-autofocus]') ?? panel?.querySelector<HTMLElement>(FOCUSABLE) ?? panel)?.focus();
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
+    // The page scrolls on <html> (base.css clips overflow there), so the lock goes on <html>
+    const root = document.documentElement;
+    const { overflow } = root.style;
+    root.style.overflow = 'hidden';
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (panel && openPanels[openPanels.length - 1] !== panel) return;
@@ -41,7 +43,7 @@ export function useModalBehavior(panelRef: RefObject<HTMLElement | null>, open: 
     return () => {
       document.removeEventListener('keydown', onKeyDown, true);
       if (panel) openPanels.splice(openPanels.indexOf(panel), 1);
-      document.body.style.overflow = overflow;
+      root.style.overflow = overflow;
       previouslyFocused?.focus?.();
     };
   }, [open, dismissible, panelRef]);

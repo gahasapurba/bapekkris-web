@@ -1,4 +1,5 @@
 import React, { type ErrorInfo, type ReactNode } from 'react';
+import { Button } from '../ui';
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
 
 interface ErrorBoundaryProps {
@@ -39,100 +40,18 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          maxWidth: '700px',
-          margin: '60px auto',
-          padding: '40px 24px',
-          textAlign: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: 'rgba(244, 63, 94, 0.12)',
-            color: '#f43f5e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: '4px'
-          }}>
-            <AlertCircle size={32} />
-          </div>
-
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
-            Terjadi Kendala Memuat Halaman
-          </h2>
-
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', maxWidth: '480px', lineHeight: 1.6, margin: 0 }}>
-            Sistem mendeteksi kendala saat merender komponen. Silakan muat ulang halaman atau kembali ke beranda utama.
-          </p>
-
+        <div role="alert" className="mx-auto my-14 flex w-full max-w-[700px] flex-col items-center gap-4 px-6 py-10 text-center">
+          <span className="flex size-16 items-center justify-center rounded-full bg-danger-tint text-danger"><AlertCircle size={32} aria-hidden="true" /></span>
+          <h2 className="font-display text-[1.4rem] font-semibold text-ink">Terjadi kendala memuat halaman</h2>
+          <p className="max-w-[480px] text-[0.92rem] leading-relaxed text-muted">Muat ulang halaman atau kembali ke beranda. Jika kendala berulang, beri tahu pengurus beserta pesan di bawah.</p>
           {this.state.error && (
-            <div style={{
-              maxWidth: '560px',
-              width: '100%',
-              textAlign: 'left',
-              padding: '12px 16px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(244, 63, 94, 0.08)',
-              border: '1px solid rgba(244, 63, 94, 0.3)',
-              color: '#f43f5e',
-              fontSize: '0.8rem',
-              fontFamily: 'monospace',
-              wordBreak: 'break-word',
-              maxHeight: '180px',
-              overflowY: 'auto'
-            }}>
-              <strong>Error Info:</strong> {this.state.error.toString()}
-            </div>
+            <pre className="m-0 max-h-44 w-full max-w-[560px] overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-danger-line bg-danger-tint px-4 py-3 text-left font-mono text-[0.8rem] text-ink">
+              {this.state.error.toString()}
+            </pre>
           )}
-
-          <div style={{ display: 'flex', gap: '10px', marginTop: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button
-              type="button"
-              onClick={this.handleReload}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 20px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--mandiri-gold)',
-                color: '#040914',
-                fontSize: '0.84rem',
-                fontWeight: 800,
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              <RotateCcw size={15} />
-              <span>Muat Ulang Halaman</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={this.handleGoHome}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 20px',
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--input-bg)',
-                border: '1px solid var(--border-card)',
-                color: 'var(--text-main)',
-                fontSize: '0.84rem',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              <Home size={15} />
-              <span>Kembali ke Beranda</span>
-            </button>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            <Button variant="gold" icon={<RotateCcw size={15} aria-hidden="true" />} onClick={this.handleReload}>Muat ulang halaman</Button>
+            <Button variant="secondary" icon={<Home size={15} aria-hidden="true" />} onClick={this.handleGoHome}>Kembali ke beranda</Button>
           </div>
         </div>
       );

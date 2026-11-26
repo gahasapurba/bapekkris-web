@@ -1,18 +1,11 @@
-import { useEditDialogContext } from '../../AdminPortalContext';
 import { Field, Input, Select, Textarea } from '../../../ui';
 import { SONG_CATEGORIES } from '../../../data/contentOptions';
-import type { SongValues } from '../../contentItems';
+import { useEditBinding } from './useEditBinding';
 
 /** Fields of the edit dialog for `song` items (same fields as the create form). */
 export default function SongFields() {
-  const { editingItem, setEditingItem } = useEditDialogContext();
-  const item = editingItem.item;
-  const bind = (key: keyof SongValues) => ({
-    value: String(item[key] ?? ''),
-    onChange: (e: { target: { value: string } }) => setEditingItem({ ...editingItem, item: { ...item, [key]: e.target.value } })
-  });
+  const { bind, item } = useEditBinding();
   const knownCategory = SONG_CATEGORIES.some((c) => c.value === item.category);
-
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-3">

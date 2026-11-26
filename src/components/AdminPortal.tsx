@@ -58,7 +58,7 @@ export default function AdminPortal(props: AdminPortalProps) {
 
   return (
     <AdminPortalContext.Provider value={state}>
-    <div className="admin-portal-wrapper mx-auto w-full max-w-[1360px] px-4 pb-24 pt-6 md:px-6">
+    <div className="mx-auto w-full max-w-[1360px] px-4 pb-24 pt-6 md:px-6">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
         <div className="min-w-0">
           <Button variant="ghost" size="sm" icon={<ArrowLeft size={16} aria-hidden="true" />} onClick={onBack} className="-ml-3 mb-2">Kembali ke situs</Button>
