@@ -1,100 +1,58 @@
 /**
- * Script Restore Otomatis Berkas Fisik ke Storage Bucket Supabase `bapekkris-media`
- * Membaca folder backups/storage/ (atau mengekstrak dari backup_latest.zip)
- * dan mengunggah kembali semua berkas ke Supabase Storage.
+ * Uploads the files of a backup back into the `bapekkris-media` bucket (service-role key, so every
+ * folder can be restored, not only the public upload folder). Reads backups/storage/ or extracts it
+ * from backups/supabase_full_backup_latest.zip. Existing files with the same path are replaced.
  */
-
 const fs = require('fs');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
 const { execSync } = require('child_process');
+const { resolveSupabaseAdmin } = require('./supabase-admin.cjs');
 
-let supabaseUrl = process.env.VITE_SUPABASE_URL;
-let supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+const BUCKET = 'bapekkris-media';
+const MIME = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif',
+  '.svg': 'image/svg+xml', '.avif': 'image/avif', '.pdf': 'application/pdf', '.zip': 'application/zip',
+  '.doc': 'application/msword', '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.ppt': 'application/vnd.ms-powerpoint', '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.xls': 'application/vnd.ms-excel', '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+};
 
-if (!supabaseUrl || !supabaseKey) {
-  const envPath = path.join(__dirname, '..', '.env');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    const urlMatch = envContent.match(/VITE_SUPABASE_URL=([^\s]+)/);
-    const keyMatch = envContent.match(/VITE_SUPABASE_ANON_KEY=([^\s]+)/);
-    if (!supabaseUrl && urlMatch) supabaseUrl = urlMatch[1];
-    if (!supabaseKey && keyMatch) supabaseKey = keyMatch[1];
-  }
-}
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('[ERROR] Kredensial Supabase (URL / ANON KEY) tidak ditemukan.');
-  process.exit(1);
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-function getAllFiles(dir, all = []) {
-  if (!fs.existsSync(dir)) return all;
-  fs.readdirSync(dir).forEach(file => {
-    const full = path.join(dir, file);
-    if (fs.statSync(full).isDirectory()) getAllFiles(full, all);
-    else all.push(full);
+function listFiles(dir) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir).flatMap((name) => {
+    const full = path.join(dir, name);
+    return fs.statSync(full).isDirectory() ? listFiles(full) : [full];
   });
-  return all;
 }
 
-async function restoreStorage() {
-  console.log(`[${new Date().toISOString()}] === MEMULAI RESTORE STORAGE KE SUPABASE ===`);
-  const backupDir = path.join(__dirname, '..', 'backups');
-  let storageDir = path.join(backupDir, 'storage');
-
-  // Jika folder storage belum ada, coba ekstrak dari zip latest
+async function run() {
+  const backupDir = process.env.BACKUP_DIR || path.join(__dirname, '..', 'backups');
+  const storageDir = path.join(backupDir, 'storage');
   if (!fs.existsSync(storageDir)) {
-    const latestZip = path.join(backupDir, 'supabase_full_backup_latest.zip');
-    if (fs.existsSync(latestZip)) {
-      console.log('Mengekstrak berkas storage dari', latestZip, '...');
-      execSync(`unzip -q -o "${latestZip}" -d "${backupDir}"`);
-    }
+    const zip = path.join(backupDir, 'supabase_full_backup_latest.zip');
+    if (!fs.existsSync(zip)) throw new Error('backups/storage/ dan supabase_full_backup_latest.zip tidak ditemukan.');
+    execSync(`unzip -q -o "${zip}" "storage/*" -d "${backupDir}"`);
   }
 
-  if (!fs.existsSync(storageDir)) {
-    console.error('[ERROR] Folder backups/storage/ atau file zip backup tidak ditemukan.');
-    process.exit(1);
+  const admin = await resolveSupabaseAdmin();
+  const files = listFiles(storageDir);
+  console.log(`=== RESTORE STORAGE: ${files.length} berkas ke ${BUCKET} ===`);
+  let failed = 0;
+  for (const [i, file] of files.entries()) {
+    const objectPath = path.relative(storageDir, file).split(path.sep).join('/');
+    const res = await fetch(`${admin.baseUrl}/storage/v1/object/${BUCKET}/${objectPath.split('/').map(encodeURIComponent).join('/')}`, {
+      method: 'POST',
+      headers: { ...admin.headers, 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', 'x-upsert': 'true' },
+      body: fs.readFileSync(file)
+    });
+    if (res.ok) console.log(`  [${i + 1}/${files.length}] ✓ ${objectPath}`);
+    else { failed++; console.error(`  [${i + 1}/${files.length}] ✗ ${objectPath}: HTTP ${res.status}`); }
   }
-
-  const allFiles = getAllFiles(storageDir);
-  console.log(`Ditemukan ${allFiles.length} berkas lokal untuk diunggah ke bucket bapekkris-media...\n`);
-
-  let successCount = 0;
-  for (let i = 0; i < allFiles.length; i++) {
-    const filePath = allFiles[i];
-    const relPath = path.relative(storageDir, filePath).replace(/\\/g, '/');
-    const fileBuffer = fs.readFileSync(filePath);
-
-    let mime = 'application/octet-stream';
-    if (relPath.endsWith('.jpg') || relPath.endsWith('.jpeg')) mime = 'image/jpeg';
-    else if (relPath.endsWith('.png')) mime = 'image/png';
-    else if (relPath.endsWith('.zip')) mime = 'application/zip';
-
-    try {
-      const { error } = await supabase.storage.from('bapekkris-media').upload(relPath, fileBuffer, {
-        contentType: mime,
-        upsert: true
-      });
-
-      if (error) {
-        console.error(`  [${i + 1}/${allFiles.length}] ✗ Gagal upload ${relPath}:`, error.message);
-      } else {
-        successCount++;
-        console.log(`  [${i + 1}/${allFiles.length}] ✓ ${relPath} berhasil diunggah.`);
-      }
-    } catch (err) {
-      console.error(`  ✗ Error upload ${relPath}:`, err.message);
-    }
-  }
-
-  console.log(`\n[SELESAI] Berhasil memulihkan ${successCount} dari ${allFiles.length} berkas ke Storage Bucket bapekkris-media!`);
+  console.log(`\nSelesai: ${files.length - failed} dari ${files.length} berkas dipulihkan.`);
+  if (failed > 0) process.exit(1);
 }
 
-restoreStorage().catch(err => {
-  console.error('[FATAL] Restore gagal:', err);
+run().catch((err) => {
+  console.error('[FATAL] Restore gagal:', err.message);
   process.exit(1);
 });
-

@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          actor_role: string | null
+          changed_fields: string[] | null
+          id: number
+          new_data: Json | null
+          occurred_at: string
+          old_data: Json | null
+          row_id: string | null
+          summary: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          changed_fields?: string[] | null
+          id?: never
+          new_data?: Json | null
+          occurred_at?: string
+          old_data?: Json | null
+          row_id?: string | null
+          summary?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_role?: string | null
+          changed_fields?: string[] | null
+          id?: never
+          new_data?: Json | null
+          occurred_at?: string
+          old_data?: Json | null
+          row_id?: string | null
+          summary?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       admin_profiles: {
         Row: {
           created_at: string | null
@@ -1235,3 +1280,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

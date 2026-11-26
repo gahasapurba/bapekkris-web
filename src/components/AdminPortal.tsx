@@ -24,6 +24,7 @@ import AssetsTab from '../admin/tabs/AssetsTab';
 import FaqsTab from '../admin/tabs/FaqsTab';
 import PrayerRequestsTab from '../admin/tabs/PrayerRequestsTab';
 import VisitorStatsTab from '../admin/tabs/VisitorStatsTab';
+import AuditLogTab from '../admin/tabs/AuditLogTab';
 import EditItemModal from '../admin/modals/EditItemModal';
 import DeleteConfirmModal from '../admin/modals/DeleteConfirmModal';
 import ExecutiveReportModal from '../admin/modals/ExecutiveReportModal';
@@ -99,6 +100,8 @@ export default function AdminPortal(props: AdminPortalProps) {
       {activeTab === 'prayers' && isSuperAdmin && <PrayerRequestsTab />}
 
       {activeTab === 'visitors' && isSuperAdmin && <VisitorStatsTab />}
+
+      {activeTab === 'activity' && isSuperAdmin && <AuditLogTab />}
 
       {/* TAB CONTENT: PENGURUS & ANGGOTA (DENGAN NOMOR WA OPSIONAL) */}
       {activeTab === 'members' && <MembersTab />}

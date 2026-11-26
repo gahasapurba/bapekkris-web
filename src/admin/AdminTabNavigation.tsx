@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, Calendar, CalendarDays, ClipboardList, Download, Eye, FileCheck2, HandHeart, Image as ImageIcon, Layers, LogOut, MessageSquare, MonitorPlay, Music, Shield, ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, BookOpen, History, Calendar, CalendarDays, ClipboardList, Download, Eye, FileCheck2, HandHeart, Image as ImageIcon, Layers, LogOut, MessageSquare, MonitorPlay, Music, Shield, ShieldCheck, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Sheet, cn } from '../ui';
 import { DIVISION_ADMIN_TABS } from './adminConstants';
@@ -36,6 +36,7 @@ export default function AdminTabNavigation({ onLogout }: { onLogout?: () => void
     ] },
     { title: 'Pengaturan', items: [
       { id: 'visitors', label: 'Statistik pengunjung', icon: BarChart3 },
+      { id: 'activity', label: 'Log aktivitas', icon: History },
       { id: 'visibility', label: 'Visibilitas menu', icon: Eye },
       { id: 'admins', label: 'Kelola admin', icon: ShieldCheck }
     ] }

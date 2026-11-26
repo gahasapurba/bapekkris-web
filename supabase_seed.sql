@@ -88,3 +88,5 @@ ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 -- VALUES (...) ON CONFLICT (id) DO NOTHING;
 
 -- 22. page_view_daily (Statistik pengunjung). Diisi otomatis lewat RPC track_page_view; tanpa seed.
+
+-- 23. admin_audit_log (Log aktivitas admin). Diisi otomatis oleh trigger log_admin_change; tanpa seed.
