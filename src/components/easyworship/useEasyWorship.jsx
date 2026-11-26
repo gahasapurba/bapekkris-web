@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createRoomCode, useProjectorRoomOperator } from '../../lib/projectorSync';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../bible/useBible';
 import { BIBLE_SONG_COLLECTION } from '../../data/hymnalLibrary';
@@ -94,6 +95,23 @@ export function useEasyWorship({
     };
   });
 
+  // Cross-device projector room (Supabase Realtime); the code survives a page refresh in this tab
+  const [roomCode, setRoomCode] = useState(() => {
+    try { return sessionStorage.getItem('bapekkris_ew_room') || null; } catch (e) { return null; }
+  });
+  const { connectedScreens, sendState: sendRemoteState } = useProjectorRoomOperator(roomCode, liveState);
+
+  const startRemoteRoom = () => {
+    const code = roomCode || createRoomCode();
+    setRoomCode(code);
+    try { sessionStorage.setItem('bapekkris_ew_room', code); } catch (e) { /* storage unavailable */ }
+    return code;
+  };
+  const stopRemoteRoom = () => {
+    setRoomCode(null);
+    try { sessionStorage.removeItem('bapekkris_ew_room'); } catch (e) { /* storage unavailable */ }
+  };
+
   // Modal Add Item states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addTab, setAddTab] = useState('song'); // 'song' | 'bible' | 'custom'
@@ -132,15 +150,17 @@ export function useEasyWorship({
     }
   }, [initialItem]);
 
-  // Sync live state to BroadcastChannel & LocalStorage
+  // Sync live state to projector windows on this device (BroadcastChannel / storage) and to
+  // screens on other devices joined to the room (Supabase Realtime)
   const broadcastLiveState = (nextState) => {
     setLiveState(nextState);
+    sendRemoteState(nextState);
     try {
       localStorage.setItem('bapekkris_ew_live_state', JSON.stringify(nextState));
       const channel = new BroadcastChannel('bapekkris_easyworship');
       channel.postMessage(nextState);
       channel.close();
-    } catch (e) {}
+    } catch (e) { /* storage or BroadcastChannel unavailable */ }
   };
 
   // Push specific slide to LIVE
@@ -265,6 +285,10 @@ export function useEasyWorship({
     handleToggleLogo,
     handleOpenProjectorWindow,
     handleSavePlaylist,
-    handleAddItemToPlaylist
+    handleAddItemToPlaylist,
+    roomCode,
+    connectedScreens,
+    startRemoteRoom,
+    stopRemoteRoom
   };
 }

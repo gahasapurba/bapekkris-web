@@ -1,4 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { normalizeRoomCode, useProjectorRoomScreen, ROOM_CODE_LENGTH } from '../lib/projectorSync';
+
+const CONNECTION_LABEL = {
+  connecting: 'Menyambungkan ke konsol operator…',
+  connected: 'Tersambung ke konsol operator',
+  error: 'Gagal tersambung. Periksa koneksi internet atau kode ruang.'
+};
+
+/**
+ * Corner panel of the projector screen: shows the room connection, or lets the operator type a room
+ * code when the screen was opened without one. Hidden while connected unless the pointer moves.
+ */
+function RoomPanel({ roomCode, connection, onConnect }) {
+  const [visible, setVisible] = useState(true);
+  const [draft, setDraft] = useState('');
+  const timerRef = useRef();
+
+  useEffect(() => {
+    const reveal = () => {
+      setVisible(true);
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setVisible(false), 3000);
+    };
+    reveal();
+    window.addEventListener('mousemove', reveal);
+    window.addEventListener('touchstart', reveal);
+    return () => {
+      clearTimeout(timerRef.current);
+      window.removeEventListener('mousemove', reveal);
+      window.removeEventListener('touchstart', reveal);
+    };
+  }, []);
+
+  const pinned = !roomCode || connection !== 'connected';
+  if (!visible && !pinned) return null;
+  const code = normalizeRoomCode(draft);
+
+  return (
+    <div style={{ position: 'fixed', right: '20px', bottom: '20px', zIndex: 1000000, maxWidth: '360px', padding: '14px 16px', borderRadius: '12px', background: 'rgba(5, 12, 28, 0.88)', border: '1px solid rgba(255, 255, 255, 0.18)', color: '#ffffff', fontFamily: "'Inter', system-ui, sans-serif", fontSize: '0.9rem', lineHeight: 1.45 }}>
+      {roomCode ? (
+        <div role="status">
+          <strong style={{ display: 'block', letterSpacing: '0.2em' }}>RUANG {roomCode}</strong>
+          <span style={{ color: connection === 'error' ? '#fca5a5' : '#cbd5e1' }}>{CONNECTION_LABEL[connection] || ''}</span>
+        </div>
+      ) : (
+        <form onSubmit={(e) => { e.preventDefault(); if (code) onConnect(code); }} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <label htmlFor="projector-room-code" style={{ color: '#cbd5e1' }}>Sambungkan ke konsol di perangkat lain</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input id="projector-room-code" value={draft} onChange={(e) => setDraft(e.target.value.toUpperCase())} maxLength={ROOM_CODE_LENGTH + 2} placeholder="KODE RUANG" autoComplete="off"
+              style={{ flex: 1, minWidth: 0, padding: '8px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.08)', color: '#ffffff', letterSpacing: '0.2em', fontWeight: 700 }} />
+            <button type="submit" disabled={!code} style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: code ? '#e3b341' : '#64748b', color: '#0b1320', fontWeight: 700, cursor: code ? 'pointer' : 'not-allowed' }}>Sambungkan</button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
 
 // Pure Fullscreen Projector Display for 2nd Monitor / HDMI Projector
 export default function ProjectorDisplay() {
@@ -21,6 +78,17 @@ export default function ProjectorDisplay() {
       return { isLogo: true, bgTheme: 'cathedral' };
     }
   });
+
+  // Room on another device (?room=CODE); otherwise windows on this device sync via BroadcastChannel
+  const [roomCode, setRoomCode] = useState(() => normalizeRoomCode(new URLSearchParams(window.location.search).get('room')));
+  const connection = useProjectorRoomScreen(roomCode, setLiveState);
+  const connectRoom = (code) => {
+    setRoomCode(code);
+    const url = new URL(window.location.href);
+    url.searchParams.set('room', code);
+    window.history.replaceState(null, '', url);
+  };
+  const roomPanel = <RoomPanel roomCode={roomCode} connection={connection} onConnect={connectRoom} />;
 
   useEffect(() => {
     // Listen to BroadcastChannel for real-time instant cross-window sync
@@ -77,7 +145,7 @@ export default function ProjectorDisplay() {
   };
 
   if (liveState.isBlackout) {
-    return <div style={{ width: '100vw', height: '100vh', background: '#000000' }} />;
+    return <div style={{ width: '100vw', height: '100vh', background: '#000000' }}>{roomPanel}</div>;
   }
 
   return (
@@ -212,7 +280,7 @@ export default function ProjectorDisplay() {
           </div>
         </div>
       )}
+      {roomPanel}
     </div>
   );
 }
-

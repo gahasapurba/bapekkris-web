@@ -1,8 +1,10 @@
-import { ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink, Layers, MonitorOff, MonitorSmartphone, Plus, Radio, Save, Sparkles, Trash2, Type } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 import { BIBLE_BOOKS } from '../bible/useBible';
 import { Badge, Button, Card, Dialog, Field, Input, Select, Tabs, Textarea, cn } from '../../ui';
 import { useEasyWorship } from './useEasyWorship';
+import RemoteProjectorDialog from './RemoteProjectorDialog';
 
 interface Item { id: string; type: string; title: string; subtitle?: string; text?: string }
 interface Slide { label: string; text: string }
@@ -20,8 +22,10 @@ export default function EasyWorshipSection(props: any) {
     playlist, setPlaylist, activeItem, setActiveItemId, slides, activeSlideIndex, setActiveSlideIndex, liveState, isAddModalOpen, setIsAddModalOpen,
     addTab, setAddTab, songSearchQuery, setSongSearchQuery, selectedBibleBook, setSelectedBibleBook, selectedBibleChapter, setSelectedBibleChapter,
     selectedBibleVerse, setSelectedBibleVerse, customTitle, setCustomTitle, customText, setCustomText, toastMsg, filteredAvailableSongs,
-    broadcastLiveState, handleGoLive, handleToggleBlackout, handleToggleClearText, handleToggleLogo, handleOpenProjectorWindow, handleSavePlaylist, handleAddItemToPlaylist
+    broadcastLiveState, handleGoLive, handleToggleBlackout, handleToggleClearText, handleToggleLogo, handleOpenProjectorWindow, handleSavePlaylist, handleAddItemToPlaylist,
+    roomCode, connectedScreens, startRemoteRoom, stopRemoteRoom
   } = useEasyWorship(props) as Record<string, any>;
+  const [isRemoteOpen, setIsRemoteOpen] = useState(false);
 
   const goSlide = (index: number) => { setActiveSlideIndex(index); handleGoLive(activeItem, index); };
   const status = liveState.isBlackout ? 'Layar padam' : liveState.isLogo ? 'Layar logo' : 'Live';
@@ -39,9 +43,13 @@ export default function EasyWorshipSection(props: any) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="secondary" icon={<Save size={16} aria-hidden="true" />} onClick={handleSavePlaylist}>{toastMsg ? 'Tersimpan' : 'Simpan tata ibadah'}</Button>
+          <Button variant="secondary" icon={<MonitorSmartphone size={16} aria-hidden="true" />} onClick={() => { startRemoteRoom(); setIsRemoteOpen(true); }}>
+            {roomCode ? `Perangkat lain (${connectedScreens})` : 'Sambungkan perangkat lain'}
+          </Button>
           <Button icon={<ExternalLink size={16} aria-hidden="true" />} onClick={handleOpenProjectorWindow}>Buka layar proyektor</Button>
         </div>
       </header>
+      <RemoteProjectorDialog open={isRemoteOpen} onClose={() => setIsRemoteOpen(false)} roomCode={roomCode} connectedScreens={connectedScreens} onStop={stopRemoteRoom} />
 
       <div className="grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_420px]">
         <Card padding="none" className="flex max-h-[720px] flex-col">
