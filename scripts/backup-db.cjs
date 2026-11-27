@@ -115,10 +115,10 @@ async function run() {
     try {
       await downloadObject(admin, obj.path, path.join(storageDir, obj.path));
       totalBytes += obj.size;
-      console.log(`  [${i + 1}/${objects.length}] ✓ ${obj.path}`);
+      console.log(`  [${i + 1}/${objects.length}] ✓`); // nama berkas sengaja tidak dicetak: log Actions repo publik terbuka
     } catch (err) {
       problems.push(`Berkas ${obj.path}: ${err.message}`);
-      console.error(`  [${i + 1}/${objects.length}] ✗ ${obj.path}: ${err.message}`);
+      console.error(`  [${i + 1}/${objects.length}] ✗ ${err.message}`);
     }
   }
   const sizeMb = (totalBytes / 1024 / 1024).toFixed(2);
