@@ -571,8 +571,10 @@ RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
 $$;
 
 -- Pelacak status mandiri: cocok persis dengan ID pendaftaran atau field indeks pencarian
+-- Cek Status: hanya status, catatan panitia, nama & keterangan singkat (bukan seluruh isi formulir)
+DROP FUNCTION IF EXISTS public.track_submissions(TEXT);
 CREATE OR REPLACE FUNCTION public.track_submissions(p_query TEXT)
-RETURNS TABLE (id TEXT, form_id TEXT, status TEXT, admin_notes TEXT, data JSONB, created_at TIMESTAMPTZ)
+RETURNS TABLE (id TEXT, form_id TEXT, status TEXT, admin_notes TEXT, participant_name TEXT, participant_detail TEXT, created_at TIMESTAMPTZ)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 #variable_conflict use_column
 DECLARE
@@ -584,9 +586,33 @@ BEGIN
         RETURN;
     END IF;
     RETURN QUERY
-    SELECT s.id, s.form_id, s.status, s.admin_notes, s.data, s.created_at
+    SELECT
+        s.id,
+        s.form_id,
+        s.status,
+        s.admin_notes,
+        coalesce(nullif(s.data->>nf.fid, ''), ''),
+        coalesce(s.data->>df.fid, ''),
+        s.created_at
     FROM public.submissions s
     JOIN public.forms f ON f.id = s.form_id
+    LEFT JOIN LATERAL (
+        SELECT fld->>'id' AS fid
+        FROM jsonb_array_elements(f.fields) WITH ORDINALITY AS t(fld, ord)
+        WHERE coalesce(fld->>'type', '') <> 'file'
+        ORDER BY (coalesce(fld->>'label', '') ~* '(nama|name|squad|tim)') DESC, ord
+        LIMIT 1
+    ) nf ON true
+    LEFT JOIN LATERAL (
+        -- Hanya kolom yang memang keterangan (unit/divisi/pilihan); tidak pernah NIP/WA/email
+        SELECT fld->>'id' AS fid
+        FROM jsonb_array_elements(f.fields) WITH ORDINALITY AS t(fld, ord)
+        WHERE coalesce(fld->>'type', '') <> 'file'
+          AND (fld->>'id') IS DISTINCT FROM nf.fid
+          AND coalesce(fld->>'label', '') ~* '(unit|department|dept|divisi|pilihan|cabor)'
+        ORDER BY ord
+        LIMIT 1
+    ) df ON true
     WHERE f.requires_tracking IS NOT FALSE
       AND (
         lower(s.id) IN (q, q_clean)
@@ -775,6 +801,14 @@ BEGIN
 END;
 $$;
 
+-- Fungsi baru mewarisi EXECUTE untuk PUBLIC; cabut dulu lalu beri eksplisit
+REVOKE ALL ON FUNCTION
+    public.track_submissions(TEXT), public.get_registration_counts(), public.get_event_attendees(TEXT),
+    public.is_submission_value_taken(TEXT, TEXT, TEXT), public.get_accepted_submissions(TEXT),
+    public.submit_form(TEXT, JSONB, JSONB), public.submit_rsvp(TEXT, TEXT, TEXT, TEXT),
+    public.assign_admin_role(TEXT, TEXT, TEXT, TEXT), public.revoke_admin_role(UUID)
+FROM PUBLIC, anon;
+
 GRANT EXECUTE ON FUNCTION
     public.parse_wib_deadline(TEXT),
     public.get_registration_counts(),
@@ -803,12 +837,20 @@ DROP POLICY IF EXISTS "Public Access cnt-media" ON storage.objects;
 
 DROP POLICY IF EXISTS "Public upload submission files" ON storage.objects;
 CREATE POLICY "Public upload submission files" ON storage.objects FOR INSERT TO anon, authenticated
-    WITH CHECK (bucket_id = 'bapekkris-media' AND (storage.foldername(name))[1] = 'submissions');
+    WITH CHECK (
+        bucket_id = 'bapekkris-media'
+        AND (storage.foldername(name))[1] = 'submissions'
+        AND lower(storage.extension(name)) = ANY (ARRAY[
+            'pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'heic', 'heif',
+            'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv',
+            'zip', 'rar', '7z', 'mp3', 'mp4', 'mov'
+        ])
+    );
 
 DROP POLICY IF EXISTS "Admin manage media" ON storage.objects;
 CREATE POLICY "Admin manage media" ON storage.objects FOR ALL TO authenticated
-    USING (bucket_id IN ('bapekkris-media', 'cnt-media') AND public.is_admin())
-    WITH CHECK (bucket_id IN ('bapekkris-media', 'cnt-media') AND public.is_admin());
+    USING (bucket_id = 'bapekkris-media' AND public.is_admin())
+    WITH CHECK (bucket_id = 'bapekkris-media' AND public.is_admin());
 
 -- ------------------------------------------------------------------------------
 -- 7. Super admin pertama (jalankan sekali setelah membuat user di Authentication → Users):

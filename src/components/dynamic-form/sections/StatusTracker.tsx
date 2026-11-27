@@ -51,7 +51,7 @@ export default function StatusTracker() {
           ) : matchedSubmissions.map((sub) => {
             const status = submissionStatus(sub.status);
             const parentForm = forms.find((f) => f.id === sub.formId);
-            const identity = Object.values(sub.data || {}).slice(0, 3).map(String).filter(Boolean).join(' · ');
+            const identity = [sub.participantName, sub.participantDetail].filter(Boolean).join(' · ');
             return (
               <div key={sub.id} className="flex flex-col gap-3 rounded-lg border border-line bg-page p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">

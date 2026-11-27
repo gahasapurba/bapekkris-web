@@ -1138,9 +1138,10 @@ export type Database = {
         Returns: {
           admin_notes: string
           created_at: string
-          data: Json
           form_id: string
           id: string
+          participant_detail: string
+          participant_name: string
           status: string
         }[]
       }

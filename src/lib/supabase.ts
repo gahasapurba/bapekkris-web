@@ -888,7 +888,8 @@ export async function trackSubmissions(query: string) {
     formId: row.form_id,
     status: row.status,
     adminNotes: row.admin_notes || '',
-    data: row.data || {},
+    participantName: row.participant_name || '',
+    participantDetail: row.participant_detail || '',
     createdAt: row.created_at
   }));
 }
