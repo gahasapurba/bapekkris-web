@@ -70,6 +70,8 @@ export default function SiteHeader({
   const formActive = isActiveTab('form', currentTab);
   const openForms = countOpenForms(forms, activeTenure);
   const moreActive = secondary.some((item) => item.id === currentTab);
+  // The period picker lives in "Lainnya" (desktop) and the menu sheet (mobile): the header row has no room for it.
+  const hasTenureChoice = tenures.length > 1;
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -115,13 +117,15 @@ export default function SiteHeader({
               </button>
             );
           })}
-          {secondary.length > 0 && (
+          {(secondary.length > 0 || hasTenureChoice) && (
             <div ref={moreRef} className="relative">
-              <button type="button" onClick={() => setMoreOpen((o) => !o)} aria-haspopup="menu" aria-expanded={moreOpen} className={navLink(moreActive)}>
+              <button type="button" onClick={() => setMoreOpen((o) => !o)} aria-haspopup="true" aria-expanded={moreOpen} className={navLink(moreActive)}>
                 Lainnya <ChevronDown size={15} aria-hidden="true" className={cn('transition-transform', moreOpen && 'rotate-180')} />
               </button>
               {moreOpen && (
-                <div role="menu" className="absolute left-0 top-full mt-2 w-60 rounded-lg border border-line bg-surface p-1.5 shadow-card">
+                <div className="absolute left-0 top-full mt-2 w-64 rounded-lg border border-line bg-surface p-1.5 shadow-card">
+                  {secondary.length > 0 && (
+                  <div role="menu" aria-label="Halaman lainnya">
                   {secondary.map((item) => {
                     const Icon = item.icon;
                     const active = item.id === currentTab;
@@ -134,6 +138,14 @@ export default function SiteHeader({
                       </button>
                     );
                   })}
+                  </div>
+                  )}
+                  {hasTenureChoice && (
+                    <div className={cn('px-1.5 pb-1.5', secondary.length > 0 && 'mt-1.5 border-t border-line pt-3')}>
+                      <p className="mb-2 px-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-dim">Periode kepengurusan</p>
+                      <TenureSelect tenures={tenures} activeTenure={activeTenure} onSelectTenure={onSelectTenure} onChanged={() => setMoreOpen(false)} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -162,7 +174,6 @@ export default function SiteHeader({
               <kbd className="hidden rounded border border-line bg-subtle px-1.5 text-[0.68rem] font-semibold text-dim lg:inline">⌘K</kbd>
             </button>
           )}
-          <TenureSelect tenures={tenures} activeTenure={activeTenure} onSelectTenure={onSelectTenure} className="hidden w-44 2xl:block" />
           <button type="button" onClick={onToggleTheme} aria-label={isDark ? 'Gunakan tema terang' : 'Gunakan tema gelap'} className={iconButton}>
             {isDark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
           </button>
@@ -206,7 +217,7 @@ export default function SiteHeader({
             </button>
           )}
         </nav>
-        {tenures.length > 1 && (
+        {hasTenureChoice && (
           <div className="mt-5 border-t border-line px-2 pt-5">
             <p className="mb-2 text-[0.74rem] font-semibold uppercase tracking-[0.12em] text-dim">Periode kepengurusan</p>
             <TenureSelect tenures={tenures} activeTenure={activeTenure} onSelectTenure={onSelectTenure} onChanged={() => setMenuOpen(false)} />
