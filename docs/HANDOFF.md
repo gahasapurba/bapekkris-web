@@ -180,7 +180,7 @@ Terakhir diperbarui: 27 November 2026 (Fase 1–4 selesai; Master_Test_Checklist
 - Diuji Playwright 15/15 (validasi, draf antar tab, terbit, edit, filter tema & kategori publik, hapus) + cek isi database; data uji dihapus.
 
 ### Uji Master_Test_Checklist (187 kasus × 4 matriks) — ✅ SELESAI (27 Nov 2026)
-- Hasil akhir per matriks (setelah perbaikan): Web Light, Web Dark, Mobile Light, Mobile Dark masing-masing **183 PASS, 0 FAIL, 3 N/A** (#145, #173, #174) + #161 manual + #187 build/push. Mobile memakai profil **iPhone 17 Pro Max** (440×763, retina 3×); web 1366×900.
+- Hasil akhir per matriks (setelah perbaikan): Web Light, Web Dark, Mobile Light, Mobile Dark masing-masing **184 PASS, 0 FAIL, 3 N/A** (#145, #173, #174), termasuk #161 yang diuji manual oleh pengurus di proyektor nyata (lulus, 27 Nov 2026) dan #187 build/push. Mobile memakai profil **iPhone 17 Pro Max** (440×763, retina 3×); web 1366×900.
 - Bug aplikasi yang ditemukan & diperbaiki di putaran ini:
   - #109 kalender membuka bulan acara pertama menurut urutan data → kini acara terdekat menurut tanggal (`EventCalendarView.tsx`).
   - #160 pencarian "KJ 1" menampilkan KJ 100 lebih dulu → `rankSongs` (nomor persis > awalan nomor > judul > lirik).
