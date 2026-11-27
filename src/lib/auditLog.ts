@@ -40,7 +40,7 @@ export const AUDIT_TABLE_LABELS: Record<string, string> = {
 /** Characters that would break a PostgREST or() filter are dropped from the search text. */
 const cleanSearch = (q: string) => q.replace(/[,()*%\\]/g, ' ').trim();
 
-export async function fetchAuditLog(f: AuditFilters): Promise<{ entries: AuditEntry[]; total: number }> {
+async function fetchAuditLog(f: AuditFilters): Promise<{ entries: AuditEntry[]; total: number }> {
   let query = supabase
     .from('admin_audit_log')
     .select('id, occurred_at, actor_email, actor_role, action, table_name, row_id, summary, changed_fields', { count: 'exact' })

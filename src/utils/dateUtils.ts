@@ -42,7 +42,7 @@ export const INDONESIAN_MONTHS = [
   'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
 ];
 
-export const INDONESIAN_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+const INDONESIAN_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 const WIB_OFFSET_HOURS = 7;
 const WIB_TIME_ZONE = 'Asia/Jakarta';
@@ -108,7 +108,7 @@ export function toWibIsoDate(date: Date = new Date()): string {
  * Parses an Indonesian date string (e.g. "31 Maret 2026") or ISO string ("2026-03-31")
  * into a valid ISO string "YYYY-MM-DD". Returns empty string if invalid.
  */
-export function parseDateToIso(str: unknown): string {
+function parseDateToIso(str: unknown): string {
   if (!str || typeof str !== 'string') return '';
   const trimmed = str.trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
@@ -332,16 +332,6 @@ export function toDatetimeLocalValue(str: DateInput): string {
   const iso = parseDateToIso(trimmed);
   if (iso) return `${iso}T09:00`;
   return '';
-}
-
-/**
- * Convert any date / datetime / legacy string into standard HTML <input type="date"> value (YYYY-MM-DD).
- */
-export function toDateInputValue(str: DateInput): string {
-  if (!str) return '';
-  const dt = toDatetimeLocalValue(str);
-  if (dt) return dt.split('T')[0];
-  return parseDateToIso(str) || '';
 }
 
 /**
@@ -573,7 +563,7 @@ export function parseFlexibleDate(str: DateInput): FlexibleDate {
  * - 25 Okt & 25 Nov 2026 -> "25 Oktober, 25 November 2026"
  * - 21 Mar 2025 & 25 Agu 2027 -> "21 Maret 2025, 25 Agustus 2027"
  */
-export function formatMultipleDates(dates: DateInput[] = []): string {
+function formatMultipleDates(dates: DateInput[] = []): string {
   const validDates = dates
     .map(d => String(d || '').trim().split('T')[0])
     .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d));

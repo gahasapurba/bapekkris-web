@@ -120,7 +120,7 @@ export const tenureCreateSchema = z.object({
   newTenureTitle: requiredText('Nama Periode Kepengurusan wajib diisi')
 });
 
-export const DIVISION_NAME_REQUIRED = 'Nama Divisi wajib diisi';
+const DIVISION_NAME_REQUIRED = 'Nama Divisi wajib diisi';
 export const divisionCreateSchema = z.object({
   newDivName: requiredText(DIVISION_NAME_REQUIRED)
 });

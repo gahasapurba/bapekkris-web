@@ -80,7 +80,7 @@ export function getConnectedEventForForm<E extends QuotaEvent>(
 
 const REJECTED_STATUSES = ['Rejected', 'Ditolak'];
 
-export const EMPTY_REGISTRATION_COUNTS: RegistrationCounts = { forms: {}, events: {} };
+const EMPTY_REGISTRATION_COUNTS: RegistrationCounts = { forms: {}, events: {} };
 
 /**
  * Builds registration counts from full lists (admin view). Rejected submissions free up their seat,

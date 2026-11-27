@@ -37,7 +37,7 @@ function rpcError(error: { message?: string }): RpcError {
   return new RpcError(code, detail, error.message);
 }
 
-export async function fetchPrayerWall(): Promise<PrayerWallItem[]> {
+async function fetchPrayerWall(): Promise<PrayerWallItem[]> {
   const { data, error } = await supabase.rpc('get_prayer_wall');
   if (error) throw rpcError(error);
   return (data || []).map((row) => ({
@@ -67,7 +67,7 @@ export async function prayForRequest(id: string): Promise<number> {
   return data as number;
 }
 
-export async function listPrayerRequests(): Promise<PrayerRequest[]> {
+async function listPrayerRequests(): Promise<PrayerRequest[]> {
   const { data, error } = await supabase.from('prayer_requests').select('*').order('created_at', { ascending: false });
   if (error) throw new Error(`Gagal memuat pokok doa: ${error.message}`);
   return data.map((row) => ({

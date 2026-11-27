@@ -1,8 +1,8 @@
 import type { AppItem } from '../../lib/supabase';
 import { parseWibDateTime, toWibIsoDate } from '../../utils/dateUtils';
 import { downloadBlob } from '../../utils/download';
+import { SITE_URL } from '../../lib/seo';
 
-const SITE_URL = 'https://bapekkris-mandiri.netlify.app';
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 type CalendarRange =
@@ -49,7 +49,7 @@ function fold(line: string): string {
   return parts.join('\r\n');
 }
 
-export function eventUrl(evt: AppItem): string {
+function eventUrl(evt: AppItem): string {
   return `${SITE_URL}/?event=${encodeURIComponent(evt.id)}#event`;
 }
 

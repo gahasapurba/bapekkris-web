@@ -230,7 +230,7 @@ export function getMemberLevel(member: AppItem | null | undefined, tenureRoles: 
  * Whether a member holds the given role: by roleId when the member has one; legacy rows without a
  * roleId match by exact name, or by prefix for division roles (e.g. "Pimpro Divisi Acara").
  */
-export function memberHasRole(member: AppItem, role: { id?: string; name?: string; requiresDivision?: boolean }): boolean {
+function memberHasRole(member: AppItem, role: { id?: string; name?: string; requiresDivision?: boolean }): boolean {
   if (member.roleId) return member.roleId === role.id;
   const mRole = String(member.role || '').toLowerCase().trim();
   const rName = String(role.name || '').toLowerCase().trim();
@@ -393,29 +393,6 @@ export function getTenureQuotaSummary(
 }
 
 /**
- * Backward compatibility helper for legacy code
- */
-export function getMemberRoleType(category: string | null = '', role: string | null = '', title: string | null = ''): string {
-  const cat = String(category || '').toLowerCase().trim();
-  const text = `${role} ${title}`.toLowerCase();
-
-  if (cat === 'penasehat' || text.includes('penasehat') || text.includes('penasihat')) return 'penasehat';
-  if (cat === 'pembina') return 'pembina';
-  if (cat === 'pimpro') return 'pimpro';
-  if (cat === 'anggota') return 'anggota';
-
-  if (cat === 'inti') {
-    if (text.includes('wakil')) return 'wakil_ketua';
-    if (text.includes('ketua')) return 'ketua';
-    if (text.includes('sekretaris jenderal') || text.includes('sekjen')) return 'sekjen';
-    if (text.includes('sekretaris') || text.includes('bendahara')) return 'sekretaris_bendahara';
-    return 'inti_lainnya';
-  }
-
-  return 'anggota';
-}
-
-/**
  * Mengelompokkan anggota divisi menjadi pimpinan (leaders) dan anggota biasa (members)
  * murni berdasarkan data relasional DB: role_id, level, requires_division, dan sort_order.
  * Tanpa hardcoded string/kata kunci teks.
@@ -506,7 +483,7 @@ export function getDivisionLead(
 /**
  * Dapatkan sub-divisi di bawah suatu divisi
  */
-export function getSubDivisionsByDivision(divisionId: string | null | undefined, subDivisions: AppItem[] = []): AppItem[] {
+function getSubDivisionsByDivision(divisionId: string | null | undefined, subDivisions: AppItem[] = []): AppItem[] {
   if (!divisionId) return [];
   return (subDivisions || []).filter(sd => sd.divisionId === divisionId);
 }

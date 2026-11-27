@@ -10,7 +10,7 @@ const nf = new Intl.NumberFormat('id-ID');
 const nf1 = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 });
 
 /** Rounds the axis maximum up to a "nice" even number so the midline is a whole number too. */
-export function niceAxisMax(max: number): number {
+function niceAxisMax(max: number): number {
   if (max <= 2) return 2;
   const magnitude = 10 ** Math.floor(Math.log10(max));
   const step = [1, 2, 4, 5, 10].map((m) => m * magnitude).find((v) => v >= max) || 10 * magnitude;

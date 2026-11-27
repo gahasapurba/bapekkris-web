@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from './supabase';
 
-export const TRACKED_PAGES = ['home', 'organisasi', 'event', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'galeri', 'assets', 'form'] as const;
+const TRACKED_PAGES = ['home', 'organisasi', 'event', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'galeri', 'assets', 'form'] as const;
 const SESSION_KEY = 'bapekkris_viewed_pages';
 
 function alreadyCounted(page: string): boolean {
@@ -36,7 +36,7 @@ export function useTrackPageView(page: string, { enabled }: { enabled: boolean }
 
 export interface PageViewRow { day: string; page: string; views: number }
 
-export async function fetchPageViewStats(days: number): Promise<PageViewRow[]> {
+async function fetchPageViewStats(days: number): Promise<PageViewRow[]> {
   const { data, error } = await supabase.rpc('get_page_view_stats', { p_days: days });
   if (error) throw new Error(`Gagal memuat statistik pengunjung: ${error.message}`);
   return (data || []).map((r) => ({ day: r.day, page: r.page, views: r.views }));

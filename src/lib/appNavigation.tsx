@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from 'react-router';
  */
 
 export const PUBLIC_PAGE_IDS = ['home', 'organisasi', 'event', 'renungan', 'alkitab', 'lagu', 'doa', 'easyworship', 'galeri', 'assets', 'form'] as const;
-export const VALID_TABS: readonly string[] = [...PUBLIC_PAGE_IDS, 'program', 'oprec', 'admin', 'event-stats', 'projector'];
+const VALID_TABS: readonly string[] = [...PUBLIC_PAGE_IDS, 'program', 'oprec', 'admin', 'event-stats', 'projector'];
 
 export interface LocationLike {
   pathname: string;

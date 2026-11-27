@@ -31,7 +31,7 @@ export const queryClient = new QueryClient({
   }
 });
 
-export const queryKeys = {
+const queryKeys = {
   table: (key: TableKey) => ['table', key] as const,
   settings: ['settings'] as const,
   registrationCounts: ['registrationCounts'] as const

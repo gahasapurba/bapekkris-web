@@ -72,7 +72,7 @@ function absolute(url: unknown): string | undefined {
   return value.startsWith('/') ? `${SITE_URL}${value}` : value;
 }
 
-export function eventJsonLd(event: Item): Record<string, unknown> {
+function eventJsonLd(event: Item): Record<string, unknown> {
   return {
     '@context': 'https://schema.org',
     '@type': 'Event',

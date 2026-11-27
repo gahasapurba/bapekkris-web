@@ -42,7 +42,7 @@ export function loadLocalCache<T>(key: string, fallbackValue: T): T {
   return fallbackValue;
 }
 
-export function saveLocalCache(key: string, value: unknown): void {
+function saveLocalCache(key: string, value: unknown): void {
   try {
     localStorage.setItem(LOCAL_PREFIX + key, JSON.stringify(value));
   } catch (e) {
@@ -91,7 +91,7 @@ interface RowMapper<K extends TableKey> {
   fromDb: (row: Tables<(typeof TABLE_MAP)[K]>) => AppItem;
 }
 
-export const rowMappers: { [K in TableKey]: RowMapper<K> } = {
+const rowMappers: { [K in TableKey]: RowMapper<K> } = {
   tenures: {
     toDb: (item: AppItem) => ({
       id: String(item.id),
@@ -618,7 +618,7 @@ const FETCH_ORDER: Record<TableKey, string> = {
 };
 const DESCENDING_ORDER = new Set(['created_at', 'drawn_at', 'devotion_date']);
 
-export const TABLE_KEYS = Object.keys(FETCH_ORDER) as TableKey[];
+const TABLE_KEYS = Object.keys(FETCH_ORDER) as TableKey[];
 
 /** Web-state key of a database table, for routing realtime change events. */
 export const TABLE_KEY_BY_DB_TABLE: Record<string, TableKey> = Object.fromEntries(
@@ -725,7 +725,6 @@ export async function fetchRegistrationCounts(): Promise<RegistrationCounts> {
 // ============================================================================
 
 const WRITE_CHUNK_SIZE = 200;
-const DELETE_CHUNK_SIZE = 100;
 
 function tableFor(key: TableKey): string {
   const table = TABLE_MAP[key];
@@ -785,14 +784,6 @@ export async function saveRows(key: TableKey, items: AppItem[]): Promise<void> {
 export async function deleteRow(key: TableKey, id: RowId): Promise<void> {
   const table = tableFor(key);
   assertOk(await dynamicDb.from(table).delete().eq('id', String(id)), `Gagal menghapus data ${table}`);
-}
-
-export async function deleteRows(key: TableKey, ids: RowId[]): Promise<void> {
-  if (!Array.isArray(ids) || ids.length === 0) return;
-  const table = tableFor(key);
-  for (const part of chunk(ids.map(String), DELETE_CHUNK_SIZE)) {
-    assertOk(await dynamicDb.from(table).delete().in('id', part), `Gagal menghapus data ${table}`);
-  }
 }
 
 export async function deleteRowsWhere(key: TableKey, column: string, value: unknown): Promise<void> {

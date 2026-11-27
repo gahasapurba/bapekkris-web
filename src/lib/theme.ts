@@ -27,7 +27,7 @@ export function saveTheme(theme: Theme): void {
   }
 }
 
-export function getSystemTheme(): Theme {
+function getSystemTheme(): Theme {
   return typeof window !== 'undefined' && window.matchMedia?.(DARK_QUERY).matches ? 'dark' : 'light';
 }
 
