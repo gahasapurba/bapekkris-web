@@ -53,7 +53,7 @@ async function listAllObjects(admin, prefix = '') {
     for (const entry of entries) {
       const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.id === null) objects.push(...await listAllObjects(admin, fullPath));
-      else objects.push({ path: fullPath, size: Number(entry.metadata?.size || 0) });
+      else objects.push({ path: fullPath, size: Number(entry.metadata?.size || 0), createdAt: entry.created_at || null });
     }
     if (entries.length < PAGE_SIZE) return objects;
   }
@@ -155,7 +155,11 @@ ${problems.length ? `\n### Masalah\n${problems.map((p) => `- ${p}`).join('\n')}`
   }
 }
 
-run().catch((err) => {
-  console.error('[FATAL] Backup gagal:', err.message);
-  process.exit(1);
-});
+module.exports = { BUCKET, TABLES, ORDER_BY, fetchAllRows, listAllObjects, appendGithubSummary };
+
+if (require.main === module) {
+  run().catch((err) => {
+    console.error('[FATAL] Backup gagal:', err.message);
+    process.exit(1);
+  });
+}
